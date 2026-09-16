@@ -452,7 +452,7 @@ git commit -m "feat(ui): add button, badge and section heading primitives"
 
 **Interfaces produced:** `siteConfig` (object literal), `navLinks: NavLink[]`, `socialLinks: SocialLink[]`.
 
-- [ ] **Step 1: Create `data/site.ts`**
+- [x] **Step 1: Create `data/site.ts`**
 
 The string values here are the repository owner's to set. Use these defaults verbatim, then list this file in your handoff as needing real values.
 
@@ -477,7 +477,7 @@ export const socialLinks: SocialLink[] = [
 ];
 ```
 
-- [ ] **Step 2: Create `data/navigation.ts`**
+- [x] **Step 2: Create `data/navigation.ts`**
 
 Each `href` must match a section `id` rendered in Phases 3–6.
 
@@ -492,14 +492,14 @@ export const navLinks: NavLink[] = [
 ];
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
 npm run lint
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add data/site.ts data/navigation.ts
