@@ -878,7 +878,7 @@ git commit -m "feat(scroll): add lenis smooth scroll provider"
 
 Behavior: fixed, centered, glassmorphism pill. Transparent at the top of the page; gains background blur and a border once scrolled past 32px. Anchor clicks are routed through the Lenis instance so they ease rather than jump. Below `md` the anchor links collapse into a toggle button.
 
-- [ ] **Step 1: Create `components/layout/site-header.tsx`**
+- [x] **Step 1: Create `components/layout/site-header.tsx`**
 
 ```tsx
 "use client";
@@ -991,7 +991,7 @@ export function SiteHeader() {
 }
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1001,7 +1001,7 @@ npm run build
 
 The header is not rendered on the page until Task 3.4 — these checks confirm it compiles.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/layout/site-header.tsx
