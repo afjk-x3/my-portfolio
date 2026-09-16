@@ -2183,7 +2183,7 @@ git commit -m "feat(ui): neon accent buttons, badges and skill card glow"
 
 **Interfaces produced:** `siteConfig` gains `watermark: "DEVELOPER"`, `availability: { isAvailable: true; label: string }`, `timeZone: "Asia/Manila"`, `timeZoneLabel: "GMT+8"`. `useLocalTime(timeZone: string): string | null`. `TelemetryBar` (props `{ className?: string }`). Task 7.4 renders the bar and reads `siteConfig.watermark`.
 
-- [ ] **Step 1: Replace `data/site.ts`**
+- [x] **Step 1: Replace `data/site.ts`**
 
 The existing fields are unchanged; four fields are added at the end of `siteConfig`.
 
@@ -2221,7 +2221,7 @@ export const socialLinks: SocialLink[] = [
 ];
 ```
 
-- [ ] **Step 2: Create `hooks/use-local-time.ts`**
+- [x] **Step 2: Create `hooks/use-local-time.ts`**
 
 This uses `useSyncExternalStore`, not `useState` + `useEffect`. Two reasons: the server snapshot is `null`, so server-rendered and hydrated markup always match (a clock rendered on the server would be seconds stale and trigger a hydration mismatch); and it avoids calling `setState` inside an effect, which the React Compiler lint rules in this ESLint config discourage. Do not "simplify" it into an effect.
 
@@ -2267,7 +2267,7 @@ export function useLocalTime(timeZone: string): string | null {
 }
 ```
 
-- [ ] **Step 3: Create `components/sections/telemetry-bar.tsx`**
+- [x] **Step 3: Create `components/sections/telemetry-bar.tsx`**
 
 Layout: status on the left, role in the center (`md` and up), clock on the right. The pulsing ring is a CSS animation, so the existing global `prefers-reduced-motion` rule in `globals.css` already stops it — the solid dot stays. Do **not** add `aria-live` to the clock; it would announce every second to screen readers.
 
@@ -2320,7 +2320,7 @@ export function TelemetryBar({ className }: { className?: string }) {
 }
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -2330,7 +2330,7 @@ npm run build
 
 The bar is not rendered until Task 7.4; these checks confirm it compiles.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add data/site.ts hooks/use-local-time.ts components/sections/telemetry-bar.tsx
