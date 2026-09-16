@@ -5,8 +5,8 @@
 > **Verify** block, then commit. Do not skip ahead, do not batch phases, and do
 > not "improve" adjacent files that the task does not list.
 
-> **Status:** Phases 1–8 are complete and committed. **Start at Phase 9** (swap
-> the 3D headgear for a photo-based reveal). Later phases modify files that earlier phases
+> **Status:** Phases 1–9 are complete and committed. **Start at Phase 10** (the
+> first-visit monogram preloader). Later phases modify files that earlier phases
 > created; where an earlier task's code block no longer matches the target
 > design, that task carries a "Superseded" note pointing at the task that
 > replaces it. Never re-run a completed task's code over a newer version.
@@ -64,8 +64,8 @@ Three files hold personal content that only the owner can supply. Create them wi
 
 ```
 app/
-  layout.tsx                 # fonts (Geist, Geist Mono, Anton), metadata, <Backdrop>, <SmoothScrollProvider>
-  page.tsx                   # composes the five sections
+  layout.tsx                 # fonts (Geist, Geist Mono, Anton, UnifrakturCook), metadata, <Backdrop>, <SmoothScrollProvider>
+  page.tsx                   # <Preloader> first, then the header and the five sections
   globals.css                # Tailwind v4 theme tokens, custom utilities, Lenis base styles
 components/
   layout/
@@ -90,6 +90,7 @@ components/
     button.tsx               # cva + Radix Slot, shadcn convention
     badge.tsx                # tech-stack pill
     section-heading.tsx      # shared eyebrow + title
+    preloader.tsx            # first-visit monogram + counter overlay, inline gate script (client) [Phase 10]
 data/
   site.ts                    # identity + social links
   navigation.ts              # nav anchors
@@ -4136,12 +4137,617 @@ git commit -m "fix: address phase 9 verification findings"
 
 ---
 
+# Phase 10 — Gothic monogram telemetry preloader
+
+A full-screen intro for the first visit in each browser session. It shows the blackletter monogram **𝕲** with a lime glow, a monospace counter running from `00%` to `100%` with a thin progress bar, and three status lines (`GARAZA // DEV PORTFOLIO`, `SYS.INIT // OK`, `LATENCY // 12MS`). It holds at 100% for a moment, then wipes upward with a neon leading edge to uncover the hero. Reloading in the same tab does not replay it.
+
+Every block below was type-checked, linted, and built with Turbopack in a scratch copy of this repository at commit `9023a5b`, then tested with headless Chrome on both the production build and the dev server. Results:
+
+- **First visit:** the overlay is on the first paint, and scrolling stays locked, both by wheel and through Lenis, until the wipe finishes.
+- **Reload in the same tab:** the overlay never paints; `display` stays `none` from the first frame.
+- **Checked at 1440px and 390px:** with reduced motion the overlay fades instead of wiping. With JavaScript disabled it stays hidden and the page works normally.
+- **Console:** clean in production and in development, with no hydration or `<script>` warnings.
+
+Copy the blocks exactly.
+
+**How it works:**
+
+| Piece | Mechanism |
+| --- | --- |
+| No flash | The overlay is in the server HTML on every load, but CSS keeps it `display: none` unless `<html>` has `data-preloader-active`. A tiny inline script, the first thing on the page, sets that attribute during HTML parsing, before first paint, only when `sessionStorage` has no `portfolio_preloaded` key. This is the pattern from `node_modules/next/dist/docs/01-app/02-guides/preventing-flash-before-hydration.md`. A `useEffect`-only check would paint the hero first and then cover it. |
+| React state | React never reads `sessionStorage` during SSR or hydration. `useSyncExternalStore` uses `true` as the server snapshot, then switches to the real storage value right after hydration. |
+| Counter | `animate()` from `motion/react` tweens a motion value from 0 to 100 over 1.6 s. The number and the bar are bound to that value, so the component does not re-render per frame. |
+| Exit | `AnimatePresence` plays `y: "-100%"` over 0.8 s with `[0.76, 0, 0.24, 1]`, after a 0.2 s hold at 100%. With reduced motion it fades out instead. When the exit finishes, the storage key is written and the lock is released. |
+| Scroll lock | CSS `overflow: hidden` on `<html>` while the attribute is set, so scrolling is locked before React loads. Lenis scrolls programmatically, so `lenis.stop()` is also called; `document.body.style.overflow` alone would not stop the wheel. `scrollbar-gutter: stable` prevents a sideways jump when the scrollbar comes back. |
+| Monogram | `𝕲` (U+1D572) is a math symbol that no bundled font covers, so each OS would draw its own substitute or a missing-glyph box. The component renders a plain `G` in **UnifrakturCook** (a Google font, loaded via `next/font`), which is the same blackletter capital on every device. |
+| Stacking | The overlay is `z-90`: above the header (`z-50`) and below the page-wide film grain (`z-100`), so the grain shows on the overlay without a duplicate layer. |
+
+---
+
+### Task 10.1: Add the blackletter font, animation tokens, and preloader gate styles
+
+**Files:**
+- Modify: `app/layout.tsx` (full replacement)
+- Modify: `app/globals.css` (three insertions)
+
+**Interfaces produced:** the Tailwind classes `font-gothic`, `animate-monogram-in`, `animate-monogram-breathe`, `animate-status-in`; the CSS gate for `[data-preloader]` / `data-preloader-active`.
+
+- [x] **Step 1: Replace `app/layout.tsx`**
+
+The two changes from the current file: the `UnifrakturCook` font (with its variable added to `<html>`), and `suppressHydrationWarning` on `<html>`, because the preloader's gate script adds an attribute there before React hydrates. `suppressHydrationWarning` only applies to `<html>`'s own attributes, not its children.
+
+```tsx
+import type { Metadata } from "next";
+import { Anton, Geist, Geist_Mono, UnifrakturCook } from "next/font/google";
+
+import { Backdrop } from "@/components/layout/backdrop";
+import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
+import { siteConfig } from "@/data/site";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// Condensed display face for the hero watermark and headline. Anton ships a
+// single static weight, so `weight` is required.
+const anton = Anton({
+  variable: "--font-anton",
+  subsets: ["latin"],
+  weight: "400",
+});
+
+// Blackletter face for the preloader monogram. `display: "block"` hides the
+// letter until the font arrives instead of flashing a fallback serif "G"; the
+// file is preloaded, so the wait is short.
+const unifraktur = UnifrakturCook({
+  variable: "--font-unifraktur",
+  subsets: ["latin"],
+  weight: "700",
+  display: "block",
+});
+
+export const metadata: Metadata = {
+  title: `${siteConfig.name} — ${siteConfig.role}`,
+  description: siteConfig.description,
+  openGraph: {
+    title: `${siteConfig.name} — ${siteConfig.role}`,
+    description: siteConfig.description,
+    type: "website",
+  },
+};
+
+export default function RootLayout({ children }: LayoutProps<"/">) {
+  return (
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${unifraktur.variable} h-full antialiased`}
+      // The preloader's inline gate script adds an attribute to <html> before
+      // React hydrates.
+      suppressHydrationWarning
+    >
+      <body className="min-h-full bg-bg font-sans text-fg">
+        <Backdrop />
+        <SmoothScrollProvider>{children}</SmoothScrollProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+- [x] **Step 2: Add the animation tokens to the first `@theme` block in `app/globals.css`**
+
+Find this, the end of the `pulse-dot` keyframes and the closing brace of the first `@theme` block:
+
+```css
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
+}
+```
+
+Replace it with:
+
+```css
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
+
+  /* Preloader: monogram entrance, then a slow glow breath; status line fade. */
+  --animate-monogram-in: monogram-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-monogram-breathe: monogram-breathe 2.4s ease-in-out 0.9s infinite;
+  --animate-status-in: status-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes monogram-in {
+    from {
+      transform: scale(0.8);
+      opacity: 0;
+      filter: blur(12px);
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+      filter: blur(0);
+    }
+  }
+
+  @keyframes monogram-breathe {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.03);
+      opacity: 0.85;
+    }
+  }
+
+  @keyframes status-in {
+    from {
+      transform: translateY(6px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+```
+
+These entrances are CSS animations rather than motion props on purpose: they start as soon as the server HTML paints, before React loads. The existing global `prefers-reduced-motion` rule already cuts them to near-instant.
+
+- [x] **Step 3: Register the font in the `@theme inline` block**
+
+Find:
+
+```css
+  --font-display: var(--font-anton);
+}
+```
+
+Replace with:
+
+```css
+  --font-display: var(--font-anton);
+  --font-gothic: var(--font-unifraktur);
+}
+```
+
+- [x] **Step 4: Add the gate rules after the Lenis base styles**
+
+Find:
+
+```css
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+```
+
+Replace with:
+
+```css
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+/*
+ * Preloader gate. The overlay is in the server HTML on every load but stays
+ * hidden unless the inline gate script flagged a first visit on <html>, so
+ * returning visitors and no-JS visitors never see it. Unlayered on purpose:
+ * this must beat any Tailwind display utility.
+ *
+ * While flagged, native scrolling is locked. `scrollbar-gutter: stable` keeps
+ * the scrollbar's space reserved so the page does not shift sideways when the
+ * lock is released.
+ */
+[data-preloader] {
+  display: none;
+}
+
+:root[data-preloader-active] [data-preloader] {
+  display: flex;
+}
+
+:root[data-preloader-active] {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+```
+
+Do not wrap these rules in `@layer`. Tailwind utilities live in a cascade layer, and unlayered CSS always beats layered CSS. That is what lets this gate override any `flex`/`hidden` class.
+
+- [x] **Step 5: Verify**
+
+```bash
+npm run build
+npx tsc --noEmit
+npm run lint
+```
+
+Expected: all three pass. Run `build` first: it regenerates the `LayoutProps` global that `tsc` needs. If the build fails with `next/font: error` / `Error while requesting resource`, Google Fonts was unreachable; re-run `npm run build`. The page looks unchanged at this point: nothing uses the new classes yet.
+
+- [x] **Step 6: Commit**
+
+```bash
+git add app/layout.tsx app/globals.css
+git commit -m "feat(preloader): add blackletter font, animation tokens, and gate styles"
+```
+
+---
+
+### Task 10.2: Build the preloader component
+
+**Files:**
+- Create: `components/ui/preloader.tsx`
+
+**Interfaces consumed:** `font-gothic`, `animate-monogram-in`, `animate-monogram-breathe`, `animate-status-in`, and the `[data-preloader]` gate (Task 10.1); the `bg-grid` utility and `.glow` class (Phase 7); `useLenis` from `lenis/react`; `AnimatePresence`, `animate`, `motion`, `useMotionValue`, `useReducedMotion`, `useTransform` from `motion/react`.
+**Interfaces produced:** `Preloader` (no props).
+
+- [ ] **Step 1: Create `components/ui/preloader.tsx`**
+
+Details that must not change:
+
+- **No `flex` class on the overlay.** `display` belongs to the CSS gate. The `flex-col items-center justify-center` classes still apply once the gate sets `display: flex`.
+- **`InlineScript`'s `type` switch** (`text/javascript` on the server, `text/plain` on the client) is the documented Next 16 way to render an inline script without React's dev warning.
+- **`useLayoutEffect` re-reads storage.** In development, Strict Mode's remount strips the attribute from `<html>`, and this puts it back before paint. The storage re-read stops a returning visitor, whose `shouldPlay` is still the server value during the hydration commit, from seeing a one-frame flash.
+- **The storage key is written in `handleExitComplete`, not when the counter finishes.** Writing it earlier flips `shouldPlay` to `false` mid-wipe, which removes the `<html>` attribute, and the CSS gate would hide the overlay before the wipe animates.
+- **`{"//"}`** in JSX: a bare `//` text node fails the `react/jsx-no-comment-textnodes` lint rule.
+
+```tsx
+"use client";
+
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
+import { useLenis } from "lenis/react";
+import {
+  AnimatePresence,
+  animate,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useTransform,
+} from "motion/react";
+
+/** Present in sessionStorage once the preloader has played in this tab. */
+const STORAGE_KEY = "portfolio_preloaded";
+
+/**
+ * Set on `<html>` while the preloader owns the screen. `app/globals.css` reads
+ * it to show the overlay and to lock native scrolling.
+ */
+const ACTIVE_ATTRIBUTE = "data-preloader-active";
+
+/** Seconds the counter takes to run from 00 to 100. */
+const COUNT_DURATION = 1.6;
+
+/** Seconds the overlay holds at 100% before it wipes away. */
+const EXIT_HOLD = 0.2;
+
+const EASE_OUT_QUINT = [0.22, 1, 0.36, 1] as const;
+const EASE_IN_OUT_QUART = [0.76, 0, 0.24, 1] as const;
+
+const STATUS_LINES = [
+  { label: "GARAZA", value: "DEV PORTFOLIO", accent: false },
+  { label: "SYS.INIT", value: "OK", accent: true },
+  { label: "LATENCY", value: "12MS", accent: false },
+] as const;
+
+/*
+ * Runs synchronously while the browser parses the HTML: before first paint,
+ * and before React has loaded. On a first visit it flags `<html>`, which makes
+ * the server-rendered overlay visible and locks scrolling. On later visits it
+ * does nothing, so the overlay stays `display: none` and never flashes. If
+ * sessionStorage is blocked, the preloader is skipped rather than replayed on
+ * every load.
+ */
+const GATE_SCRIPT = `try{if(!sessionStorage.getItem("${STORAGE_KEY}"))document.documentElement.setAttribute("${ACTIVE_ATTRIBUTE}","")}catch(e){}`;
+
+function readShouldPlay() {
+  try {
+    return sessionStorage.getItem(STORAGE_KEY) === null;
+  } catch {
+    return false;
+  }
+}
+
+// sessionStorage has no change event within the same tab, so there is nothing
+// to subscribe to. The store is only read once, after hydration.
+const subscribe = () => () => {};
+
+/**
+ * An inline script that executes during HTML parsing only. On the client it
+ * renders as `text/plain`, which stops React warning about `<script>` tags;
+ * `suppressHydrationWarning` absorbs the `type` difference.
+ */
+function InlineScript({ html }: { html: string }) {
+  return (
+    <script
+      type={typeof window === "undefined" ? "text/javascript" : "text/plain"}
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+/**
+ * First-visit intro: the Gothic monogram, a telemetry counter from 00 to 100,
+ * then an upward wipe that uncovers the hero. Plays once per browser session.
+ */
+export function Preloader() {
+  // The server always renders the overlay (CSS keeps it hidden unless the gate
+  // script flagged a first visit). After hydration this switches to the real
+  // sessionStorage value, so React never reads storage during SSR or hydration.
+  const shouldPlay = useSyncExternalStore(subscribe, readShouldPlay, () => true);
+  const [counted, setCounted] = useState(false);
+  const [exited, setExited] = useState(false);
+
+  const reduceMotion = useReducedMotion();
+  const lenis = useLenis();
+
+  const visible = shouldPlay && !counted;
+  // The lock outlasts `visible`: it is released only after the wipe finishes.
+  const locked = shouldPlay && !exited;
+
+  const progress = useMotionValue(0);
+  const percent = useTransform(progress, (value) =>
+    Math.round(value).toString().padStart(2, "0"),
+  );
+  const barScale = useTransform(progress, [0, 100], [0, 1]);
+
+  // Keep the `<html>` flag in step with React. In production the gate script
+  // has already set it and this is a no-op. In development, Strict Mode's
+  // remount strips attributes React does not manage from `<html>`, so this puts
+  // it back before paint. Storage is re-read so that a returning visitor, whose
+  // `shouldPlay` is still the server value during the hydration commit, never
+  // sees the overlay flash.
+  useLayoutEffect(() => {
+    if (!locked || !readShouldPlay()) return;
+    const root = document.documentElement;
+    root.setAttribute(ACTIVE_ATTRIBUTE, "");
+    return () => root.removeAttribute(ACTIVE_ATTRIBUTE);
+  }, [locked]);
+
+  // Lenis drives scrolling programmatically, so `overflow: hidden` alone does
+  // not stop wheel scrolling. With reduced motion there is no Lenis instance
+  // and the CSS lock is enough.
+  useEffect(() => {
+    if (!lenis || !locked) return;
+    lenis.stop();
+    return () => lenis.start();
+  }, [lenis, locked]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const controls = animate(progress, 100, {
+      duration: COUNT_DURATION,
+      ease: EASE_OUT_QUINT,
+      onComplete: () => setCounted(true),
+    });
+    return () => controls.stop();
+  }, [visible, progress]);
+
+  const handleExitComplete = () => {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, "1");
+    } catch {
+      // Storage blocked: the gate script skips the preloader in that case too.
+    }
+    setExited(true);
+  };
+
+  return (
+    <>
+      <InlineScript html={GATE_SCRIPT} />
+      <AnimatePresence onExitComplete={handleExitComplete}>
+        {visible && (
+          <motion.div
+            key="preloader"
+            // `display` is owned by the `[data-preloader]` rules in globals.css,
+            // so there is deliberately no `flex` class here.
+            data-preloader
+            role="status"
+            exit={
+              reduceMotion
+                ? { opacity: 0, transition: { duration: 0.4, delay: EXIT_HOLD } }
+                : {
+                    y: "-100%",
+                    transition: { duration: 0.8, delay: EXIT_HOLD, ease: EASE_IN_OUT_QUART },
+                  }
+            }
+            className="fixed inset-0 z-90 flex-col items-center justify-center overflow-hidden bg-bg select-none"
+          >
+            <span className="sr-only">Loading portfolio</span>
+
+            {/*
+             * Atmosphere. The grid is repeated here because the page-wide grid
+             * sits behind this opaque overlay. The film grain is not: the
+             * page-wide noise layer is at z-100, already above this overlay.
+             */}
+            <div aria-hidden className="bg-grid pointer-events-none absolute inset-0" />
+            <div
+              aria-hidden
+              className="glow pointer-events-none absolute top-1/2 left-1/2 size-[26rem] -translate-x-1/2 -translate-y-1/2"
+            />
+
+            <div aria-hidden className="relative flex flex-col items-center">
+              {/*
+               * `𝕲` (U+1D572) is a math symbol that no bundled font covers, so
+               * each OS would substitute its own glyph. A plain "G" in
+               * UnifrakturCook renders the same blackletter capital everywhere.
+               */}
+              <span className="animate-monogram-in block">
+                <span className="animate-monogram-breathe block font-gothic text-8xl leading-none text-fg drop-shadow-[0_0_25px_rgba(204,255,0,0.35)] md:text-[10rem]">
+                  G
+                </span>
+              </span>
+
+              <div className="mt-10 flex items-baseline font-mono tabular-nums">
+                <motion.span className="text-5xl font-medium tracking-tight text-fg md:text-6xl">
+                  {percent}
+                </motion.span>
+                <span className="ml-1 text-xl text-accent md:text-2xl">%</span>
+              </div>
+
+              <div className="mt-4 h-px w-56 overflow-hidden bg-line">
+                <motion.div style={{ scaleX: barScale }} className="h-full origin-left bg-accent" />
+              </div>
+
+              <ul className="mt-8 flex flex-col items-center gap-2 font-mono text-[0.65rem] uppercase tracking-[0.3em] text-muted md:text-xs">
+                {STATUS_LINES.map((line, index) => (
+                  <li
+                    key={line.label}
+                    className="animate-status-in"
+                    style={{ animationDelay: `${0.3 + index * 0.18}s` }}
+                  >
+                    {line.label} <span className="text-line-strong">{"//"}</span>{" "}
+                    <span className={line.accent ? "text-accent" : "text-fg"}>{line.value}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Neon leading edge, visible as the overlay wipes upward. */}
+            <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-accent" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+```
+
+- [ ] **Step 2: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+Expected: all pass. Nothing renders the component yet.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add components/ui/preloader.tsx
+git commit -m "feat(preloader): add gothic monogram telemetry preloader"
+```
+
+---
+
+### Task 10.3: Mount the preloader on the home page
+
+**Files:**
+- Modify: `app/page.tsx` (full replacement)
+
+**Interfaces consumed:** `Preloader` (Task 10.2).
+
+- [ ] **Step 1: Replace `app/page.tsx`**
+
+`<Preloader />` must be the **first** element: its gate script has to run before the browser parses, and can paint, any page content. It is mounted here rather than in `app/layout.tsx` on purpose. If it were in the layout, the 404 page would also lock scrolling and show the intro.
+
+```tsx
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
+import { BentoGrid } from "@/components/sections/bento-grid";
+import { Contact } from "@/components/sections/contact";
+import { Hero } from "@/components/sections/hero";
+import { ProjectsShowcase } from "@/components/sections/projects-showcase";
+import { Preloader } from "@/components/ui/preloader";
+
+export default function Home() {
+  return (
+    <>
+      {/* First, so its gate script runs before any page content is parsed. */}
+      <Preloader />
+      <SiteHeader />
+      <main>
+        <Hero />
+        <ProjectsShowcase />
+        <BentoGrid />
+        <Contact />
+      </main>
+      <SiteFooter />
+    </>
+  );
+}
+```
+
+- [ ] **Step 2: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run dev
+```
+
+At `http://localhost:3000`, in a fresh tab:
+
+- The `G` blurs in with a lime glow, the counter runs to `100%` while the bar fills, and the three status lines fade in one after another.
+- After a short hold, the overlay wipes upward with a thin lime edge and uncovers the hero.
+- Reloading the tab goes straight to the page, with no black frame.
+- To replay it, run `sessionStorage.removeItem("portfolio_preloaded")` in the DevTools console and reload. A new tab also replays it, because sessionStorage is per tab.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add app/page.tsx
+git commit -m "feat(preloader): mount preloader on the home page"
+```
+
+---
+
+### Task 10.4: Phase 10 verification pass
+
+**Files:** none created; fix whatever this task surfaces.
+
+- [ ] **Step 1: Production build walk**
+
+```bash
+npm run build
+npm run start
+```
+
+With DevTools open, and after clearing the storage key before each first-visit check:
+
+- [ ] **Console:** clean on the first visit and on reload; no hydration warning and no `Encountered a script tag` warning.
+- [ ] **Scroll lock:** during the counter, the mouse wheel and the keyboard (Space, Page Down) do not move the page. Scrolling works immediately after the wipe finishes. The header links do nothing while the overlay is up, because the overlay covers them.
+- [ ] **No flash on reload:** in the Performance panel, or by throttling the network to "Slow 4G" and reloading, the overlay never appears on a reload in the same tab.
+- [ ] **Slow network, first visit:** with "Slow 4G" and the key cleared, the first paint is the overlay (at `00%`), never the hero.
+- [ ] **Reduced motion** (Rendering panel → emulate `prefers-reduced-motion: reduce`): the counter still runs, the overlay fades out instead of wiping, and scrolling is locked until then.
+- [ ] **JavaScript disabled** (Command Menu → "Disable JavaScript"): the page renders normally with no overlay.
+- [ ] **Hero after the wipe:** the telemetry clock ticks, the headgear reveal follows the cursor, and the parallax still separates on scroll.
+- [ ] `document.documentElement.scrollWidth === window.innerWidth` is `true` at 375px, 768px, and 1440px, both during and after the preloader.
+- [ ] After the wipe, `document.documentElement.hasAttribute("data-preloader-active")` is `false` and `document.querySelector("[data-preloader]")` is `null`.
+
+- [ ] **Step 2: Commit any fixes**
+
+```bash
+git add -A
+git commit -m "fix: address phase 10 verification findings"
+```
+
+If nothing needed fixing, skip the commit.
+
+---
+
 ## Handoff checklist
 
-Report these to the repository owner when Phase 9 is done:
+Report these to the repository owner when Phase 10 is done:
 
 1. `data/site.ts` — name, initials, email, GitHub URL, and site URL are placeholders. Also confirm `availability.isAvailable`, `timeZone` / `timeZoneLabel` (set to `Asia/Manila` / `GMT+8`), and the `watermark` word (sized for ~9 characters).
 2. `data/projects.ts` — three structurally complete example projects need replacing with real ones. Adding or removing entries automatically changes the scroll-stack height; no component edits needed.
 3. `public/resume.pdf` — a minimal placeholder PDF; replace with the real résumé.
 4. `public/images/hero/headgear.webp` and `headgear-ghost.webp` — cut out from STIX's product photo (red variant, front view) as sold by Eljan Sports. That photo belongs to STIX/the retailer; replacing it with your own photo of your headgear removes the copyright risk. If either the portrait or the headgear image changes, re-tune the `HEADGEAR` and `FACE` constants in `components/sections/headgear-reveal.tsx`, and nothing else.
-5. Optional next steps, not in scope for v1: a `/projects/[slug]` detail route, and the Supabase swap (replace the two function bodies in `lib/queries.ts`; the `Project` and `SkillCategory` fields map 1:1 to columns, snake_case in Postgres).
+5. `components/ui/preloader.tsx` — the status lines are hard-coded in `STATUS_LINES` (`GARAZA // DEV PORTFOLIO`, `SYS.INIT // OK`, `LATENCY // 12MS`); `12MS` is decorative, not a measurement. Timing lives in `COUNT_DURATION` and `EXIT_HOLD`. To see the intro again while testing, run `sessionStorage.removeItem("portfolio_preloaded")` and reload.
+6. Optional next steps, not in scope for v1: a `/projects/[slug]` detail route, and the Supabase swap (replace the two function bodies in `lib/queries.ts`; the `Project` and `SkillCategory` fields map 1:1 to columns, snake_case in Postgres).

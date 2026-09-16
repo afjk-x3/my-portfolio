@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Anton, Geist, Geist_Mono } from "next/font/google";
+import { Anton, Geist, Geist_Mono, UnifrakturCook } from "next/font/google";
 
 import { Backdrop } from "@/components/layout/backdrop";
 import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
@@ -24,6 +24,16 @@ const anton = Anton({
   weight: "400",
 });
 
+// Blackletter face for the preloader monogram. `display: "block"` hides the
+// letter until the font arrives instead of flashing a fallback serif "G"; the
+// file is preloaded, so the wait is short.
+const unifraktur = UnifrakturCook({
+  variable: "--font-unifraktur",
+  subsets: ["latin"],
+  weight: "700",
+  display: "block",
+});
+
 export const metadata: Metadata = {
   title: `${siteConfig.name} — ${siteConfig.role}`,
   description: siteConfig.description,
@@ -38,7 +48,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${unifraktur.variable} h-full antialiased`}
+      // The preloader's inline gate script adds an attribute to <html> before
+      // React hydrates.
+      suppressHydrationWarning
     >
       <body className="min-h-full bg-bg font-sans text-fg">
         <Backdrop />

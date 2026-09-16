@@ -43,6 +43,47 @@
       opacity: 0;
     }
   }
+
+  /* Preloader: monogram entrance, then a slow glow breath; status line fade. */
+  --animate-monogram-in: monogram-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-monogram-breathe: monogram-breathe 2.4s ease-in-out 0.9s infinite;
+  --animate-status-in: status-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes monogram-in {
+    from {
+      transform: scale(0.8);
+      opacity: 0;
+      filter: blur(12px);
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+      filter: blur(0);
+    }
+  }
+
+  @keyframes monogram-breathe {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.03);
+      opacity: 0.85;
+    }
+  }
+
+  @keyframes status-in {
+    from {
+      transform: translateY(6px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
 }
 
 /*
@@ -54,6 +95,7 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-anton);
+  --font-gothic: var(--font-unifraktur);
 }
 
 :root {
@@ -90,6 +132,29 @@ html.lenis body {
 
 .lenis.lenis-smooth [data-lenis-prevent] {
   overscroll-behavior: contain;
+}
+
+/*
+ * Preloader gate. The overlay is in the server HTML on every load but stays
+ * hidden unless the inline gate script flagged a first visit on <html>, so
+ * returning visitors and no-JS visitors never see it. Unlayered on purpose:
+ * this must beat any Tailwind display utility.
+ *
+ * While flagged, native scrolling is locked. `scrollbar-gutter: stable` keeps
+ * the scrollbar's space reserved so the page does not shift sideways when the
+ * lock is released.
+ */
+[data-preloader] {
+  display: none;
+}
+
+:root[data-preloader-active] [data-preloader] {
+  display: flex;
+}
+
+:root[data-preloader-active] {
+  overflow: hidden;
+  scrollbar-gutter: stable;
 }
 
 /* Hollow display type for the hero watermark. */
