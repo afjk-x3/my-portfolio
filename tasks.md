@@ -1303,7 +1303,7 @@ git commit -m "feat(projects): add project card"
 
 **Interfaces produced:** `ProjectsStack` with props `{ projects: Project[] }`; `ProjectsShowcase` (no props, async Server Component).
 
-- [ ] **Step 1: Create `components/sections/projects-stack.tsx`**
+- [x] **Step 1: Create `components/sections/projects-stack.tsx`**
 
 ```tsx
 "use client";
@@ -1342,7 +1342,7 @@ export function ProjectsStack({ projects }: { projects: Project[] }) {
 
 The container needs no explicit height: each child is `h-screen`, so the container is naturally `projects.length × 100vh` tall while the sticky cards pin inside it.
 
-- [ ] **Step 2: Create `components/sections/projects-showcase.tsx`**
+- [x] **Step 2: Create `components/sections/projects-showcase.tsx`**
 
 ```tsx
 import { ProjectsStack } from "@/components/sections/projects-stack";
@@ -1365,7 +1365,7 @@ export async function ProjectsShowcase() {
 
 This is the pattern every remaining content section follows: an async Server Component awaits `lib/queries.ts` and passes plain data into a client child.
 
-- [ ] **Step 3: Add the section to `app/page.tsx`**
+- [x] **Step 3: Add the section to `app/page.tsx`**
 
 ```tsx
 import { SiteHeader } from "@/components/layout/site-header";
@@ -1385,7 +1385,7 @@ export default function Home() {
 }
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1396,7 +1396,7 @@ npm run dev
 
 Expected in the browser: scrolling past the hero pins each project card in turn; as the next card rises over it, the one beneath scales down slightly and its top edge stays visible as a stacked ledge. The "Projects" nav link now scrolls to this section. Enable "Emulate CSS prefers-reduced-motion: reduce" and reload — cards must still be readable one per screen, just without the scale effect.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add components/sections/projects-stack.tsx components/sections/projects-showcase.tsx app/page.tsx
