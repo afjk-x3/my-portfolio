@@ -3744,7 +3744,7 @@ git commit -m "feat(hero): mount 3d headgear reveal over portrait"
 
 **Files:** none created; fix whatever this task surfaces.
 
-- [ ] **Step 1: Clean build, lint, type check**
+- [x] **Step 1: Clean build, lint, type check**
 
 ```bash
 rm -rf .next
@@ -3753,7 +3753,7 @@ npm run lint
 npx tsc --noEmit
 ```
 
-- [ ] **Step 2: Bundle boundary check**
+- [x] **Step 2: Bundle boundary check**
 
 ```bash
 grep -rln "@react-three\|from \"three\"" --include=*.ts --include=*.tsx app components hooks lib data
@@ -3761,19 +3761,19 @@ grep -rln "@react-three\|from \"three\"" --include=*.ts --include=*.tsx app comp
 
 Expected: only files under `components/three/`. Any other path means 3D code leaked into the main bundle.
 
-- [ ] **Step 3: Console check on the production build**
+- [x] **Step 3: Console check on the production build**
 
 With `npm run start` running, open the page with DevTools open, once normally and once with reduced motion emulated. The only acceptable console message is the `THREE.Clock … deprecated` warning. There must be no hydration errors and no WebGL errors.
 
-- [ ] **Step 4: Regression walk**
+- [x] **Step 4: Regression walk**
 
-- [ ] Telemetry clock ticks; the status dot pulses (solid with reduced motion).
-- [ ] The hollow "DEVELOPER" watermark sits behind the portrait, and the parallax still separates them on scroll.
-- [ ] Project cards stack, tilt, and spotlight; with reduced motion they do not tilt and there is no hydration error.
-- [ ] Scroll past the hero and back: the reveal still works. The render loop pauses off-screen via `useInView`.
-- [ ] No horizontal scrollbar at 375px, 768px, or 1440px.
+- [x] Telemetry clock ticks; the status dot pulses (solid with reduced motion).
+- [x] The hollow "DEVELOPER" watermark sits behind the portrait, and the parallax still separates them on scroll.
+- [x] Project cards stack, tilt, and spotlight; with reduced motion they do not tilt and there is no hydration error.
+- [x] Scroll past the hero and back: the reveal still works. The render loop pauses off-screen via `useInView`.
+- [x] No horizontal scrollbar at 375px, 768px, or 1440px.
 
-- [ ] **Step 5: Commit any fixes**
+- [x] **Step 5: Commit any fixes**
 
 ```bash
 git add -A
