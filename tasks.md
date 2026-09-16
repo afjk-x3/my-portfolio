@@ -4393,7 +4393,7 @@ git commit -m "feat(preloader): add blackletter font, animation tokens, and gate
 **Interfaces consumed:** `font-gothic`, `animate-monogram-in`, `animate-monogram-breathe`, `animate-status-in`, and the `[data-preloader]` gate (Task 10.1); the `bg-grid` utility and `.glow` class (Phase 7); `useLenis` from `lenis/react`; `AnimatePresence`, `animate`, `motion`, `useMotionValue`, `useReducedMotion`, `useTransform` from `motion/react`.
 **Interfaces produced:** `Preloader` (no props).
 
-- [ ] **Step 1: Create `components/ui/preloader.tsx`**
+- [x] **Step 1: Create `components/ui/preloader.tsx`**
 
 Details that must not change:
 
@@ -4625,7 +4625,7 @@ export function Preloader() {
 }
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -4635,7 +4635,7 @@ npm run build
 
 Expected: all pass. Nothing renders the component yet.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/ui/preloader.tsx
