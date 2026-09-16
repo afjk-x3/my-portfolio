@@ -2025,7 +2025,7 @@ git commit -m "feat(theme): neon accent tokens, display font and backdrop layers
 
 **Interfaces produced:** `Button` keeps its exact props (`variant: "primary" | "outline" | "ghost"`, `size`, `asChild`). `Badge` gains `variant?: "default" | "accent"` and exports `badgeVariants`. Existing `<Badge className="...">` call sites keep compiling.
 
-- [ ] **Step 1: Replace `components/ui/button.tsx`**
+- [x] **Step 1: Replace `components/ui/button.tsx`**
 
 Primary becomes a neon fill with dark ink and a glow on hover. Outline gets a stronger hairline and a softer glow. `transition-colors` widens to include `box-shadow` so the glow animates.
 
@@ -2083,7 +2083,7 @@ export function Button({
 export { buttonVariants };
 ```
 
-- [ ] **Step 2: Replace `components/ui/badge.tsx`**
+- [x] **Step 2: Replace `components/ui/badge.tsx`**
 
 `BadgeProps` is a type alias rather than an empty `interface … extends` so the `@typescript-eslint/no-empty-object-type` rule never fires.
 
@@ -2117,7 +2117,7 @@ export function Badge({ className, variant, ...props }: BadgeProps) {
 export { badgeVariants };
 ```
 
-- [ ] **Step 3: Replace `components/sections/tech-stack-card.tsx`**
+- [x] **Step 3: Replace `components/sections/tech-stack-card.tsx`**
 
 Adds a neon border and outer glow on hover, and lights the card label.
 
@@ -2154,7 +2154,7 @@ export function TechStackCard({ category, className }: TechStackCardProps) {
 }
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -2165,7 +2165,7 @@ npm run dev
 
 Expected: the hero GitHub button and the "Live Demo" buttons are neon with near-black text and glow on hover. Outline buttons turn neon on hover. Hovering a skill card in the bento grid gives it a neon border, a soft outer glow, and a neon label.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add components/ui/button.tsx components/ui/badge.tsx components/sections/tech-stack-card.tsx
