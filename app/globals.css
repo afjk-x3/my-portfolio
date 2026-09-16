@@ -2,20 +2,47 @@
 
 /*
  * Literal design tokens. Plain `@theme` (not `@theme inline`) so Tailwind also
- * emits them as real CSS custom properties — the radial glow helpers below
- * reference them directly.
+ * emits them as real CSS custom properties — the glow, grid, and spotlight
+ * helpers reference them directly.
+ *
+ * Token names are stable; only values changed in the Phase 7 visual upgrade,
+ * so existing `bg-bg`, `text-accent`, `border-line` usages keep working.
  */
 @theme {
-  --color-bg: #05060a;
-  --color-surface: #0b0d14;
-  --color-elevated: #12151f;
-  --color-line: #1e2230;
-  --color-fg: #f5f6f8;
-  --color-muted: #8a90a2;
-  --color-accent: #ff4d17;
-  --color-accent-soft: #ff8a5c;
+  /* Surfaces: zinc-950 base, stepping up in lightness. */
+  --color-bg: #09090b;
+  --color-surface: #0f0f12;
+  --color-elevated: #17171b;
+
+  /* Hairlines. `line` for card borders, `line-strong` for outline type. */
+  --color-line: #27272a;
+  --color-line-strong: #3f3f46;
+
+  /* Text. */
+  --color-fg: #fafafa;
+  --color-muted: #a1a1aa;
+
+  /* Electric neon accent. `accent-ink` is the text color on accent fills. */
+  --color-accent: #ccff00;
+  --color-accent-soft: #e2fd52;
+  --color-accent-ink: #09090b;
 
   --radius-card: 1.5rem;
+
+  /* Live status dot: an expanding ring that fades out. */
+  --animate-pulse-dot: pulse-dot 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+
+  @keyframes pulse-dot {
+    0% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    75%,
+    100% {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
 }
 
 /*
@@ -26,6 +53,7 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-anton);
 }
 
 :root {
@@ -40,7 +68,7 @@ body {
 
 ::selection {
   background-color: var(--color-accent);
-  color: #05060a;
+  color: var(--color-accent-ink);
 }
 
 /*
@@ -64,20 +92,47 @@ html.lenis body {
   overscroll-behavior: contain;
 }
 
-/* Faint telemetry grid used behind the hero. */
-.grid-backdrop {
-  background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.04) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+/* Hollow display type for the hero watermark. */
+@utility text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--color-line-strong);
 }
 
-/* Ambient accent bloom, positioned by the consuming component. */
+@utility text-outline-accent {
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in oklab, var(--color-accent) 60%, transparent);
+}
+
+/*
+ * Page-wide geometric grid. Faded toward the viewport edges so it reads as
+ * atmosphere rather than graph paper.
+ */
+@utility bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: 80px 80px;
+  background-position: center top;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, #000 35%, transparent 100%);
+}
+
+/*
+ * Film grain. An inline SVG turbulence filter tiled at 200px — no image
+ * request. Consumers set the strength with an `opacity-*` utility.
+ */
+@utility bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+/*
+ * Ambient accent bloom, positioned by the consuming component. Lower mix than
+ * the old orange accent: neon lime at 45% blows out.
+ */
 .glow {
   background: radial-gradient(
     circle at center,
-    color-mix(in oklab, var(--color-accent) 45%, transparent) 0%,
+    color-mix(in oklab, var(--color-accent) 22%, transparent) 0%,
     transparent 70%
   );
   filter: blur(80px);

@@ -5,6 +5,12 @@
 > **Verify** block, then commit. Do not skip ahead, do not batch phases, and do
 > not "improve" adjacent files that the task does not list.
 
+> **Status:** Phases 1–6 are complete and committed. **Start at Phase 7** (signature
+> visual upgrade). Phase 7 tasks modify files that earlier phases created; where
+> an earlier task's code block no longer matches the target design, that task
+> carries a "Superseded" note pointing at the Phase 7 task that replaces it.
+> Never re-run a completed task's code over the Phase 7 version.
+
 **Goal:** Ship a single-page, dark, motion-driven developer portfolio on Next.js 16 App Router, deployed to Vercel.
 
 **Architecture:** All page content is composed in `app/page.tsx` from section components under `components/sections/`. Every section that renders content is an async Server Component that awaits a function from `lib/queries.ts`; those functions currently return local typed arrays but their signatures are already `Promise`-returning, so swapping them for Supabase queries in Phase 2 is a data-layer edit with zero UI churn. Client-side interactivity (smooth scroll, scroll-linked animation, mobile nav) is isolated in leaf `"use client"` components so the page stays mostly server-rendered.
@@ -22,7 +28,10 @@ Copy these exactly; they apply to every task.
 - **Import alias is `@/*` → repository root.** Import as `@/components/ui/button`, `@/types`, `@/lib/utils`. Never use deep relative paths like `../../..`.
 - **Next.js 16 conventions are mandatory.** Before writing framework code, consult `node_modules/next/dist/docs/` as `AGENTS.md` requires. The rules that matter here: `params`, `searchParams`, `cookies()`, and `headers()` are async-only; route component props use the generated globals `PageProps<"/">` / `LayoutProps<"/">` (already used in `app/layout.tsx`) rather than hand-written prop types.
 - **`next/image` `quality` is restricted in Next 16.** The default allowed set is `[75]` only. Never pass a `quality` prop unless you also add `images.qualities` to `next.config.ts`. Passing `quality={90}` silently coerces to 75.
-- **Dark theme only.** There is no light mode and no theme toggle. Do not write `dark:` variants; write the dark values directly using the theme tokens from Task 1.3.
+- **Dark theme only.** There is no light mode and no theme toggle. Do not write `dark:` variants; write the dark values directly using the theme tokens in `app/globals.css` (see the token table in Phase 7).
+- **Accent is electric neon lime (`#ccff00`).** Use it for badges, borders, the live dot, and hover glows. When it is a background fill, the text on it is always `text-accent-ink`. Hover glows use the arbitrary shadow `shadow-[0_0_32px_-6px_var(--color-accent)]` (verified to compile in Tailwind v4.3).
+- **`next/image` `priority` is deprecated in Next 16.** Use `preload` for the single above-the-fold LCP image (the hero portrait) and nothing else.
+- **`lucide-react` v1 has no brand icons.** There is no `Github` export. The GitHub link uses `CodeXml` (already in place in the header, hero, and cards); do not try to import `Github`.
 - **No `scroll-behavior: smooth` in CSS.** Lenis drives scrolling; a CSS smooth-scroll rule fights it. Anchor navigation goes through the Lenis instance (Task 3.2).
 - **Respect `prefers-reduced-motion`.** Every scroll-linked or entrance animation must degrade to a static layout. Tasks that add motion say exactly how.
 - **Accessibility floor.** Every `<Image>` has meaningful `alt` (or `alt=""` when purely decorative). Every icon-only link or button has an `aria-label`. Every section has an `id` that matches its nav anchor.
@@ -55,19 +64,21 @@ Three files hold personal content that only the owner can supply. Create them wi
 
 ```
 app/
-  layout.tsx                 # fonts, metadata, <SmoothScrollProvider>
+  layout.tsx                 # fonts (Geist, Geist Mono, Anton), metadata, <Backdrop>, <SmoothScrollProvider>
   page.tsx                   # composes the five sections
-  globals.css                # Tailwind v4 theme tokens + Lenis base styles
+  globals.css                # Tailwind v4 theme tokens, custom utilities, Lenis base styles
 components/
   layout/
+    backdrop.tsx             # page-wide fixed grid + noise layers (server)         [Phase 7]
     site-header.tsx          # floating glass nav (client)
     site-footer.tsx          # footer (server)
   sections/
-    hero.tsx                 # server shell
-    hero-visual.tsx          # portrait + glow, entrance motion (client)
+    hero.tsx                 # server shell: telemetry bar, visual stage, copy
+    hero-visual.tsx          # watermark type + glow + portrait, parallax (client)
+    telemetry-bar.tsx        # live status dot + local clock (client)                [Phase 7]
     projects-showcase.tsx    # server: awaits getProjects()
     projects-stack.tsx       # sticky scroll stack (client)
-    project-card.tsx         # one card in the stack (client)
+    project-card.tsx         # one card in the stack, tilt + spotlight (client)
     bento-grid.tsx           # server: awaits getSkillCategories()
     tech-stack-card.tsx      # one skill group card (server)
     discipline-card.tsx      # Arnis photo card (client, hover swap)
@@ -83,6 +94,9 @@ data/
   navigation.ts              # nav anchors
   projects.ts                # Project[]
   skills.ts                  # SkillCategory[] + discipline photos
+hooks/
+  use-local-time.ts          # ticking clock via useSyncExternalStore               [Phase 7]
+  use-pointer-tilt.ts        # mouse-tracked 3D tilt + spotlight motion values      [Phase 7]
 lib/
   utils.ts                   # cn()
   queries.ts                 # async data access seam (Supabase swap point)
@@ -190,6 +204,8 @@ git commit -m "chore: add cn() utility and shadcn components.json"
 ---
 
 ### Task 1.3: Replace `app/globals.css` with the dark theme token system
+
+> **Superseded by the Phase 7 token update.** The architect has already rewritten `app/globals.css` with the neon palette and new utilities; Task 7.1 commits it. The code block below is the historical Phase 1 version — do not re-apply it.
 
 **Files:**
 - Modify: `app/globals.css` (full replacement)
@@ -314,6 +330,8 @@ git commit -m "feat(theme): replace starter styles with dark token system"
 ---
 
 ### Task 1.4: Add `button.tsx`, `badge.tsx`, and `section-heading.tsx`
+
+> **Partially superseded by Task 7.2**, which replaces `button.tsx` and `badge.tsx` with neon-accent variants. `section-heading.tsx` is unchanged.
 
 **Files:**
 - Create: `components/ui/button.tsx`
@@ -1012,6 +1030,8 @@ git commit -m "feat(header): add floating glass navigation"
 
 ### Task 3.3: Build the hero section
 
+> **Superseded by Task 7.4** (layered hero). Both files below are fully replaced there. Also note the code below uses `priority`, which Next.js 16 deprecated — Task 7.4 uses `preload`.
+
 **Files:**
 - Create: `components/sections/hero-visual.tsx`
 - Create: `components/sections/hero.tsx`
@@ -1176,6 +1196,8 @@ git commit -m "feat(page): render header and hero"
 The mechanism: the section is `projects.length × 100vh` tall. Each card sits in a `sticky top-0 h-screen` wrapper, so cards pin in turn and stack on top of one another. A shared `useScroll` progress value drives a downward scale on each card as the next one arrives, producing the layered deck effect. There is no `/projects/[slug]` route in v1.
 
 ### Task 4.1: Build the project card
+
+> **Superseded by Task 7.5** (tilt + spotlight), which fully replaces `project-card.tsx`.
 
 **Files:**
 - Create: `components/sections/project-card.tsx`
@@ -1839,11 +1861,958 @@ git commit -m "fix: address full-site verification findings"
 
 ---
 
+# Phase 7 — Signature visual upgrade
+
+This phase pushes the site toward the landonorris.com feel with five signature elements: layered hero typography, an electric neon accent, a live telemetry bar, tilt-and-spotlight project cards, and page-wide grain and grid. Every code block below was type-checked, linted, built, and screenshot-verified at 375px, 768px, and 1440px before it was written into this plan. Copy the blocks exactly.
+
+### Design tokens (reference)
+
+The architect has **already rewritten `app/globals.css`** — it is modified but uncommitted in the working tree. Do not edit it. Task 7.1 commits it. Token names are unchanged from Phase 1, so every existing `bg-bg` / `text-accent` / `border-line` class picks up the new values automatically.
+
+| Token | Value | Tailwind classes | Use |
+| --- | --- | --- | --- |
+| `--color-bg` | `#09090b` | `bg-bg`, `from-bg` | Page background |
+| `--color-surface` | `#0f0f12` | `bg-surface` | Cards |
+| `--color-elevated` | `#17171b` | `bg-elevated` | Default badges |
+| `--color-line` | `#27272a` | `border-line` | Card borders, telemetry rules |
+| `--color-line-strong` | `#3f3f46` | `border-line-strong` | Outline buttons, watermark stroke |
+| `--color-fg` | `#fafafa` | `text-fg` | Primary text |
+| `--color-muted` | `#a1a1aa` | `text-muted` | Secondary text |
+| `--color-accent` | `#ccff00` | `bg-accent`, `text-accent`, `border-accent/50` | Neon: badges, borders, live dot, glows |
+| `--color-accent-soft` | `#e2fd52` | `hover:bg-accent-soft` | Hover state of accent fills |
+| `--color-accent-ink` | `#09090b` | `text-accent-ink` | Text on accent fills |
+| `--font-display` | Anton (via `--font-anton`) | `font-display` | Watermark and hero headline |
+| `--animate-pulse-dot` | 1.8s ring | `animate-pulse-dot` | Live status dot |
+
+Custom utilities defined in `globals.css` with `@utility`:
+
+| Utility | Effect |
+| --- | --- |
+| `text-outline` | Transparent fill, 1px `line-strong` stroke — hollow display type |
+| `text-outline-accent` | Same, with a 60% neon stroke |
+| `bg-grid` | 80px faint grid, radially faded toward the viewport edges |
+| `bg-noise` | Tiled SVG `feTurbulence` grain; set strength with `opacity-*` |
+
+The old `.grid-backdrop` class was **removed** — the page-wide `bg-grid` layer from Task 7.1 replaces it. The `.glow` class still exists, retuned to a 22% neon mix.
+
+---
+
+### Task 7.1: Commit tokens, add the display font, and mount the backdrop layers
+
+**Files:**
+- Commit (already modified by the architect — do not edit): `app/globals.css`
+- Create: `components/layout/backdrop.tsx`
+- Modify: `app/layout.tsx` (full replacement)
+
+**Interfaces produced:** `Backdrop` (no props). The `font-display` utility becomes functional once `--font-anton` is defined by this task.
+
+- [x] **Step 1: Confirm the token update is present**
+
+```bash
+git diff --stat app/globals.css
+grep -n "ccff00\|@utility bg-noise\|--font-display" app/globals.css
+```
+
+Expected: `app/globals.css` shows as modified, and all three patterns match. If they do not match, stop and report — do not recreate the file.
+
+- [x] **Step 2: Create `components/layout/backdrop.tsx`**
+
+```tsx
+/**
+ * Page-wide atmosphere layers, fixed to the viewport so content scrolls over
+ * them.
+ *
+ * The grid sits at `-z-10`: behind every section, but still above the canvas,
+ * because `<body>`'s background propagates to the canvas (`<html>` has no
+ * background of its own). The noise sits at `z-100`, above everything including
+ * the header, and ignores the pointer so it never intercepts clicks.
+ */
+export function Backdrop() {
+  return (
+    <>
+      <div aria-hidden className="bg-grid pointer-events-none fixed inset-0 -z-10" />
+      <div
+        aria-hidden
+        className="bg-noise pointer-events-none fixed inset-0 z-100 opacity-[0.05]"
+      />
+    </>
+  );
+}
+```
+
+Do not add a background color to `<html>` anywhere. If `<html>` gets a background, the body background stops propagating to the canvas and paints over the `-z-10` grid.
+
+- [x] **Step 3: Replace `app/layout.tsx`**
+
+```tsx
+import type { Metadata } from "next";
+import { Anton, Geist, Geist_Mono } from "next/font/google";
+
+import { Backdrop } from "@/components/layout/backdrop";
+import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
+import { siteConfig } from "@/data/site";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// Condensed display face for the hero watermark and headline. Anton ships a
+// single static weight, so `weight` is required.
+const anton = Anton({
+  variable: "--font-anton",
+  subsets: ["latin"],
+  weight: "400",
+});
+
+export const metadata: Metadata = {
+  title: `${siteConfig.name} — ${siteConfig.role}`,
+  description: siteConfig.description,
+  openGraph: {
+    title: `${siteConfig.name} — ${siteConfig.role}`,
+    description: siteConfig.description,
+    type: "website",
+  },
+};
+
+export default function RootLayout({ children }: LayoutProps<"/">) {
+  return (
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} h-full antialiased`}
+    >
+      <body className="min-h-full bg-bg font-sans text-fg">
+        <Backdrop />
+        <SmoothScrollProvider>{children}</SmoothScrollProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+- [x] **Step 4: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run dev
+```
+
+Expected in the browser: every existing accent (the "Developer" headline word, category badges, focus rings, text selection) is now neon lime instead of orange. A faint 80px grid is visible across the whole page and stays fixed while content scrolls. A very subtle film grain sits over everything, including the header. The hero's old square grid is gone. Primary buttons are still white — that changes in Task 7.2.
+
+- [x] **Step 5: Commit**
+
+```bash
+git add app/globals.css app/layout.tsx components/layout/backdrop.tsx
+git commit -m "feat(theme): neon accent tokens, display font and backdrop layers"
+```
+
+---
+
+### Task 7.2: Neon accent on buttons, badges, and skill cards
+
+**Files:**
+- Modify: `components/ui/button.tsx` (full replacement)
+- Modify: `components/ui/badge.tsx` (full replacement)
+- Modify: `components/sections/tech-stack-card.tsx` (full replacement)
+
+**Interfaces produced:** `Button` keeps its exact props (`variant: "primary" | "outline" | "ghost"`, `size`, `asChild`). `Badge` gains `variant?: "default" | "accent"` and exports `badgeVariants`. Existing `<Badge className="...">` call sites keep compiling.
+
+- [ ] **Step 1: Replace `components/ui/button.tsx`**
+
+Primary becomes a neon fill with dark ink and a glow on hover. Outline gets a stronger hairline and a softer glow. `transition-colors` widens to include `box-shadow` so the glow animates.
+
+```tsx
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-tight transition-[color,background-color,border-color,box-shadow] duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        primary:
+          "bg-accent text-accent-ink hover:bg-accent-soft hover:shadow-[0_0_32px_-6px_var(--color-accent)]",
+        outline:
+          "border border-line-strong bg-transparent text-fg hover:border-accent hover:text-accent hover:shadow-[0_0_32px_-10px_var(--color-accent)]",
+        ghost: "text-muted hover:text-fg",
+      },
+      size: {
+        sm: "h-9 px-4 text-sm",
+        md: "h-11 px-6 text-sm",
+        lg: "h-13 px-8 text-base",
+      },
+    },
+    defaultVariants: {
+      variant: "primary",
+      size: "md",
+    },
+  },
+);
+
+export interface ButtonProps
+  extends React.ComponentProps<"button">,
+    VariantProps<typeof buttonVariants> {
+  /** Render the child element instead of a <button> — use for <a> links. */
+  asChild?: boolean;
+}
+
+export function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  ...props
+}: ButtonProps) {
+  const Comp = asChild ? Slot : "button";
+  return (
+    <Comp className={cn(buttonVariants({ variant, size, className }))} {...props} />
+  );
+}
+
+export { buttonVariants };
+```
+
+- [ ] **Step 2: Replace `components/ui/badge.tsx`**
+
+`BadgeProps` is a type alias rather than an empty `interface … extends` so the `@typescript-eslint/no-empty-object-type` rule never fires.
+
+```tsx
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const badgeVariants = cva(
+  "inline-flex items-center rounded-full border px-3 py-1 font-mono text-xs tracking-tight transition-colors",
+  {
+    variants: {
+      variant: {
+        default: "border-line bg-elevated text-muted",
+        accent: "border-accent/40 bg-accent/10 text-accent",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  },
+);
+
+export type BadgeProps = React.ComponentProps<"span"> & VariantProps<typeof badgeVariants>;
+
+export function Badge({ className, variant, ...props }: BadgeProps) {
+  return <span className={cn(badgeVariants({ variant, className }))} {...props} />;
+}
+
+export { badgeVariants };
+```
+
+- [ ] **Step 3: Replace `components/sections/tech-stack-card.tsx`**
+
+Adds a neon border and outer glow on hover, and lights the card label.
+
+```tsx
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import type { SkillCategory } from "@/types";
+
+export interface TechStackCardProps {
+  category: SkillCategory;
+  className?: string;
+}
+
+export function TechStackCard({ category, className }: TechStackCardProps) {
+  return (
+    <article
+      className={cn(
+        "group flex flex-col gap-4 rounded-card border border-line bg-surface p-6 transition-[border-color,box-shadow] duration-300 hover:border-accent/50 hover:shadow-[0_0_40px_-16px_var(--color-accent)]",
+        className,
+      )}
+    >
+      <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-muted transition-colors group-hover:text-accent">
+        {category.label}
+      </h3>
+      <ul className="flex flex-wrap gap-2">
+        {category.skills.map((skill) => (
+          <li key={skill.name}>
+            <Badge className="text-fg">{skill.name}</Badge>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+```
+
+- [ ] **Step 4: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run dev
+```
+
+Expected: the hero GitHub button and the "Live Demo" buttons are neon with near-black text and glow on hover. Outline buttons turn neon on hover. Hovering a skill card in the bento grid gives it a neon border, a soft outer glow, and a neon label.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add components/ui/button.tsx components/ui/badge.tsx components/sections/tech-stack-card.tsx
+git commit -m "feat(ui): neon accent buttons, badges and skill card glow"
+```
+
+---
+
+### Task 7.3: Build the telemetry bar
+
+**Files:**
+- Modify: `data/site.ts` (full replacement)
+- Create: `hooks/use-local-time.ts`
+- Create: `components/sections/telemetry-bar.tsx`
+
+**Interfaces produced:** `siteConfig` gains `watermark: "DEVELOPER"`, `availability: { isAvailable: true; label: string }`, `timeZone: "Asia/Manila"`, `timeZoneLabel: "GMT+8"`. `useLocalTime(timeZone: string): string | null`. `TelemetryBar` (props `{ className?: string }`). Task 7.4 renders the bar and reads `siteConfig.watermark`.
+
+- [ ] **Step 1: Replace `data/site.ts`**
+
+The existing fields are unchanged; four fields are added at the end of `siteConfig`.
+
+```ts
+import type { SocialLink } from "@/types";
+
+export const siteConfig = {
+  name: "Your Name",
+  initials: "YN",
+  role: "Full Stack Developer",
+  description:
+    "Full Stack Developer building web applications, games, and the systems behind them.",
+  url: "https://example.com",
+  email: "you@example.com",
+  githubUrl: "https://github.com/your-handle",
+  resumePath: "/resume.pdf",
+  /**
+   * Giant outline word layered behind the hero portrait. The type size is
+   * tuned for roughly 9 characters; much longer words bleed off both edges.
+   */
+  watermark: "DEVELOPER",
+  /** Drives the pulsing status dot in the hero telemetry bar. */
+  availability: {
+    isAvailable: true,
+    label: "Available for work",
+  },
+  /** IANA zone for the telemetry clock. Asia/Manila is GMT+8 with no DST. */
+  timeZone: "Asia/Manila",
+  timeZoneLabel: "GMT+8",
+} as const;
+
+export const socialLinks: SocialLink[] = [
+  { label: "GitHub", href: siteConfig.githubUrl, icon: "Github" },
+  { label: "Email", href: `mailto:${siteConfig.email}`, icon: "Mail" },
+];
+```
+
+- [ ] **Step 2: Create `hooks/use-local-time.ts`**
+
+This uses `useSyncExternalStore`, not `useState` + `useEffect`. Two reasons: the server snapshot is `null`, so server-rendered and hydrated markup always match (a clock rendered on the server would be seconds stale and trigger a hydration mismatch); and it avoids calling `setState` inside an effect, which the React Compiler lint rules in this ESLint config discourage. Do not "simplify" it into an effect.
+
+```ts
+import { useSyncExternalStore } from "react";
+
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
+function getFormatter(timeZone: string) {
+  let formatter = formatters.get(timeZone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("en-GB", {
+      timeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+    formatters.set(timeZone, formatter);
+  }
+  return formatter;
+}
+
+function subscribe(onStoreChange: () => void) {
+  const id = window.setInterval(onStoreChange, 1000);
+  return () => window.clearInterval(id);
+}
+
+/**
+ * Current wall-clock time in `timeZone` as "HH:MM:SS", updating once a second.
+ *
+ * Returns null on the server and during hydration, so server and client markup
+ * always match; callers render a placeholder for null. The snapshot is a
+ * string, so React compares it by value and the component only re-renders when
+ * the displayed second actually changes.
+ */
+export function useLocalTime(timeZone: string): string | null {
+  return useSyncExternalStore(
+    subscribe,
+    () => getFormatter(timeZone).format(new Date()),
+    () => null,
+  );
+}
+```
+
+- [ ] **Step 3: Create `components/sections/telemetry-bar.tsx`**
+
+Layout: status on the left, role in the center (`md` and up), clock on the right. The pulsing ring is a CSS animation, so the existing global `prefers-reduced-motion` rule in `globals.css` already stops it — the solid dot stays. Do **not** add `aria-live` to the clock; it would announce every second to screen readers.
+
+```tsx
+"use client";
+
+import { siteConfig } from "@/data/site";
+import { useLocalTime } from "@/hooks/use-local-time";
+import { cn } from "@/lib/utils";
+
+export function TelemetryBar({ className }: { className?: string }) {
+  const time = useLocalTime(siteConfig.timeZone);
+  const { availability } = siteConfig;
+
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-4 border-y border-line py-3 font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-muted",
+        className,
+      )}
+    >
+      <p className="flex items-center gap-3">
+        <span aria-hidden className="relative flex size-2">
+          {availability.isAvailable ? (
+            <span className="absolute inset-0 animate-pulse-dot rounded-full bg-accent" />
+          ) : null}
+          <span
+            className={cn(
+              "relative size-2 rounded-full",
+              availability.isAvailable
+                ? "bg-accent shadow-[0_0_10px_var(--color-accent)]"
+                : "bg-muted",
+            )}
+          />
+        </span>
+        <span className={availability.isAvailable ? "text-fg" : undefined}>
+          {availability.label}
+        </span>
+      </p>
+
+      <p className="hidden md:block">{siteConfig.role}</p>
+
+      <p className="flex items-center gap-2 tabular-nums">
+        <span className="hidden sm:inline">Local</span>
+        <span className="text-fg">{time ?? "--:--:--"}</span>
+        <span className="text-accent">{siteConfig.timeZoneLabel}</span>
+      </p>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 4: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+The bar is not rendered until Task 7.4; these checks confirm it compiles.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add data/site.ts hooks/use-local-time.ts components/sections/telemetry-bar.tsx
+git commit -m "feat(hero): add live telemetry bar with status dot and local clock"
+```
+
+---
+
+### Task 7.4: Rebuild the hero with layered typography
+
+**Files:**
+- Modify: `components/sections/hero-visual.tsx` (full replacement)
+- Modify: `components/sections/hero.tsx` (full replacement)
+
+**Interfaces consumed:** `TelemetryBar`, `siteConfig.watermark`, `Button`, the `font-display`, `text-outline`, `glow`, `bg-linear-to-t` utilities.
+**Interfaces produced:** `HeroVisual` now takes props `{ watermark: string }`. `Hero` still takes no props, so `app/page.tsx` needs no change.
+
+Composition, back to front:
+
+1. **Glow** — neon bloom behind the portrait.
+2. **Watermark** — giant hollow Anton "DEVELOPER", bleeding off both edges.
+3. **Portrait** — `hero-portrait.png` is a true transparent cutout (verified: ~69% of pixels have alpha 0; the subject fills the middle ~55% of the width and touches the bottom edge). Because it comes after the watermark in the DOM, the head and hood paint over the letters.
+4. **Fade** — a bottom gradient hides the waist cut.
+5. **Copy** — the solid Anton headline and the buttons. On `lg` they sit across the bottom of the stage overlapping the faded portrait; below `lg` they flow underneath it.
+
+On scroll the portrait sinks and the watermark rises, so the layers separate in depth. With reduced motion both stay still and the entrance animations are skipped.
+
+- [ ] **Step 1: Replace `components/sections/hero-visual.tsx`**
+
+Two details that must not change:
+
+- **The watermark is nested inside the portrait layer.** That keeps it positioned relative to the portrait at every viewport size, so the head always overlaps the letters.
+- **`preload`, not `priority`.** `priority` is deprecated in Next.js 16. The portrait is the single LCP image, which is the case `preload` is for.
+
+```tsx
+"use client";
+
+import { useRef } from "react";
+import Image from "next/image";
+import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+
+const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
+
+export function HeroVisual({ watermark }: { watermark: string }) {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+
+  // 0 while the stage top is at the viewport top, 1 once the stage has
+  // scrolled fully out above it.
+  const { scrollYProgress } = useScroll({
+    target: stageRef,
+    offset: ["start start", "end start"],
+  });
+
+  // The portrait sinks slowly and the watermark rises against it. The
+  // watermark is nested inside the portrait layer, so its offset stacks on top
+  // of the portrait's and the two visibly separate in depth while scrolling.
+  const portraitY = useTransform(scrollYProgress, [0, 1], ["0%", "12%"]);
+  const watermarkY = useTransform(scrollYProgress, [0, 1], ["0%", "-80%"]);
+
+  return (
+    <div ref={stageRef} className="relative flex flex-1 items-end justify-center">
+      {/* Layer 0: accent bloom behind everything. */}
+      <div
+        aria-hidden
+        className="glow absolute bottom-[15%] left-1/2 size-[28rem] -translate-x-1/2"
+      />
+
+      {/*
+       * Width is the smallest of: 140% of the container, 64rem, and whatever
+       * width keeps the 3:2 portrait's height inside the viewport minus the
+       * hero's top padding, telemetry bar, and bottom padding (~12rem).
+       *
+       * 140% is safe because the subject only occupies the middle ~55% of the
+       * PNG; the transparent margins bleed off-screen and the section's
+       * `overflow-hidden` clips them. On phones this is what makes the portrait
+       * large enough to read.
+       */}
+      <motion.div
+        style={{ y: reduceMotion ? 0 : portraitY }}
+        className="relative w-[min(140%,64rem,calc((100svh_-_12rem)*1.5))] shrink-0"
+      >
+        {/*
+         * Layer 1: outline watermark. It comes first in the DOM, so the
+         * portrait after it paints on top. `justify-center` on an overflowing
+         * flex item bleeds equally off both sides, which is intended.
+         */}
+        <motion.div
+          aria-hidden
+          style={{ y: reduceMotion ? 0 : watermarkY }}
+          className="pointer-events-none absolute inset-x-0 top-[16%] flex select-none justify-center"
+        >
+          <motion.p
+            initial={reduceMotion ? false : { opacity: 0, y: 48 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.1, ease: EASE_OUT_EXPO }}
+            className="whitespace-nowrap font-display text-[clamp(4.5rem,21vw,22rem)] uppercase leading-[0.8] text-outline"
+          >
+            {watermark}
+          </motion.p>
+        </motion.div>
+
+        {/* Layer 2: the transparent cutout portrait, in front of the watermark. */}
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.9, delay: 0.15, ease: EASE_OUT_EXPO }}
+          className="relative aspect-[3/2] w-full"
+        >
+          <Image
+            src="/images/hero/hero-portrait.png"
+            alt=""
+            fill
+            preload
+            sizes="(min-width: 1024px) 1024px, 100vw"
+            className="object-contain object-bottom"
+          />
+        </motion.div>
+      </motion.div>
+
+      {/* The portrait is cut off at the waist; fade that edge into the page. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-bg via-bg/70 to-transparent"
+      />
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Replace `components/sections/hero.tsx`**
+
+`lg:min-h-svh` is deliberate: the hero is a full-viewport stage only on large screens. On phones a forced full height left a large empty band above the portrait.
+
+```tsx
+import { CodeXml, Download } from "lucide-react";
+
+import { HeroVisual } from "@/components/sections/hero-visual";
+import { TelemetryBar } from "@/components/sections/telemetry-bar";
+import { Button } from "@/components/ui/button";
+import { siteConfig } from "@/data/site";
+
+export function Hero() {
+  return (
+    <section
+      id="hero"
+      className="relative flex flex-col overflow-hidden px-6 pt-24 pb-10 lg:min-h-svh"
+    >
+      <div className="relative z-20 mx-auto w-full max-w-7xl">
+        <TelemetryBar />
+      </div>
+
+      <div className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col">
+        <HeroVisual watermark={siteConfig.watermark} />
+
+        {/*
+         * Below lg the copy flows under the portrait. From lg up it is pinned
+         * across the bottom of the stage, overlapping the faded portrait edge.
+         */}
+        <div className="relative z-20 -mt-16 flex flex-col items-center gap-6 text-center lg:absolute lg:inset-x-0 lg:bottom-0 lg:mt-0 lg:flex-row lg:items-end lg:justify-between lg:text-left">
+          <div className="flex flex-col gap-3">
+            <span className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
+              {siteConfig.name}
+            </span>
+            <h1 className="font-display text-6xl uppercase leading-[0.85] text-fg sm:text-7xl lg:text-8xl">
+              Full Stack
+              <span className="block text-accent">Developer</span>
+            </h1>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button asChild size="lg">
+              <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer">
+                <CodeXml aria-hidden />
+                GitHub
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <a href={siteConfig.resumePath} download>
+                <Download aria-hidden />
+                Resume
+              </a>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+```
+
+- [ ] **Step 3: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run dev
+```
+
+Expected at 1440×900:
+
+- The telemetry bar sits under the floating header: pulsing neon dot and "AVAILABLE FOR WORK" on the left, "FULL STACK DEVELOPER" centered, "LOCAL HH:MM:SS GMT+8" on the right, ticking every second.
+- A giant hollow "DEVELOPER" spans nearly the full width, and **the hood and face sit in front of the middle letters**.
+- The solid "FULL STACK / DEVELOPER" headline sits bottom-left overlapping the portrait's faded lower edge; the neon GitHub button and outline Resume button sit bottom-right.
+- Scrolling down, the watermark drifts up faster than the portrait.
+
+Expected at 375px (DevTools device toolbar): the portrait is large and centered with the watermark behind the hood, the headline and stacked buttons sit below it, the clock shows without the "Local" label, and **there is no horizontal scrollbar**. In DevTools run `document.documentElement.scrollWidth === window.innerWidth` — it must return `true`.
+
+With "Emulate CSS prefers-reduced-motion: reduce": no entrance animation, no parallax, and the status dot is solid with no ring.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add components/sections/hero-visual.tsx components/sections/hero.tsx
+git commit -m "feat(hero): layered watermark typography with parallax portrait"
+```
+
+---
+
+### Task 7.5: Add mouse-tracked tilt and spotlight to project cards
+
+**Files:**
+- Create: `hooks/use-pointer-tilt.ts`
+- Modify: `components/sections/project-card.tsx` (full replacement)
+
+**Interfaces produced:** `usePointerTilt({ disabled?: boolean }): { handlers: { onPointerMove, onPointerLeave }; tiltStyle: { rotateX, rotateY, transformPerspective } | undefined; spotlight: MotionValue<string> }`. `ProjectCard` props are unchanged, so `projects-stack.tsx` needs no change.
+
+The card now has three nested layers, and the split is load-bearing:
+
+| Layer | Element | Responsibility |
+| --- | --- | --- |
+| Sticky | `div.sticky` | Pins the card while the stack scrolls (unchanged) |
+| Scroll | `motion.div` | Stack `scale` and `top` offset, **and** receives pointer events |
+| Tilt | `motion.article` | `rotateX` / `rotateY`, spotlight overlay, neon border glow |
+
+Pointer events must be measured on the scroll layer, never on the rotating article. `getBoundingClientRect()` on a rotating element changes as it rotates, which feeds back into the pointer math and makes the card jitter. The scroll layer only scales uniformly around its center, so normalized 0–1 pointer coordinates stay correct.
+
+- [ ] **Step 1: Create `hooks/use-pointer-tilt.ts`**
+
+```ts
+import type { PointerEvent as ReactPointerEvent } from "react";
+import {
+  useMotionTemplate,
+  useMotionValue,
+  useSpring,
+  useTransform,
+} from "motion/react";
+
+const MAX_TILT_DEG = 6;
+const TILT_SPRING = { stiffness: 200, damping: 20, mass: 0.5 };
+
+/**
+ * Mouse-tracked 3D tilt plus a radial spotlight that follows the cursor.
+ *
+ * - Spread `handlers` onto an element that does NOT rotate. Measuring the
+ *   rotating element itself feeds the tilt back into the pointer math and
+ *   makes the card jitter.
+ * - Apply `tiltStyle` to the child that should rotate.
+ * - Use `spotlight` as the `background` of an overlay inside that child.
+ *
+ * Only mouse input is tracked, so touch scrolling never tilts anything.
+ */
+export function usePointerTilt({ disabled = false }: { disabled?: boolean } = {}) {
+  // Pointer position within the element, 0–1 per axis; 0.5 is dead center.
+  const pointerX = useMotionValue(0.5);
+  const pointerY = useMotionValue(0.5);
+
+  const rotateX = useSpring(
+    useTransform(pointerY, [0, 1], [MAX_TILT_DEG, -MAX_TILT_DEG]),
+    TILT_SPRING,
+  );
+  const rotateY = useSpring(
+    useTransform(pointerX, [0, 1], [-MAX_TILT_DEG, MAX_TILT_DEG]),
+    TILT_SPRING,
+  );
+
+  const spotX = useTransform(pointerX, (value) => `${value * 100}%`);
+  const spotY = useTransform(pointerY, (value) => `${value * 100}%`);
+  const spotlight = useMotionTemplate`radial-gradient(520px circle at ${spotX} ${spotY}, color-mix(in oklab, var(--color-accent) 14%, transparent), transparent 70%)`;
+
+  function onPointerMove(event: ReactPointerEvent<HTMLElement>) {
+    if (event.pointerType !== "mouse") return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    pointerX.set((event.clientX - rect.left) / rect.width);
+    pointerY.set((event.clientY - rect.top) / rect.height);
+  }
+
+  function onPointerLeave() {
+    pointerX.set(0.5);
+    pointerY.set(0.5);
+  }
+
+  return {
+    handlers: { onPointerMove, onPointerLeave },
+    tiltStyle: disabled ? undefined : { rotateX, rotateY, transformPerspective: 1000 },
+    spotlight,
+  };
+}
+```
+
+- [ ] **Step 2: Replace `components/sections/project-card.tsx`**
+
+The category badge switches from a hand-written `className` to `variant="accent"` from Task 7.2. With reduced motion, tilt is disabled but the spotlight and border glow remain — they are color changes, not motion.
+
+```tsx
+"use client";
+
+import { ArrowUpRight, CodeXml } from "lucide-react";
+import {
+  motion,
+  useReducedMotion,
+  useTransform,
+  type MotionValue,
+} from "motion/react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { usePointerTilt } from "@/hooks/use-pointer-tilt";
+import { PROJECT_CATEGORY_LABELS, type Project } from "@/types";
+
+export interface ProjectCardProps {
+  project: Project;
+  index: number;
+  total: number;
+  /** Scroll progress of the whole stack, 0 at the top and 1 at the bottom. */
+  progress: MotionValue<number>;
+}
+
+export function ProjectCard({ project, index, total, progress }: ProjectCardProps) {
+  const reduceMotion = useReducedMotion() ?? false;
+
+  // Each card shrinks slightly once the next card begins covering it, so the
+  // stack reads as a physical deck rather than a flat overlay.
+  const targetScale = 1 - (total - index) * 0.04;
+  const scale = useTransform(progress, [index / total, 1], [1, targetScale]);
+
+  const { handlers, tiltStyle, spotlight } = usePointerTilt({ disabled: reduceMotion });
+
+  return (
+    <div className="sticky top-0 flex h-screen items-center justify-center px-6">
+      {/*
+       * Scroll layer: stack scale and offset. It is also the pointer
+       * measurement box, which is why it must never rotate.
+       */}
+      <motion.div
+        {...handlers}
+        style={{
+          scale: reduceMotion ? 1 : scale,
+          top: `${index * 1.5}rem`,
+        }}
+        className="relative w-full max-w-4xl"
+      >
+        {/* Tilt layer. */}
+        <motion.article
+          style={tiltStyle}
+          className="group relative overflow-hidden rounded-card border border-line bg-surface p-8 transition-[border-color,box-shadow] duration-300 hover:border-accent/50 hover:shadow-[0_0_60px_-24px_var(--color-accent)] sm:p-12"
+        >
+          <motion.div
+            aria-hidden
+            style={{ background: spotlight }}
+            className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          />
+
+          <div className="relative flex flex-col gap-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Badge variant="accent">{PROJECT_CATEGORY_LABELS[project.category]}</Badge>
+              <span className="font-mono text-xs text-muted">{project.year}</span>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <h3 className="text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
+                {project.title}
+              </h3>
+              <p className="text-lg text-fg/80">{project.summary}</p>
+              <p className="max-w-2xl text-sm leading-relaxed text-muted">
+                {project.description}
+              </p>
+            </div>
+
+            <ul className="flex flex-wrap gap-2">
+              {project.techStack.map((tech) => (
+                <li key={tech}>
+                  <Badge>{tech}</Badge>
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex flex-wrap gap-3">
+              {project.liveUrl ? (
+                <Button asChild size="sm">
+                  <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
+                    Live Demo
+                    <ArrowUpRight aria-hidden />
+                  </a>
+                </Button>
+              ) : null}
+              {project.repoUrl ? (
+                <Button asChild variant="outline" size="sm">
+                  <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
+                    <CodeXml aria-hidden />
+                    Repository
+                  </a>
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        </motion.article>
+      </motion.div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 3: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run dev
+```
+
+Expected: move the mouse over a pinned project card. The card tilts up to 6° toward the cursor with a springy follow, a soft neon spotlight tracks the cursor inside the card, the border turns neon, and a neon glow appears around the card. Moving the mouse off the card eases it back flat and fades the spotlight out. The scroll-stack scaling from Phase 4 still works while hovering. In DevTools device mode with touch emulation, dragging over a card must **not** tilt it. With reduced motion emulated, the card does not tilt but the spotlight and glow still appear.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add hooks/use-pointer-tilt.ts components/sections/project-card.tsx
+git commit -m "feat(projects): mouse-tracked card tilt with neon spotlight"
+```
+
+---
+
+### Task 7.6: Phase 7 verification pass
+
+**Files:** none created; fix whatever this task surfaces.
+
+- [ ] **Step 1: Clean build, lint, type check**
+
+```bash
+rm -rf .next
+npm run build
+npm run lint
+npx tsc --noEmit
+```
+
+Expected: all clean, and no `priority` deprecation warning in the build output.
+
+- [ ] **Step 2: Walk the five signature elements on the production build**
+
+```bash
+npm run start
+```
+
+- [ ] **Layered typography:** at 1440px, 768px, and 375px, the hood and face overlap the hollow "DEVELOPER" watermark.
+- [ ] **Neon accent:** badges, primary buttons, focus rings, the live dot, and hover glows are `#ccff00`; the page background is `#09090b`.
+- [ ] **Telemetry:** the clock ticks every second in GMT+8 and matches the actual time in Manila; the status dot pulses.
+- [ ] **Tilt + spotlight:** project cards tilt and spotlight under the mouse, and do not tilt on touch.
+- [ ] **Noise + grid:** grain is faintly visible over the whole page including the header, and the grid stays fixed while scrolling. Neither blocks clicks: every nav link, button, and card link still works.
+
+- [ ] **Step 3: Regression checks from Task 6.2**
+
+- [ ] `document.documentElement.scrollWidth === window.innerWidth` is `true` at 375px, 768px, and 1440px.
+- [ ] All four nav links still scroll to their sections.
+- [ ] Reduced motion: no Lenis, no parallax, no entrance animations, no tilt, no pulse ring.
+- [ ] Keyboard: every link and button still shows the (now neon) focus ring; the Arnis card still swaps photos on focus.
+
+- [ ] **Step 4: Commit any fixes**
+
+```bash
+git add -A
+git commit -m "fix: address phase 7 verification findings"
+```
+
+---
+
 ## Handoff checklist
 
-Report these to the repository owner when Phase 6 is done:
+Report these to the repository owner when Phase 7 is done:
 
-1. `data/site.ts` — name, initials, email, GitHub URL, and site URL are placeholders.
+1. `data/site.ts` — name, initials, email, GitHub URL, and site URL are placeholders. Also confirm `availability.isAvailable`, `timeZone` / `timeZoneLabel` (set to `Asia/Manila` / `GMT+8`), and the `watermark` word (sized for ~9 characters).
 2. `data/projects.ts` — three structurally complete example projects need replacing with real ones. Adding or removing entries automatically changes the scroll-stack height; no component edits needed.
 3. `public/resume.pdf` — a minimal placeholder PDF; replace with the real résumé.
 4. Optional next steps, not in scope for v1: a `/projects/[slug]` detail route, and the Supabase swap (replace the two function bodies in `lib/queries.ts`; the `Project` and `SkillCategory` fields map 1:1 to columns, snake_case in Postgres).
