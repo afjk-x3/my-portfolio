@@ -689,7 +689,7 @@ git commit -m "feat(data): add skill categories and discipline photos"
 
 **Interfaces produced:** `getProjects(): Promise<Project[]>`, `getSkillCategories(): Promise<SkillCategory[]>`. **Every section component in Phases 4 and 5 must call these — no section may import from `data/` directly.** That rule is the entire reason the Supabase migration will not touch the UI.
 
-- [ ] **Step 1: Create `lib/queries.ts`**
+- [x] **Step 1: Create `lib/queries.ts`**
 
 ```ts
 import { projects } from "@/data/projects";
@@ -713,7 +713,7 @@ export async function getSkillCategories(): Promise<SkillCategory[]> {
 }
 ```
 
-- [ ] **Step 2: Confirm the image assets exist at the expected paths**
+- [x] **Step 2: Confirm the image assets exist at the expected paths**
 
 ```bash
 ls public/images/hero/hero-portrait.png public/images/about/arnis-stance.jpg public/images/about/arnis-action.jpg
@@ -729,7 +729,7 @@ Note their real dimensions, which later tasks depend on:
 | `arnis-stance.jpg` | 3024×4032 | 3:4 portrait, ~2.0 MB |
 | `arnis-action.jpg` | 3024×4032 | 3:4 portrait, ~2.5 MB |
 
-- [ ] **Step 3: Create a placeholder `public/resume.pdf`**
+- [x] **Step 3: Create a placeholder `public/resume.pdf`**
 
 `public/resume.pdf` does not exist, and Task 3.3 renders a download button pointing at it. Write a minimal valid one-page PDF so the link resolves; the owner replaces the file later.
 
@@ -737,7 +737,7 @@ Note their real dimensions, which later tasks depend on:
 printf '%%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj\ntrailer<</Root 1 0 R>>\n' > public/resume.pdf
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -745,7 +745,7 @@ npm run lint
 npm run build
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Image assets are currently untracked; commit them here alongside the code that will reference them.
 
