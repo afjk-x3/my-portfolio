@@ -1567,7 +1567,7 @@ git commit -m "feat(bento): add arnis discipline card"
 
 Layout: a 6-column grid on `lg`. The discipline card spans 3 columns and 2 rows so it reads as the visual anchor; the five skill cards fill the remaining cells, with the first one widened to keep the grid balanced.
 
-- [ ] **Step 1: Create `components/sections/bento-grid.tsx`**
+- [x] **Step 1: Create `components/sections/bento-grid.tsx`**
 
 ```tsx
 import { DisciplineCard } from "@/components/sections/discipline-card";
@@ -1600,7 +1600,7 @@ export async function BentoGrid() {
 }
 ```
 
-- [ ] **Step 2: Add the section to `app/page.tsx`**
+- [x] **Step 2: Add the section to `app/page.tsx`**
 
 ```tsx
 import { SiteHeader } from "@/components/layout/site-header";
@@ -1622,7 +1622,7 @@ export default function Home() {
 }
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1633,7 +1633,7 @@ npm run dev
 
 Expected: a modular grid with the Arnis card dominating the left. Hovering it cross-fades the stance photo to the action photo; tabbing to it does the same. The "Stack" and "Discipline" nav links both scroll here. At 375px the grid collapses to one column with no horizontal overflow.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/sections/bento-grid.tsx app/page.tsx
