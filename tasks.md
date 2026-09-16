@@ -1023,7 +1023,7 @@ Layout: full-viewport section, headline "Full Stack Developer" set very large an
 
 The portrait is 2048×1365 — **landscape**. Frame it in a fixed-aspect box with `object-contain` so the cutout is never cropped; do not assume a tall 3:4 frame.
 
-- [ ] **Step 1: Create `components/sections/hero-visual.tsx`**
+- [x] **Step 1: Create `components/sections/hero-visual.tsx`**
 
 Split out as a client component purely so the entrance animation does not force the whole hero to the client.
 
@@ -1062,7 +1062,7 @@ export function HeroVisual() {
 
 `alt=""` is correct here: the portrait is decorative because the adjacent heading already names the person and the role.
 
-- [ ] **Step 2: Create `components/sections/hero.tsx`**
+- [x] **Step 2: Create `components/sections/hero.tsx`**
 
 ```tsx
 import { Download, Github } from "lucide-react";
@@ -1113,7 +1113,7 @@ export function Hero() {
 }
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1121,7 +1121,7 @@ npm run lint
 npm run build
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/sections/hero.tsx components/sections/hero-visual.tsx
