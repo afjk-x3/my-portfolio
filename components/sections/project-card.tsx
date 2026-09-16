@@ -10,6 +10,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { usePointerTilt } from "@/hooks/use-pointer-tilt";
 import { PROJECT_CATEGORY_LABELS, type Project } from "@/types";
 
 export interface ProjectCardProps {
@@ -21,66 +22,85 @@ export interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, index, total, progress }: ProjectCardProps) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReducedMotion() ?? false;
 
   // Each card shrinks slightly once the next card begins covering it, so the
   // stack reads as a physical deck rather than a flat overlay.
   const targetScale = 1 - (total - index) * 0.04;
   const scale = useTransform(progress, [index / total, 1], [1, targetScale]);
 
+  const { handlers, tiltStyle, spotlight } = usePointerTilt({ disabled: reduceMotion });
+
   return (
     <div className="sticky top-0 flex h-screen items-center justify-center px-6">
-      <motion.article
+      {/*
+       * Scroll layer: stack scale and offset. It is also the pointer
+       * measurement box, which is why it must never rotate.
+       */}
+      <motion.div
+        {...handlers}
         style={{
           scale: reduceMotion ? 1 : scale,
           top: `${index * 1.5}rem`,
         }}
-        className="relative flex w-full max-w-4xl flex-col gap-6 rounded-card border border-line bg-surface p-8 sm:p-12"
+        className="relative w-full max-w-4xl"
       >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Badge className="border-accent/40 text-accent">
-            {PROJECT_CATEGORY_LABELS[project.category]}
-          </Badge>
-          <span className="font-mono text-xs text-muted">{project.year}</span>
-        </div>
+        {/* Tilt layer. */}
+        <motion.article
+          style={tiltStyle}
+          className="group relative overflow-hidden rounded-card border border-line bg-surface p-8 transition-[border-color,box-shadow] duration-300 hover:border-accent/50 hover:shadow-[0_0_60px_-24px_var(--color-accent)] sm:p-12"
+        >
+          <motion.div
+            aria-hidden
+            style={{ background: spotlight }}
+            className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          />
 
-        <div className="flex flex-col gap-3">
-          <h3 className="text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
-            {project.title}
-          </h3>
-          <p className="text-lg text-fg/80">{project.summary}</p>
-          <p className="max-w-2xl text-sm leading-relaxed text-muted">
-            {project.description}
-          </p>
-        </div>
+          <div className="relative flex flex-col gap-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Badge variant="accent">{PROJECT_CATEGORY_LABELS[project.category]}</Badge>
+              <span className="font-mono text-xs text-muted">{project.year}</span>
+            </div>
 
-        <ul className="flex flex-wrap gap-2">
-          {project.techStack.map((tech) => (
-            <li key={tech}>
-              <Badge>{tech}</Badge>
-            </li>
-          ))}
-        </ul>
+            <div className="flex flex-col gap-3">
+              <h3 className="text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
+                {project.title}
+              </h3>
+              <p className="text-lg text-fg/80">{project.summary}</p>
+              <p className="max-w-2xl text-sm leading-relaxed text-muted">
+                {project.description}
+              </p>
+            </div>
 
-        <div className="flex flex-wrap gap-3">
-          {project.liveUrl ? (
-            <Button asChild size="sm">
-              <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
-                Live Demo
-                <ArrowUpRight aria-hidden />
-              </a>
-            </Button>
-          ) : null}
-          {project.repoUrl ? (
-            <Button asChild variant="outline" size="sm">
-              <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
-                <CodeXml aria-hidden />
-                Repository
-              </a>
-            </Button>
-          ) : null}
-        </div>
-      </motion.article>
+            <ul className="flex flex-wrap gap-2">
+              {project.techStack.map((tech) => (
+                <li key={tech}>
+                  <Badge>{tech}</Badge>
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex flex-wrap gap-3">
+              {project.liveUrl ? (
+                <Button asChild size="sm">
+                  <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
+                    Live Demo
+                    <ArrowUpRight aria-hidden />
+                  </a>
+                </Button>
+              ) : null}
+              {project.repoUrl ? (
+                <Button asChild variant="outline" size="sm">
+                  <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
+                    <CodeXml aria-hidden />
+                    Repository
+                  </a>
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        </motion.article>
+      </motion.div>
     </div>
   );
 }

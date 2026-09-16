@@ -2569,7 +2569,7 @@ The card now has three nested layers, and the split is load-bearing:
 
 Pointer events must be measured on the scroll layer, never on the rotating article. `getBoundingClientRect()` on a rotating element changes as it rotates, which feeds back into the pointer math and makes the card jitter. The scroll layer only scales uniformly around its center, so normalized 0–1 pointer coordinates stay correct.
 
-- [ ] **Step 1: Create `hooks/use-pointer-tilt.ts`**
+- [x] **Step 1: Create `hooks/use-pointer-tilt.ts`**
 
 ```ts
 import type { PointerEvent as ReactPointerEvent } from "react";
@@ -2632,7 +2632,7 @@ export function usePointerTilt({ disabled = false }: { disabled?: boolean } = {}
 }
 ```
 
-- [ ] **Step 2: Replace `components/sections/project-card.tsx`**
+- [x] **Step 2: Replace `components/sections/project-card.tsx`**
 
 The category badge switches from a hand-written `className` to `variant="accent"` from Task 7.2. With reduced motion, tilt is disabled but the spotlight and border glow remain — they are color changes, not motion.
 
@@ -2745,7 +2745,7 @@ export function ProjectCard({ project, index, total, progress }: ProjectCardProp
 }
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -2756,7 +2756,7 @@ npm run dev
 
 Expected: move the mouse over a pinned project card. The card tilts up to 6° toward the cursor with a springy follow, a soft neon spotlight tracks the cursor inside the card, the border turns neon, and a neon glow appears around the card. Moving the mouse off the card eases it back flat and fades the spotlight out. The scroll-stack scaling from Phase 4 still works while hovering. In DevTools device mode with touch emulation, dragging over a card must **not** tilt it. With reduced motion emulated, the card does not tilt but the spotlight and glow still appear.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add hooks/use-pointer-tilt.ts components/sections/project-card.tsx
