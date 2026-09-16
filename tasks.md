@@ -601,7 +601,7 @@ git commit -m "feat(data): add project entries"
 
 The `width`/`height` on the discipline photos are the real intrinsic dimensions of the files on disk (3024×4032, a 3:4 portrait). Use them exactly — `next/image` needs them to reserve layout space.
 
-- [ ] **Step 1: Create `data/skills.ts`**
+- [x] **Step 1: Create `data/skills.ts`**
 
 ```ts
 import type { DisciplinePhoto, SkillCategory } from "@/types";
@@ -665,14 +665,14 @@ export const disciplinePhotos: DisciplinePhoto[] = [
 ];
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npx tsc --noEmit
 npm run lint
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add data/skills.ts
