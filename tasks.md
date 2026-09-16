@@ -1478,7 +1478,7 @@ This is the personality card: both Arnis photos, the stance shot as the resting 
 
 The source files are ~2 MB each at 3024×4032. The `sizes` values below matter — without them `next/image` would serve a far larger variant than the card ever displays.
 
-- [ ] **Step 1: Create `components/sections/discipline-card.tsx`**
+- [x] **Step 1: Create `components/sections/discipline-card.tsx`**
 
 ```tsx
 "use client";
@@ -1541,14 +1541,14 @@ export function DisciplineCard({ className }: { className?: string }) {
 
 Do not add a `quality` prop to either image. Next.js 16 restricts `images.qualities` to `[75]` by default and would silently coerce any other value.
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npx tsc --noEmit
 npm run lint
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/sections/discipline-card.tsx
