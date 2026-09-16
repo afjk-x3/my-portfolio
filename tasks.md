@@ -1786,7 +1786,7 @@ git commit -m "feat(contact): add contact section and footer"
 
 **Files:** none created; fix whatever this task surfaces.
 
-- [ ] **Step 1: Clean production build**
+- [x] **Step 1: Clean production build**
 
 ```bash
 rm -rf .next
@@ -1795,7 +1795,7 @@ npm run build
 
 Expected: build completes with no errors and no warnings about missing `alt`, missing `sizes`, or unused imports.
 
-- [ ] **Step 2: Lint and type check**
+- [x] **Step 2: Lint and type check**
 
 ```bash
 npm run lint
@@ -1804,7 +1804,7 @@ npx tsc --noEmit
 
 Expected: both clean.
 
-- [ ] **Step 3: Serve the production build and walk the page**
+- [x] **Step 3: Serve the production build and walk the page**
 
 ```bash
 npm run start
@@ -1822,15 +1822,15 @@ At http://localhost:3000, confirm each item:
 - [ ] The footer year is the current year.
 - [ ] No horizontal scrollbar at 375px in any section.
 
-- [ ] **Step 4: Reduced-motion pass**
+- [x] **Step 4: Reduced-motion pass**
 
 In DevTools → Rendering, set "Emulate CSS prefers-reduced-motion: reduce" and reload. Confirm: Lenis is off (no `lenis` class on `<html>`), the hero portrait appears without an entrance animation, and every project card is still fully readable.
 
-- [ ] **Step 5: Keyboard pass**
+- [x] **Step 5: Keyboard pass**
 
 Tab through the page from the top. Confirm every link and button shows a visible accent focus ring, and that the Arnis card receives focus and swaps its photo.
 
-- [ ] **Step 6: Commit any fixes**
+- [x] **Step 6: Commit any fixes**
 
 ```bash
 git add -A
