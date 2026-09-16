@@ -1183,7 +1183,7 @@ The mechanism: the section is `projects.length × 100vh` tall. Each card sits in
 **Interfaces consumed:** `Project`, `PROJECT_CATEGORY_LABELS`, `Badge`, `Button`.
 **Interfaces produced:** `ProjectCard` with props `{ project: Project; index: number; total: number; progress: MotionValue<number> }`. Task 4.2 renders it.
 
-- [ ] **Step 1: Create `components/sections/project-card.tsx`**
+- [x] **Step 1: Create `components/sections/project-card.tsx`**
 
 ```tsx
 "use client";
@@ -1278,14 +1278,14 @@ Both link buttons render conditionally because `liveUrl` and `repoUrl` are `stri
 
 `Project.imageUrl` and `Project.imageAlt` are deliberately not rendered in v1. The fields exist so screenshots can be added later without a data migration; leave them out of this card.
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npx tsc --noEmit
 npm run lint
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/sections/project-card.tsx
