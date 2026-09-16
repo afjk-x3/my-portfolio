@@ -4072,7 +4072,7 @@ git commit -m "feat(hero): photo-based headgear reveal with svg gooey mask"
 
 `hooks/use-media-query.ts` stays; the new reveal uses it.
 
-- [ ] **Step 1: Confirm nothing still imports the 3D code**
+- [x] **Step 1: Confirm nothing still imports the 3D code**
 
 ```bash
 grep -rn "components/three\|@react-three\|from \"three\"" --include=*.ts --include=*.tsx app components hooks lib data
@@ -4080,14 +4080,14 @@ grep -rn "components/three\|@react-three\|from \"three\"" --include=*.ts --inclu
 
 Expected: matches only inside `components/three/` itself. Any match elsewhere means Task 9.1 is incomplete — stop and fix that first.
 
-- [ ] **Step 2: Delete the directory and uninstall the packages**
+- [x] **Step 2: Delete the directory and uninstall the packages**
 
 ```bash
 rm -rf components/three
 npm uninstall three @react-three/fiber @react-three/drei @types/three
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 grep -rn "@react-three\|\"three\"" package.json
@@ -4100,7 +4100,7 @@ npm run build
 
 Expected: both `grep` commands print nothing, and type check, lint, and build all pass. If the build fails with `next/font: error` / `Error while requesting resource`, that is Google Fonts being unreachable, not a code problem — re-run `npm run build`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add -A components/three package.json package-lock.json
