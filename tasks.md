@@ -196,7 +196,7 @@ git commit -m "chore: add cn() utility and shadcn components.json"
 
 Two things in the current file are actively wrong for this design and must go: the `@media (prefers-color-scheme: dark)` block (the site is dark unconditionally) and `body { font-family: Arial, Helvetica, sans-serif; }`, which overrides the Geist fonts wired up by `next/font` in the root layout.
 
-- [ ] **Step 1: Replace the entire contents of `app/globals.css`**
+- [x] **Step 1: Replace the entire contents of `app/globals.css`**
 
 ```css
 @import "tailwindcss";
@@ -295,7 +295,7 @@ html.lenis body {
 }
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npm run build
@@ -304,7 +304,7 @@ npm run dev
 
 Expected: the starter page now renders on a near-black background in the Geist typeface (not Arial). Some starter-page text will look wrong against the dark background — that is expected and gets replaced in Phase 3.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add app/globals.css

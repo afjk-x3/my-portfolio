@@ -1,26 +1,94 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Literal design tokens. Plain `@theme` (not `@theme inline`) so Tailwind also
+ * emits them as real CSS custom properties — the radial glow helpers below
+ * reference them directly.
+ */
+@theme {
+  --color-bg: #05060a;
+  --color-surface: #0b0d14;
+  --color-elevated: #12151f;
+  --color-line: #1e2230;
+  --color-fg: #f5f6f8;
+  --color-muted: #8a90a2;
+  --color-accent: #ff4d17;
+  --color-accent-soft: #ff8a5c;
+
+  --radius-card: 1.5rem;
 }
 
+/*
+ * `inline` is required here: these point at the CSS variables that
+ * `next/font/google` generates in app/layout.tsx, so the value must be
+ * referenced rather than copied at build time.
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: #05060a;
+}
+
+/*
+ * Lenis base styles, inlined rather than imported from the package so there is
+ * no dependency on its dist layout.
+ */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+/* Faint telemetry grid used behind the hero. */
+.grid-backdrop {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+}
+
+/* Ambient accent bloom, positioned by the consuming component. */
+.glow {
+  background: radial-gradient(
+    circle at center,
+    color-mix(in oklab, var(--color-accent) 45%, transparent) 0%,
+    transparent 70%
+  );
+  filter: blur(80px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
