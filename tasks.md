@@ -2912,7 +2912,7 @@ git commit -m "fix(projects): stable tilt style to prevent hydration mismatch"
 - `headgear-geometry.ts`: `SHELL` (`{ x: 4.9, y: 6.2, z: 5.4 }`), `CHIN` (`Vector3`), and the factories `createCrownGeometry()`, `createShellGeometry()`, `createCageGeometries()` (returns `{ bars: TubeGeometry[]; frame: TubeGeometry; padding: TubeGeometry }`), `createSeamGeometries()` (returns `TubeGeometry[]`), `createThroatFlapGeometry()`, and `createSideFlapGeometry()`.
 - `headgear-model.tsx`: `HeadgearMaterials` (`{ shell; seam; lining; cage }`, each a three `Material`) and `HeadgearModel` (props `{ materials: HeadgearMaterials }`).
 
-- [ ] **Step 1: Install dependencies**
+- [x] **Step 1: Install dependencies**
 
 ```bash
 npm install three@^0.186.0 @react-three/fiber@^9.7.0 @react-three/drei@^10.7.8
@@ -2921,7 +2921,7 @@ npm install -D @types/three@^0.186.0
 
 `@react-three/fiber` 9.7 declares a peer range of `react >=19 <19.3`, which the project's React 19.2.8 satisfies. If npm prints `allow-scripts` warnings, the pending script is `unrs-resolver` (an existing ESLint dependency), not these packages; leave it as is.
 
-- [ ] **Step 2: Create `components/three/headgear-geometry.ts`**
+- [x] **Step 2: Create `components/three/headgear-geometry.ts`**
 
 ```ts
 import {
@@ -3115,7 +3115,7 @@ export function createSideFlapGeometry() {
 export const CHIN = cagePoint(0, 1);
 ```
 
-- [ ] **Step 3: Create `components/three/headgear-model.tsx`**
+- [x] **Step 3: Create `components/three/headgear-model.tsx`**
 
 The model takes its materials as a prop, so Task 8.3 can pass shader-patched materials without the model knowing about the reveal.
 
@@ -3212,7 +3212,7 @@ export function HeadgearModel({ materials }: { materials: HeadgearMaterials }) {
 }
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -3220,9 +3220,9 @@ npm run lint
 npm run build
 ```
 
-Nothing renders these files yet; the checks confirm they compile.
+Nothing renders these files yet; the checks confirm they compile. (Standalone `tsc` fails on `<group>`/`<mesh>` until Task 8.3 adds a `@react-three/fiber` import that loads R3F v9's JSX augmentation — verified jointly in 8.3 per owner approval.)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add package.json package-lock.json components/three/headgear-geometry.ts components/three/headgear-model.tsx
