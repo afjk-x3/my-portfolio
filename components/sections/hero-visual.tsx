@@ -80,7 +80,7 @@ export function HeroVisual({ watermark }: { watermark: string }) {
             fill
             preload
             sizes="(min-width: 1024px) 1024px, 100vw"
-            className="object-contain object-bottom"
+            className="object-contain object-bottom -translate-y-8"
           />
           {/* Layer 3: 3D headgear over the face, revealed around the cursor. */}
           <HeadgearReveal />
