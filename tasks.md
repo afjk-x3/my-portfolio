@@ -1653,7 +1653,7 @@ git commit -m "feat(bento): assemble stack and discipline grid"
 
 **Interfaces produced:** `Contact` (no props), `SiteFooter` (no props).
 
-- [ ] **Step 1: Create `components/sections/contact.tsx`**
+- [x] **Step 1: Create `components/sections/contact.tsx`**
 
 ```tsx
 import { ArrowUpRight, Github, Mail } from "lucide-react";
@@ -1698,7 +1698,7 @@ export function Contact() {
 }
 ```
 
-- [ ] **Step 2: Create `components/layout/site-footer.tsx`**
+- [x] **Step 2: Create `components/layout/site-footer.tsx`**
 
 ```tsx
 import { Github, Mail } from "lucide-react";
@@ -1739,7 +1739,7 @@ export function SiteFooter() {
 }
 ```
 
-- [ ] **Step 3: Complete `app/page.tsx`**
+- [x] **Step 3: Complete `app/page.tsx`**
 
 ```tsx
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -1765,7 +1765,7 @@ export default function Home() {
 }
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1773,7 +1773,7 @@ npm run lint
 npm run build
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add components/sections/contact.tsx components/layout/site-footer.tsx app/page.tsx
