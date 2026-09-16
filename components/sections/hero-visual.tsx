@@ -4,6 +4,8 @@ import { useRef } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 
+import { HeadgearReveal } from "@/components/sections/headgear-reveal";
+
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 
 export function HeroVisual({ watermark }: { watermark: string }) {
@@ -80,6 +82,8 @@ export function HeroVisual({ watermark }: { watermark: string }) {
             sizes="(min-width: 1024px) 1024px, 100vw"
             className="object-contain object-bottom"
           />
+          {/* Layer 3: 3D headgear over the face, revealed around the cursor. */}
+          <HeadgearReveal />
         </motion.div>
       </motion.div>
 

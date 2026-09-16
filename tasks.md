@@ -3676,7 +3676,7 @@ git commit -m "feat(hero): cursor-driven metaball reveal layer for headgear"
 
 The layer must go **inside** the portrait's inner `motion.div` (the one with `aspect-[3/2]`), right after `<Image>`. That is what keeps the canvas the exact size and position of the portrait image, and it rides the same entrance animation and parallax.
 
-- [ ] **Step 1: Add the import**
+- [x] **Step 1: Add the import**
 
 Directly below the existing `import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";` line, add a blank line and then:
 
@@ -3684,7 +3684,7 @@ Directly below the existing `import { motion, useReducedMotion, useScroll, useTr
 import { HeadgearReveal } from "@/components/sections/headgear-reveal";
 ```
 
-- [ ] **Step 2: Render the layer after the portrait image**
+- [x] **Step 2: Render the layer after the portrait image**
 
 Find the portrait `<Image … className="object-contain object-bottom" />` and insert these two lines immediately after its closing `/>`, still inside the same `motion.div`:
 
@@ -3709,7 +3709,7 @@ The result must read:
         </motion.div>
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -3731,7 +3731,7 @@ In DevTools device mode at 390px with touch emulation on, reload. The revealed a
 
 If the headgear is visibly offset from the face in the desktop check, confirm `resize={{ offsetSize: true }}` is present on the `<Canvas>` before touching `HEAD_FIT`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/sections/hero-visual.tsx
