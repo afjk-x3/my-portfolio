@@ -5,17 +5,17 @@
 > **Verify** block, then commit. Do not skip ahead, do not batch phases, and do
 > not "improve" adjacent files that the task does not list.
 
-> **Status:** Phases 1–6 are complete and committed. **Start at Phase 7** (signature
-> visual upgrade). Phase 7 tasks modify files that earlier phases created; where
-> an earlier task's code block no longer matches the target design, that task
-> carries a "Superseded" note pointing at the Phase 7 task that replaces it.
-> Never re-run a completed task's code over the Phase 7 version.
+> **Status:** Phases 1–7 are complete and committed. **Start at Phase 8** (3D
+> headgear reveal in the hero). Later phases modify files that earlier phases
+> created; where an earlier task's code block no longer matches the target
+> design, that task carries a "Superseded" note pointing at the task that
+> replaces it. Never re-run a completed task's code over a newer version.
 
 **Goal:** Ship a single-page, dark, motion-driven developer portfolio on Next.js 16 App Router, deployed to Vercel.
 
 **Architecture:** All page content is composed in `app/page.tsx` from section components under `components/sections/`. Every section that renders content is an async Server Component that awaits a function from `lib/queries.ts`; those functions currently return local typed arrays but their signatures are already `Promise`-returning, so swapping them for Supabase queries in Phase 2 is a data-layer edit with zero UI churn. Client-side interactivity (smooth scroll, scroll-linked animation, mobile nav) is isolated in leaf `"use client"` components so the page stays mostly server-rendered.
 
-**Tech Stack:** Next.js 16.3.5 (App Router, Turbopack), React 19.2.8, TypeScript 5 (strict), Tailwind CSS v4.3.3, `motion` v13 (the current package name for Framer Motion), `lenis` v1.3 for smooth scroll, `lucide-react` for icons, shadcn/ui conventions (`cn()` + `cva` + `components/ui/`).
+**Tech Stack:** Next.js 16.3.5 (App Router, Turbopack), React 19.2.8, TypeScript 5 (strict), Tailwind CSS v4.3.3, `motion` v13 (the current package name for Framer Motion), `lenis` v1.3 for smooth scroll, `lucide-react` for icons, shadcn/ui conventions (`cn()` + `cva` + `components/ui/`), and from Phase 8 `three` 0.186 + `@react-three/fiber` 9.7 + `@react-three/drei` 10.7 for the hero headgear.
 
 ---
 
@@ -75,6 +75,7 @@ components/
   sections/
     hero.tsx                 # server shell: telemetry bar, visual stage, copy
     hero-visual.tsx          # watermark type + glow + portrait, parallax (client)
+    headgear-reveal.tsx      # lazy-loads the 3D reveal canvas over the portrait (client) [Phase 8]
     telemetry-bar.tsx        # live status dot + local clock (client)                [Phase 7]
     projects-showcase.tsx    # server: awaits getProjects()
     projects-stack.tsx       # sticky scroll stack (client)
@@ -85,6 +86,11 @@ components/
     contact.tsx              # contact CTA (server)
   providers/
     smooth-scroll-provider.tsx  # Lenis root (client)
+  three/                     # the ONLY place three / R3F / drei may be imported     [Phase 8]
+    headgear-geometry.ts     # procedural Arnis headgear geometry, in inches
+    headgear-model.tsx       # headgear meshes; materials passed in
+    reveal-material.ts       # metaball cursor-mask shader patch
+    headgear-reveal-scene.tsx # Canvas, lighting, fit-to-portrait, cursor trail
   ui/
     button.tsx               # cva + Radix Slot, shadcn convention
     badge.tsx                # tech-stack pill
@@ -96,6 +102,7 @@ data/
   skills.ts                  # SkillCategory[] + discipline photos
 hooks/
   use-local-time.ts          # ticking clock via useSyncExternalStore               [Phase 7]
+  use-media-query.ts         # matchMedia via useSyncExternalStore                  [Phase 8]
   use-pointer-tilt.ts        # mouse-tracked 3D tilt + spotlight motion values      [Phase 7]
 lib/
   utils.ts                   # cn()
@@ -2553,6 +2560,8 @@ git commit -m "feat(hero): layered watermark typography with parallax portrait"
 
 ### Task 7.5: Add mouse-tracked tilt and spotlight to project cards
 
+> **Partially superseded by Task 8.1**, which fixes a hydration mismatch in `hooks/use-pointer-tilt.ts`. `project-card.tsx` is unchanged.
+
 **Files:**
 - Create: `hooks/use-pointer-tilt.ts`
 - Modify: `components/sections/project-card.tsx` (full replacement)
@@ -2808,11 +2817,977 @@ git commit -m "fix: address phase 7 verification findings"
 
 ---
 
+# Phase 8 — 3D headgear reveal in the hero
+
+This recreates the signature landonorris.com hero effect with an Arnis twist. On the hero portrait, a faint wireframe dome floats over the head. Moving the mouse over the portrait reveals a 3D black competition headgear locked onto the face, inside a gooey blob that follows the cursor and stretches into a tail when the mouse moves fast. The face stays visible through the cage bars. On touch devices the blob drifts over the face on its own.
+
+Every code block below was type-checked, linted, built with Turbopack, and screenshot-verified in a production build: on desktop with the mouse away from and over the face, on a 390px touch-emulated phone, and with reduced motion. The 3D code ships as a separate ~258 KB (gzipped) chunk that is not referenced in the initial HTML, so it never blocks the portrait. Copy the blocks exactly.
+
+**How it works:**
+
+| Piece | Mechanism |
+| --- | --- |
+| Headgear | Built procedurally in code; there is no model file. Real proportions come from the manufacturer's dimension sheet (12" tall, 9.5" wide, 10" deep). Colours match the owner's competition gear: black shell and cage, red face padding. |
+| Fit | The transparent canvas sits exactly over the 3:2 portrait box. `HEAD_FIT` places the shell in fractions of that box, so the fit holds at every screen size. |
+| Reveal | A shader patch discards every headgear pixel outside a metaball field built from a 10-blob trail that follows the cursor. Hidden pixels are simply not drawn, so the portrait shows through with no transparency sorting. |
+| Face through cage | There is deliberately no inner lining, so the canvas is transparent between the bars and the real face shows. |
+| Ghost | A faint, unmasked wireframe dome is always visible — the hint that something is there. |
+
+**Rules for this phase:**
+
+- `three`, `@react-three/fiber`, and `@react-three/drei` may be imported **only** inside `components/three/`. The only way into that folder from the rest of the app is the `next/dynamic` import in `components/sections/headgear-reveal.tsx`. A static import anywhere else pulls ~1 MB of raw JavaScript into the initial page load.
+- The browser console will show `THREE.Clock: This module has been deprecated`. React Three Fiber 9.7 triggers it internally with three 0.186. It is expected — do not try to fix it.
+- The canvas never receives pointer events. Pointer tracking is a `window` listener, so the hero headline and buttons layered over the portrait stay clickable.
+
+---
+
+### Task 8.1: Fix the project-card tilt hydration mismatch
+
+**Files:**
+- Modify: `hooks/use-pointer-tilt.ts` (two edits)
+
+This is a bug in the Phase 7 code. `useReducedMotion()` returns `null` on the server and `true` in a reduced-motion browser. The hook returned `tiltStyle: undefined` when disabled, so the server rendered `transform: perspective(1000px)` and the client rendered no style. React logs a hydration mismatch for every project card. The fix returns the same style object in both cases and has the handler ignore the pointer when disabled.
+
+- [x] **Step 1: Make the pointer handler respect `disabled`**
+
+In `onPointerMove`, replace:
+
+```ts
+    if (event.pointerType !== "mouse") return;
+```
+
+with:
+
+```ts
+    if (disabled || event.pointerType !== "mouse") return;
+```
+
+- [x] **Step 2: Return a stable `tiltStyle`**
+
+In the returned object, replace:
+
+```ts
+    tiltStyle: disabled ? undefined : { rotateX, rotateY, transformPerspective: 1000 },
+```
+
+with:
+
+```ts
+    // Always the same shape, even when disabled. `useReducedMotion()` is null
+    // on the server and true on a reduced-motion client, so returning
+    // `undefined` when disabled made server and client markup disagree and
+    // caused a hydration mismatch. When disabled the pointer values never
+    // move, so the rotation simply stays at 0.
+    tiltStyle: { rotateX, rotateY, transformPerspective: 1000 },
+```
+
+- [x] **Step 3: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run dev
+```
+
+In Chrome DevTools → Rendering, set "Emulate CSS prefers-reduced-motion: reduce" and hard-reload. The console must show **no** "hydration" error mentioning `perspective(1000px)`. With reduced motion, cards must not tilt. Turn emulation off: cards tilt and spotlight under the mouse as before.
+
+- [x] **Step 4: Commit**
+
+```bash
+git add hooks/use-pointer-tilt.ts
+git commit -m "fix(projects): stable tilt style to prevent hydration mismatch"
+```
+
+---
+
+### Task 8.2: Install the 3D stack and build the headgear model
+
+**Files:**
+- Modify: `package.json`, `package-lock.json`
+- Create: `components/three/headgear-geometry.ts`
+- Create: `components/three/headgear-model.tsx`
+
+**Interfaces produced:**
+- `headgear-geometry.ts`: `SHELL` (`{ x: 4.9, y: 6.2, z: 5.4 }`), `CHIN` (`Vector3`), and the factories `createCrownGeometry()`, `createShellGeometry()`, `createCageGeometries()` (returns `{ bars: TubeGeometry[]; frame: TubeGeometry; padding: TubeGeometry }`), `createSeamGeometries()` (returns `TubeGeometry[]`), `createThroatFlapGeometry()`, and `createSideFlapGeometry()`.
+- `headgear-model.tsx`: `HeadgearMaterials` (`{ shell; seam; lining; cage }`, each a three `Material`) and `HeadgearModel` (props `{ materials: HeadgearMaterials }`).
+
+- [ ] **Step 1: Install dependencies**
+
+```bash
+npm install three@^0.186.0 @react-three/fiber@^9.7.0 @react-three/drei@^10.7.8
+npm install -D @types/three@^0.186.0
+```
+
+`@react-three/fiber` 9.7 declares a peer range of `react >=19 <19.3`, which the project's React 19.2.8 satisfies. If npm prints `allow-scripts` warnings, the pending script is `unrs-resolver` (an existing ESLint dependency), not these packages; leave it as is.
+
+- [ ] **Step 2: Create `components/three/headgear-geometry.ts`**
+
+```ts
+import {
+  CatmullRomCurve3,
+  ExtrudeGeometry,
+  Shape,
+  SphereGeometry,
+  TubeGeometry,
+  Vector3,
+} from "three";
+
+/*
+ * Procedural geometry for a competition Arnis headgear.
+ *
+ * Units are inches, taken from the manufacturer's dimension sheet: 12" tall,
+ * 9.5" wide across the crown, 10" deep. The flaps are shortened from the
+ * sheet's 7" so they read as tucked against the neck when worn. The scene
+ * scales the whole group to fit the portrait.
+ *
+ * Coordinate frame: +Y up, +Z out of the face, +X to the wearer's left.
+ */
+
+/** Half-extents of the padded shell ellipsoid. */
+export const SHELL = { x: 4.9, y: 6.2, z: 5.4 } as const;
+
+/** Angular extent of the face opening that the cage fills. */
+const OPENING = {
+  /** Half-width around the face, in radians either side of +Z. */
+  halfPhi: 1.08,
+  /** Top edge (brow), as a polar angle from the crown. */
+  thetaTop: 0.34 * Math.PI,
+  /** Bottom edge (chin). */
+  thetaBottom: 0.8 * Math.PI,
+} as const;
+
+/** How far the cage bulges forward of the shell at the center of the face. */
+const CAGE_BULGE = 1.35;
+
+const FRONT = Math.PI / 2;
+
+/**
+ * A point on the cage surface. `u` runs across the face (-1 right edge, 1 left
+ * edge) and `w` runs down it (-1 forehead, 1 chin). At |u| = 1 or |w| = 1 the
+ * point lies exactly on the shell's opening edge, so bars meet the shell.
+ */
+function cagePoint(u: number, w: number) {
+  const phi = FRONT + u * OPENING.halfPhi;
+  const theta =
+    OPENING.thetaTop + ((w + 1) / 2) * (OPENING.thetaBottom - OPENING.thetaTop);
+  const bulge = CAGE_BULGE * (1 - u * u) * (1 - w * w);
+  const rz = SHELL.z + bulge;
+  const rx = SHELL.x + bulge * 0.35;
+
+  return new Vector3(
+    -rx * Math.cos(phi) * Math.sin(theta),
+    SHELL.y * Math.cos(theta),
+    rz * Math.sin(phi) * Math.sin(theta),
+  );
+}
+
+function tubeThrough(points: Vector3[], radius: number, closed = false) {
+  const curve = new CatmullRomCurve3(points, closed, "centripetal");
+  return new TubeGeometry(curve, points.length * 6, radius, 10, closed);
+}
+
+function sample(count: number, fn: (t: number) => Vector3) {
+  return Array.from({ length: count }, (_, i) => fn(-1 + (2 * i) / (count - 1)));
+}
+
+/** Full crown cap: covers the top of the head including above the face. */
+export function createCrownGeometry() {
+  return new SphereGeometry(1, 64, 24, 0, Math.PI * 2, 0, OPENING.thetaTop + 0.06);
+}
+
+/** Side and back shell, leaving the face open. */
+export function createShellGeometry() {
+  const phiStart = FRONT + OPENING.halfPhi;
+  const phiLength = Math.PI * 2 - OPENING.halfPhi * 2;
+  return new SphereGeometry(
+    1,
+    64,
+    48,
+    phiStart,
+    phiLength,
+    OPENING.thetaTop,
+    OPENING.thetaBottom - OPENING.thetaTop,
+  );
+}
+
+/** Vertical and horizontal cage bars, plus a heavier outer frame. */
+export function createCageGeometries() {
+  const bars: TubeGeometry[] = [];
+  const columns = 7;
+  const rows = 7;
+
+  for (let i = 1; i < columns - 1; i++) {
+    const u = -1 + (2 * i) / (columns - 1);
+    bars.push(tubeThrough(sample(24, (w) => cagePoint(u, w)), 0.11));
+  }
+
+  for (let j = 1; j < rows - 1; j++) {
+    const w = -1 + (2 * j) / (rows - 1);
+    bars.push(tubeThrough(sample(24, (u) => cagePoint(u, w)), 0.11));
+  }
+
+  const frame = [
+    ...sample(16, (w) => cagePoint(-1, w)),
+    ...sample(16, (u) => cagePoint(u, 1)).slice(1),
+    ...sample(16, (w) => cagePoint(1, -w)).slice(1),
+    ...sample(16, (u) => cagePoint(-u, -1)).slice(1, -1),
+  ];
+
+  // The frame runs along the opening edge where the bulge is zero, so it lies
+  // on the shell. Red face padding follows the same loop, pulled slightly in.
+  const padding = frame.map((point) => point.clone().multiplyScalar(0.97));
+
+  return {
+    bars,
+    frame: tubeThrough(frame, 0.2, true),
+    padding: tubeThrough(padding, 0.45, true),
+  };
+}
+
+/** Raised seams that give the shell its padded, stitched look. */
+export function createSeamGeometries() {
+  // Horizontal band around the sides and back, level with the brow.
+  const band = sample(40, (t) => {
+    const phi = FRONT + OPENING.halfPhi + ((t + 1) / 2) * (Math.PI * 2 - OPENING.halfPhi * 2);
+    const theta = 0.42 * Math.PI;
+    return new Vector3(
+      -SHELL.x * 1.01 * Math.cos(phi) * Math.sin(theta),
+      SHELL.y * Math.cos(theta),
+      SHELL.z * 1.01 * Math.sin(phi) * Math.sin(theta),
+    );
+  });
+
+  // Center seam from the forehead, over the crown, down the back. `angle` is
+  // measured from the crown in the YZ plane: positive toward the face,
+  // negative toward the back of the head.
+  const crown = sample(32, (t) => {
+    const angle = OPENING.thetaTop - ((t + 1) / 2) * (OPENING.thetaTop + 0.76 * Math.PI);
+    return new Vector3(
+      0,
+      SHELL.y * 1.01 * Math.cos(angle),
+      SHELL.z * 1.01 * Math.sin(angle),
+    );
+  });
+
+  return [tubeThrough(band, 0.16), tubeThrough(crown, 0.16)];
+}
+
+function roundedFlapShape(topWidth: number, bottomWidth: number, height: number) {
+  const shape = new Shape();
+  const t = topWidth / 2;
+  const b = bottomWidth / 2;
+  shape.moveTo(-t, 0);
+  shape.lineTo(t, 0);
+  shape.lineTo(b, -height + b * 0.6);
+  shape.quadraticCurveTo(b * 0.9, -height, 0, -height);
+  shape.quadraticCurveTo(-b * 0.9, -height, -b, -height + b * 0.6);
+  shape.closePath();
+  return shape;
+}
+
+const FLAP_EXTRUDE = {
+  depth: 0.5,
+  bevelEnabled: true,
+  bevelThickness: 0.2,
+  bevelSize: 0.2,
+  bevelSegments: 3,
+  curveSegments: 16,
+} as const;
+
+/** Throat flap hanging below the chin, trimmed so it tucks against the neck. */
+export function createThroatFlapGeometry() {
+  return new ExtrudeGeometry(roundedFlapShape(6, 4.6, 5), FLAP_EXTRUDE);
+}
+
+/** Pointed side flaps either side of the throat flap. */
+export function createSideFlapGeometry() {
+  const shape = new Shape();
+  shape.moveTo(-1.3, 0);
+  shape.lineTo(1.3, 0);
+  shape.lineTo(0.25, -4);
+  shape.quadraticCurveTo(0, -4.3, -0.25, -4);
+  shape.closePath();
+  return new ExtrudeGeometry(shape, FLAP_EXTRUDE);
+}
+
+/** The chin edge of the cage, where the flaps attach. */
+export const CHIN = cagePoint(0, 1);
+```
+
+- [ ] **Step 3: Create `components/three/headgear-model.tsx`**
+
+The model takes its materials as a prop, so Task 8.3 can pass shader-patched materials without the model knowing about the reveal.
+
+```tsx
+"use client";
+
+import { useEffect, useMemo } from "react";
+import type { Material } from "three";
+
+import {
+  CHIN,
+  SHELL,
+  createCageGeometries,
+  createCrownGeometry,
+  createSeamGeometries,
+  createShellGeometry,
+  createSideFlapGeometry,
+  createThroatFlapGeometry,
+} from "@/components/three/headgear-geometry";
+
+export interface HeadgearMaterials {
+  shell: Material;
+  seam: Material;
+  lining: Material;
+  cage: Material;
+}
+
+const SHELL_SCALE = [SHELL.x, SHELL.y, SHELL.z] as const;
+
+/**
+ * The headgear meshes, in inches, centered on the middle of the shell and
+ * facing +Z. Materials are supplied by the caller so the same model can be
+ * rendered solid, revealed through a mask, or as a wireframe ghost.
+ */
+export function HeadgearModel({ materials }: { materials: HeadgearMaterials }) {
+  const geometry = useMemo(
+    () => ({
+      crown: createCrownGeometry(),
+      shell: createShellGeometry(),
+      cage: createCageGeometries(),
+      seams: createSeamGeometries(),
+      throatFlap: createThroatFlapGeometry(),
+      sideFlap: createSideFlapGeometry(),
+    }),
+    [],
+  );
+
+  // Geometries are created imperatively, so free them on unmount.
+  useEffect(() => {
+    return () => {
+      const { cage, seams, ...single } = geometry;
+      [...Object.values(single), ...cage.bars, cage.frame, cage.padding, ...seams].forEach((g) =>
+        g.dispose(),
+      );
+    };
+  }, [geometry]);
+
+  return (
+    <group>
+      <mesh geometry={geometry.crown} scale={SHELL_SCALE} material={materials.shell} />
+      <mesh geometry={geometry.shell} scale={SHELL_SCALE} material={materials.shell} />
+
+      {geometry.seams.map((seam) => (
+        <mesh key={seam.uuid} geometry={seam} material={materials.seam} />
+      ))}
+
+      {geometry.cage.bars.map((bar) => (
+        <mesh key={bar.uuid} geometry={bar} material={materials.cage} />
+      ))}
+      <mesh geometry={geometry.cage.frame} material={materials.cage} />
+      {/*
+       * No inner lining behind the cage on purpose: the canvas is transparent
+       * there, so the real face in the portrait shows through the bars.
+       */}
+      <mesh geometry={geometry.cage.padding} material={materials.lining} />
+
+      <mesh
+        geometry={geometry.throatFlap}
+        material={materials.shell}
+        position={[0, CHIN.y + 0.6, CHIN.z - 1.1]}
+        rotation={[-0.12, 0, 0]}
+      />
+      {([-1, 1] as const).map((side) => (
+        <mesh
+          key={side}
+          geometry={geometry.sideFlap}
+          material={materials.shell}
+          position={[side * 3.7, CHIN.y + 1.2, CHIN.z - 2.4]}
+          rotation={[-0.1, side * 0.9, side * 0.15]}
+        />
+      ))}
+    </group>
+  );
+}
+```
+
+- [ ] **Step 4: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+Nothing renders these files yet; the checks confirm they compile.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add package.json package-lock.json components/three/headgear-geometry.ts components/three/headgear-model.tsx
+git commit -m "feat(hero): procedural arnis headgear model"
+```
+
+---
+
+### Task 8.3: Build the cursor reveal layer
+
+**Files:**
+- Create: `components/three/reveal-material.ts`
+- Create: `components/three/headgear-reveal-scene.tsx`
+- Create: `hooks/use-media-query.ts`
+- Create: `components/sections/headgear-reveal.tsx`
+
+**Interfaces consumed:** `HeadgearModel`, `HeadgearMaterials`, `SHELL`.
+**Interfaces produced:**
+- `reveal-material.ts`: `REVEAL_BLOBS` (`10`), `createRevealUniform()`, `RevealUniform`, and `applyReveal(material, uniform)`, which returns the same material.
+- `headgear-reveal-scene.tsx`: `HEAD_FIT`, `RevealMode` (`"pointer" | "wander" | "static"`), and `HeadgearRevealScene` (props `{ active: boolean; mode: RevealMode }`).
+- `use-media-query.ts`: `useMediaQuery(query: string): boolean`.
+- `headgear-reveal.tsx`: `HeadgearReveal` (no props). Task 8.4 renders it.
+
+- [ ] **Step 1: Create `components/three/reveal-material.ts`**
+
+The reveal is a small patch to three's built-in `MeshStandardMaterial` shader. For every pixel it sums `r² / d²` over the trail blobs and discards the pixel when the sum is below 1. Summing makes nearby blobs merge into one gooey shape instead of overlapping circles.
+
+```ts
+import { Vector3, type Material } from "three";
+
+/** Number of blobs in the cursor trail. Must match the GLSL array size. */
+export const REVEAL_BLOBS = 10;
+
+/**
+ * Shared uniform for every revealed material. Each entry is
+ * `(x, y, radius)` in drawing-buffer pixels, with y measured from the bottom
+ * like `gl_FragCoord`. Mutating the vectors in place updates every material.
+ */
+export function createRevealUniform() {
+  return {
+    value: Array.from({ length: REVEAL_BLOBS }, () => new Vector3(0, 0, 0)),
+  };
+}
+
+export type RevealUniform = ReturnType<typeof createRevealUniform>;
+
+/**
+ * Patches a built-in three.js material so it only draws inside a metaball
+ * field around the cursor trail. Summing r²/d² per blob and discarding below 1
+ * merges nearby blobs into one gooey shape with a crisp edge, and needs no
+ * transparency sorting because hidden fragments are discarded outright.
+ */
+export function applyReveal<T extends Material>(material: T, uniform: RevealUniform): T {
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uReveal = uniform;
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        `#include <common>
+uniform vec3 uReveal[${REVEAL_BLOBS}];`,
+      )
+      .replace(
+        "#include <clipping_planes_fragment>",
+        `#include <clipping_planes_fragment>
+float revealField = 0.0;
+for (int i = 0; i < ${REVEAL_BLOBS}; i++) {
+  vec2 toBlob = gl_FragCoord.xy - uReveal[i].xy;
+  revealField += (uReveal[i].z * uReveal[i].z) / (dot(toBlob, toBlob) + 1.0);
+}
+if (revealField < 1.0) discard;`,
+      );
+  };
+  // Distinguishes the patched program from the stock one in three's cache.
+  material.customProgramCacheKey = () => `reveal-${REVEAL_BLOBS}`;
+  return material;
+}
+```
+
+- [ ] **Step 2: Create `components/three/headgear-reveal-scene.tsx`**
+
+Four details in this file were each found by testing, and each must stay exactly as written:
+
+1. **`resize={{ offsetSize: true }}`.** The portrait fades in from `scale(0.96)`. Without this, the canvas is measured mid-animation, locks ~4% small, and the headgear sits visibly off the face for good.
+2. **Animation state lives in `useRef`, not `useMemo`.** The React Compiler ESLint rules in this project reject mutating a memoized value inside `useFrame` (`react-hooks/immutability`).
+3. **No rotation of the model.** An earlier version turned the headgear toward the cursor; it slid the cage off the photographed face. Alignment beats motion here.
+4. **`HEAD_FIT` values `{ x: 0.5, y: 0.36, width: 0.32 }`** were calibrated against screenshots of `hero-portrait.png`. They only need changing if the portrait image is replaced.
+
+```tsx
+"use client";
+
+import { useEffect, useMemo, useRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Environment, Lightformer } from "@react-three/drei";
+import {
+  MathUtils,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+  SphereGeometry,
+  Vector2,
+} from "three";
+
+import { SHELL } from "@/components/three/headgear-geometry";
+import { HeadgearModel } from "@/components/three/headgear-model";
+import {
+  REVEAL_BLOBS,
+  applyReveal,
+  createRevealUniform,
+} from "@/components/three/reveal-material";
+
+/**
+ * Where the head sits inside `hero-portrait.png`, as fractions of the 3:2
+ * image box: `x`/`y` locate the middle of the headgear shell, `width` is the
+ * shell's width. Calibrated against the actual portrait — if the portrait is
+ * replaced, these three numbers are the only thing to re-tune.
+ */
+export const HEAD_FIT = { x: 0.5, y: 0.36, width: 0.32 } as const;
+
+/** Shell width in inches, including the cage bulge at the sides. */
+const MODEL_WIDTH_IN = SHELL.x * 2 + 0.7;
+
+/**
+ * Radius of each trail blob as a fraction of the canvas's shorter side. Blobs
+ * that overlap add up, so at rest the reveal is about 2.3× this size.
+ */
+const BLOB_RADIUS = 0.09;
+
+export type RevealMode = "pointer" | "wander" | "static";
+
+export interface HeadgearRevealSceneProps {
+  /** Render loop runs only while true — pass false when the hero is off-screen. */
+  active: boolean;
+  /**
+   * `pointer`: the reveal follows the mouse and hides when it leaves.
+   * `wander`: the reveal drifts slowly over the face (touch devices).
+   * `static`: a fixed reveal over the face (touch + reduced motion).
+   */
+  mode: RevealMode;
+}
+
+export function HeadgearRevealScene({ active, mode }: HeadgearRevealSceneProps) {
+  return (
+    <Canvas
+      camera={{ position: [0, 0, 10], fov: 30 }}
+      dpr={[1, 2]}
+      frameloop={active ? "always" : "never"}
+      gl={{ antialias: true, alpha: true }}
+      // Measure with offsetWidth/offsetHeight, which ignore CSS transforms. The
+      // portrait animates in from scale(0.96); a transform-aware measurement
+      // taken mid-animation would lock the canvas ~4% small and misalign the
+      // headgear with the face for good.
+      resize={{ offsetSize: true }}
+      style={{ pointerEvents: "none" }}
+    >
+      <ambientLight intensity={0.45} />
+      <directionalLight position={[4, 6, 8]} intensity={3.2} />
+      {/* Neon rim light from behind-left, the signature accent. */}
+      <directionalLight position={[-6, 3, -4]} intensity={5} color="#ccff00" />
+      <directionalLight position={[3, -4, 4]} intensity={0.5} color="#ff3b3b" />
+
+      {/* Studio reflections for the metal cage, built locally — no CDN fetch. */}
+      <Environment resolution={256}>
+        <Lightformer intensity={2} position={[0, 4, 6]} scale={[10, 2, 1]} />
+        <Lightformer
+          intensity={1.5}
+          position={[6, 0, 2]}
+          rotation-y={-Math.PI / 2}
+          scale={[6, 6, 1]}
+        />
+        <Lightformer
+          intensity={0.8}
+          color="#ccff00"
+          position={[-6, 0, -2]}
+          rotation-y={Math.PI / 2}
+          scale={[10, 1, 1]}
+        />
+      </Environment>
+
+      <FittedHeadgear mode={mode} />
+    </Canvas>
+  );
+}
+
+function FittedHeadgear({ mode }: { mode: RevealMode }) {
+  const { viewport, camera, gl } = useThree();
+
+  // Map the image-box fractions onto world units at the model's depth.
+  const view = viewport.getCurrentViewport(camera, [0, 0, 0]);
+  const scale = (HEAD_FIT.width * view.width) / MODEL_WIDTH_IN;
+  const position: [number, number, number] = [
+    (HEAD_FIT.x - 0.5) * view.width,
+    (0.5 - HEAD_FIT.y) * view.height,
+    0,
+  ];
+
+  const reveal = useMemo(() => createRevealUniform(), []);
+
+  const materials = useMemo(
+    () => ({
+      shell: applyReveal(
+        // Lifted off pure black so the shell still reads against the page.
+        new MeshStandardMaterial({ color: "#2a2a2f", roughness: 0.45, metalness: 0.15 }),
+        reveal,
+      ),
+      seam: applyReveal(new MeshStandardMaterial({ color: "#3a3a40", roughness: 0.6 }), reveal),
+      lining: applyReveal(
+        new MeshStandardMaterial({ color: "#a3161c", roughness: 0.95 }),
+        reveal,
+      ),
+      cage: applyReveal(
+        new MeshStandardMaterial({
+          color: "#1c1c20",
+          roughness: 0.35,
+          metalness: 0.8,
+        }),
+        reveal,
+      ),
+    }),
+    [reveal],
+  );
+
+  // Always-visible wireframe dome over the crown, hinting at the hidden helmet.
+  const ghost = useMemo(
+    () => ({
+      geometry: new SphereGeometry(1, 36, 12, 0, Math.PI * 2, 0, Math.PI * 0.42),
+      material: new MeshBasicMaterial({
+        color: "#fafafa",
+        wireframe: true,
+        transparent: true,
+        opacity: 0.14,
+        depthWrite: false,
+      }),
+    }),
+    [],
+  );
+
+  useEffect(() => {
+    return () => {
+      Object.values(materials).forEach((material) => material.dispose());
+      ghost.geometry.dispose();
+      ghost.material.dispose();
+    };
+  }, [materials, ghost]);
+
+  // Per-frame animation state lives in refs: the React Compiler lint rules
+  // forbid mutating memoized values from inside useFrame, but refs are meant
+  // to be mutated. Trail positions are canvas CSS pixels, y down; blob 0 leads.
+  const trailRef = useRef<Vector2[] | null>(null);
+  const pointer = useRef({ x: 0, y: 0, inside: false });
+  const strength = useRef(0);
+
+  useEffect(() => {
+    if (mode !== "pointer") return;
+
+    // Listen on window, not the canvas: the canvas ignores pointer events so
+    // the hero headline and buttons layered above it stay clickable.
+    function onMove(event: PointerEvent) {
+      const rect = gl.domElement.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      pointer.current = {
+        x,
+        y,
+        inside: x >= 0 && y >= 0 && x <= rect.width && y <= rect.height,
+      };
+    }
+    function onLeave() {
+      pointer.current.inside = false;
+    }
+
+    window.addEventListener("pointermove", onMove, { passive: true });
+    document.documentElement.addEventListener("pointerleave", onLeave);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      document.documentElement.removeEventListener("pointerleave", onLeave);
+    };
+  }, [gl, mode]);
+
+  useFrame((state, delta) => {
+    const { width, height } = state.size;
+    const dpr = state.gl.getPixelRatio();
+    const faceX = HEAD_FIT.x * width;
+    const faceY = (HEAD_FIT.y + 0.04) * height;
+
+    let targetX = faceX;
+    let targetY = faceY;
+    let targetStrength = 1;
+
+    if (mode === "pointer") {
+      targetX = pointer.current.x;
+      targetY = pointer.current.y;
+      targetStrength = pointer.current.inside ? 1 : 0;
+    } else if (mode === "wander") {
+      const t = state.clock.elapsedTime;
+      targetX = faceX + Math.sin(t * 0.6) * width * 0.07;
+      targetY = faceY + Math.sin(t * 0.9) * height * 0.09;
+    }
+
+    if (!trailRef.current) {
+      trailRef.current = Array.from(
+        { length: REVEAL_BLOBS },
+        () => new Vector2(targetX, targetY),
+      );
+    }
+    const trail = trailRef.current;
+
+    strength.current = MathUtils.damp(strength.current, targetStrength, 6, delta);
+
+    // The lead blob chases the target; each follower chases the one ahead,
+    // slightly slower, so fast movement stretches the reveal into a tail.
+    trail[0].x = MathUtils.damp(trail[0].x, targetX, 16, delta);
+    trail[0].y = MathUtils.damp(trail[0].y, targetY, 16, delta);
+    for (let i = 1; i < REVEAL_BLOBS; i++) {
+      const lambda = 14 - i;
+      trail[i].x = MathUtils.damp(trail[i].x, trail[i - 1].x, lambda, delta);
+      trail[i].y = MathUtils.damp(trail[i].y, trail[i - 1].y, lambda, delta);
+    }
+
+    const baseRadius = Math.min(width, height) * BLOB_RADIUS * strength.current;
+    reveal.value.forEach((uniform, i) => {
+      uniform.set(
+        trail[i].x * dpr,
+        (height - trail[i].y) * dpr,
+        baseRadius * (1 - (i / REVEAL_BLOBS) * 0.7) * dpr,
+      );
+    });
+  });
+
+  return (
+    // No rotation: the headgear must stay locked to the photographed face.
+    <group position={position} scale={scale}>
+      <HeadgearModel materials={materials} />
+      <mesh
+        geometry={ghost.geometry}
+        material={ghost.material}
+        scale={[SHELL.x * 1.06, SHELL.y * 1.04, SHELL.z * 1.06]}
+      />
+    </group>
+  );
+}
+```
+
+- [ ] **Step 3: Create `hooks/use-media-query.ts`**
+
+Same `useSyncExternalStore` pattern as `use-local-time.ts`: `false` on the server and during hydration, so markup always matches.
+
+```ts
+import { useCallback, useSyncExternalStore } from "react";
+
+/**
+ * Whether `query` currently matches. Returns false on the server and during
+ * hydration, then the real value once mounted; re-renders when it changes.
+ */
+export function useMediaQuery(query: string): boolean {
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      const list = window.matchMedia(query);
+      list.addEventListener("change", onStoreChange);
+      return () => list.removeEventListener("change", onStoreChange);
+    },
+    [query],
+  );
+
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(query).matches,
+    () => false,
+  );
+}
+```
+
+- [ ] **Step 4: Create `components/sections/headgear-reveal.tsx`**
+
+This is the only file outside `components/three/` that references the 3D code, and it does so only through `next/dynamic`. `ssr: false` is required: WebGL does not exist on the server, and Next.js 16 allows `ssr: false` only inside a Client Component, which this file is.
+
+Mode selection:
+
+| Device | Reduced motion off | Reduced motion on |
+| --- | --- | --- |
+| Mouse (`pointer: fine`) | `pointer` | `pointer` (the visitor drives the motion) |
+| Touch | `wander` | `static` |
+
+```tsx
+"use client";
+
+import { useRef } from "react";
+import dynamic from "next/dynamic";
+import { useInView, useReducedMotion } from "motion/react";
+
+import type { RevealMode } from "@/components/three/headgear-reveal-scene";
+import { useMediaQuery } from "@/hooks/use-media-query";
+
+/*
+ * three.js, React Three Fiber, and drei live only in this lazily imported
+ * chunk, so they never block the portrait (the page's LCP image). `ssr: false`
+ * is required: WebGL does not exist on the server.
+ */
+const HeadgearRevealScene = dynamic(
+  () =>
+    import("@/components/three/headgear-reveal-scene").then(
+      (mod) => mod.HeadgearRevealScene,
+    ),
+  { ssr: false },
+);
+
+/**
+ * Canvas layer that sits exactly on top of the hero portrait and reveals the
+ * Arnis headgear over the face through a cursor-following blob. Must be placed
+ * inside the same 3:2 box as the portrait image.
+ */
+export function HeadgearReveal() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isVisible = useInView(containerRef);
+  const reduceMotion = useReducedMotion() ?? false;
+  const finePointer = useMediaQuery("(pointer: fine)");
+
+  const mode: RevealMode = finePointer ? "pointer" : reduceMotion ? "static" : "wander";
+
+  return (
+    <div ref={containerRef} aria-hidden className="pointer-events-none absolute inset-0">
+      <HeadgearRevealScene active={isVisible} mode={mode} />
+    </div>
+  );
+}
+```
+
+`import type` from the scene file is safe: type-only imports are erased at build time and do not pull three.js into the main bundle.
+
+- [ ] **Step 5: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+Nothing renders the layer until Task 8.4.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add components/three/reveal-material.ts components/three/headgear-reveal-scene.tsx hooks/use-media-query.ts components/sections/headgear-reveal.tsx
+git commit -m "feat(hero): cursor-driven metaball reveal layer for headgear"
+```
+
+---
+
+### Task 8.4: Mount the reveal over the hero portrait
+
+**Files:**
+- Modify: `components/sections/hero-visual.tsx` (two insertions)
+
+The layer must go **inside** the portrait's inner `motion.div` (the one with `aspect-[3/2]`), right after `<Image>`. That is what keeps the canvas the exact size and position of the portrait image, and it rides the same entrance animation and parallax.
+
+- [ ] **Step 1: Add the import**
+
+Directly below the existing `import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";` line, add a blank line and then:
+
+```tsx
+import { HeadgearReveal } from "@/components/sections/headgear-reveal";
+```
+
+- [ ] **Step 2: Render the layer after the portrait image**
+
+Find the portrait `<Image … className="object-contain object-bottom" />` and insert these two lines immediately after its closing `/>`, still inside the same `motion.div`:
+
+```tsx
+          {/* Layer 3: 3D headgear over the face, revealed around the cursor. */}
+          <HeadgearReveal />
+```
+
+The result must read:
+
+```tsx
+          <Image
+            src="/images/hero/hero-portrait.png"
+            alt=""
+            fill
+            preload
+            sizes="(min-width: 1024px) 1024px, 100vw"
+            className="object-contain object-bottom"
+          />
+          {/* Layer 3: 3D headgear over the face, revealed around the cursor. */}
+          <HeadgearReveal />
+        </motion.div>
+```
+
+- [ ] **Step 3: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+Expected at http://localhost:3000 at 1440×900, on the **production** build:
+
+- **Mouse away from the portrait:** only a faint white wireframe dome shows over the hood. No headgear is visible.
+- **Mouse over the face:** a round, gooey-edged area reveals the black headgear: red padding around the face, black bars across it, and the actual face visible *through* the bars. The bars line up with the face — eyes between the upper bars, smile between the lower ones.
+- **Moving the mouse quickly:** the revealed area stretches into a tail behind the cursor, then catches up.
+- **Mouse leaves the portrait:** the revealed area shrinks away smoothly.
+- **Hero headline and buttons:** still clickable while the mouse is over them.
+- **In DevTools → Network, filtered to JS:** a ~250 KB chunk loads after the page's initial scripts. View the page source: that chunk's filename must **not** appear in the initial HTML.
+
+In DevTools device mode at 390px with touch emulation on, reload. The revealed area drifts slowly over the face on its own, the page still scrolls normally when swiping over the portrait, and `document.documentElement.scrollWidth === window.innerWidth` is `true`.
+
+If the headgear is visibly offset from the face in the desktop check, confirm `resize={{ offsetSize: true }}` is present on the `<Canvas>` before touching `HEAD_FIT`.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add components/sections/hero-visual.tsx
+git commit -m "feat(hero): mount 3d headgear reveal over portrait"
+```
+
+---
+
+### Task 8.5: Phase 8 verification pass
+
+**Files:** none created; fix whatever this task surfaces.
+
+- [ ] **Step 1: Clean build, lint, type check**
+
+```bash
+rm -rf .next
+npm run build
+npm run lint
+npx tsc --noEmit
+```
+
+- [ ] **Step 2: Bundle boundary check**
+
+```bash
+grep -rln "@react-three\|from \"three\"" --include=*.ts --include=*.tsx app components hooks lib data
+```
+
+Expected: only files under `components/three/`. Any other path means 3D code leaked into the main bundle.
+
+- [ ] **Step 3: Console check on the production build**
+
+With `npm run start` running, open the page with DevTools open, once normally and once with reduced motion emulated. The only acceptable console message is the `THREE.Clock … deprecated` warning. There must be no hydration errors and no WebGL errors.
+
+- [ ] **Step 4: Regression walk**
+
+- [ ] Telemetry clock ticks; the status dot pulses (solid with reduced motion).
+- [ ] The hollow "DEVELOPER" watermark sits behind the portrait, and the parallax still separates them on scroll.
+- [ ] Project cards stack, tilt, and spotlight; with reduced motion they do not tilt and there is no hydration error.
+- [ ] Scroll past the hero and back: the reveal still works. The render loop pauses off-screen via `useInView`.
+- [ ] No horizontal scrollbar at 375px, 768px, or 1440px.
+
+- [ ] **Step 5: Commit any fixes**
+
+```bash
+git add -A
+git commit -m "fix: address phase 8 verification findings"
+```
+
+---
+
 ## Handoff checklist
 
-Report these to the repository owner when Phase 7 is done:
+Report these to the repository owner when Phase 8 is done:
 
 1. `data/site.ts` — name, initials, email, GitHub URL, and site URL are placeholders. Also confirm `availability.isAvailable`, `timeZone` / `timeZoneLabel` (set to `Asia/Manila` / `GMT+8`), and the `watermark` word (sized for ~9 characters).
 2. `data/projects.ts` — three structurally complete example projects need replacing with real ones. Adding or removing entries automatically changes the scroll-stack height; no component edits needed.
 3. `public/resume.pdf` — a minimal placeholder PDF; replace with the real résumé.
-4. Optional next steps, not in scope for v1: a `/projects/[slug]` detail route, and the Supabase swap (replace the two function bodies in `lib/queries.ts`; the `Project` and `SkillCategory` fields map 1:1 to columns, snake_case in Postgres).
+4. `public/images/hero/hero-portrait.png` — the 3D headgear is calibrated to this exact image. If the portrait is ever replaced, re-tune the three `HEAD_FIT` numbers in `components/three/headgear-reveal-scene.tsx`, and nothing else.
+5. Optional next steps, not in scope for v1: a `/projects/[slug]` detail route, and the Supabase swap (replace the two function bodies in `lib/queries.ts`; the `Project` and `SkillCategory` fields map 1:1 to columns, snake_case in Postgres).

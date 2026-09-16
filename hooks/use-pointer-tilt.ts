@@ -39,7 +39,7 @@ export function usePointerTilt({ disabled = false }: { disabled?: boolean } = {}
   const spotlight = useMotionTemplate`radial-gradient(520px circle at ${spotX} ${spotY}, color-mix(in oklab, var(--color-accent) 14%, transparent), transparent 70%)`;
 
   function onPointerMove(event: ReactPointerEvent<HTMLElement>) {
-    if (event.pointerType !== "mouse") return;
+    if (disabled || event.pointerType !== "mouse") return;
     const rect = event.currentTarget.getBoundingClientRect();
     pointerX.set((event.clientX - rect.left) / rect.width);
     pointerY.set((event.clientY - rect.top) / rect.height);
@@ -52,7 +52,12 @@ export function usePointerTilt({ disabled = false }: { disabled?: boolean } = {}
 
   return {
     handlers: { onPointerMove, onPointerLeave },
-    tiltStyle: disabled ? undefined : { rotateX, rotateY, transformPerspective: 1000 },
+    // Always the same shape, even when disabled. `useReducedMotion()` is null
+    // on the server and true on a reduced-motion client, so returning
+    // `undefined` when disabled made server and client markup disagree and
+    // caused a hydration mismatch. When disabled the pointer values never
+    // move, so the rotation simply stays at 0.
+    tiltStyle: { rotateX, rotateY, transformPerspective: 1000 },
     spotlight,
   };
 }
