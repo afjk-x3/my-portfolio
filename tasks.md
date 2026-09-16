@@ -5,8 +5,8 @@
 > **Verify** block, then commit. Do not skip ahead, do not batch phases, and do
 > not "improve" adjacent files that the task does not list.
 
-> **Status:** Phases 1–7 are complete and committed. **Start at Phase 8** (3D
-> headgear reveal in the hero). Later phases modify files that earlier phases
+> **Status:** Phases 1–8 are complete and committed. **Start at Phase 9** (swap
+> the 3D headgear for a photo-based reveal). Later phases modify files that earlier phases
 > created; where an earlier task's code block no longer matches the target
 > design, that task carries a "Superseded" note pointing at the task that
 > replaces it. Never re-run a completed task's code over a newer version.
@@ -15,7 +15,7 @@
 
 **Architecture:** All page content is composed in `app/page.tsx` from section components under `components/sections/`. Every section that renders content is an async Server Component that awaits a function from `lib/queries.ts`; those functions currently return local typed arrays but their signatures are already `Promise`-returning, so swapping them for Supabase queries in Phase 2 is a data-layer edit with zero UI churn. Client-side interactivity (smooth scroll, scroll-linked animation, mobile nav) is isolated in leaf `"use client"` components so the page stays mostly server-rendered.
 
-**Tech Stack:** Next.js 16.3.5 (App Router, Turbopack), React 19.2.8, TypeScript 5 (strict), Tailwind CSS v4.3.3, `motion` v13 (the current package name for Framer Motion), `lenis` v1.3 for smooth scroll, `lucide-react` for icons, shadcn/ui conventions (`cn()` + `cva` + `components/ui/`), and from Phase 8 `three` 0.186 + `@react-three/fiber` 9.7 + `@react-three/drei` 10.7 for the hero headgear.
+**Tech Stack:** Next.js 16.3.5 (App Router, Turbopack), React 19.2.8, TypeScript 5 (strict), Tailwind CSS v4.3.3, `motion` v13 (the current package name for Framer Motion), `lenis` v1.3 for smooth scroll, `lucide-react` for icons, shadcn/ui conventions (`cn()` + `cva` + `components/ui/`). (Phase 8 added three.js for the hero headgear; Phase 9 removes it again in favour of a photo inside an SVG mask.)
 
 ---
 
@@ -75,7 +75,7 @@ components/
   sections/
     hero.tsx                 # server shell: telemetry bar, visual stage, copy
     hero-visual.tsx          # watermark type + glow + portrait, parallax (client)
-    headgear-reveal.tsx      # lazy-loads the 3D reveal canvas over the portrait (client) [Phase 8]
+    headgear-reveal.tsx      # headgear photo revealed over the face via SVG gooey mask (client) [Phase 9]
     telemetry-bar.tsx        # live status dot + local clock (client)                [Phase 7]
     projects-showcase.tsx    # server: awaits getProjects()
     projects-stack.tsx       # sticky scroll stack (client)
@@ -86,11 +86,6 @@ components/
     contact.tsx              # contact CTA (server)
   providers/
     smooth-scroll-provider.tsx  # Lenis root (client)
-  three/                     # the ONLY place three / R3F / drei may be imported     [Phase 8]
-    headgear-geometry.ts     # procedural Arnis headgear geometry, in inches
-    headgear-model.tsx       # headgear meshes; materials passed in
-    reveal-material.ts       # metaball cursor-mask shader patch
-    headgear-reveal-scene.tsx # Canvas, lighting, fit-to-portrait, cursor trail
   ui/
     button.tsx               # cva + Radix Slot, shadcn convention
     badge.tsx                # tech-stack pill
@@ -2903,6 +2898,8 @@ git commit -m "fix(projects): stable tilt style to prevent hydration mismatch"
 
 ### Task 8.2: Install the 3D stack and build the headgear model
 
+> **Superseded by Phase 9.** The procedural 3D headgear read as clip art and is removed in Task 9.2, including the three.js dependencies. Do not re-apply this task.
+
 **Files:**
 - Modify: `package.json`, `package-lock.json`
 - Create: `components/three/headgear-geometry.ts`
@@ -3232,6 +3229,8 @@ git commit -m "feat(hero): procedural arnis headgear model"
 ---
 
 ### Task 8.3: Build the cursor reveal layer
+
+> **Superseded by Phase 9.** `components/sections/headgear-reveal.tsx` is fully replaced in Task 9.1 and `components/three/` is deleted in Task 9.2. `hooks/use-media-query.ts` from this task stays and is reused.
 
 **Files:**
 - Create: `components/three/reveal-material.ts`
@@ -3671,6 +3670,8 @@ git commit -m "feat(hero): cursor-driven metaball reveal layer for headgear"
 
 ### Task 8.4: Mount the reveal over the hero portrait
 
+> **Still valid.** `hero-visual.tsx` keeps rendering `<HeadgearReveal />` in the same place; Phase 9 changes only what that component draws.
+
 **Files:**
 - Modify: `components/sections/hero-visual.tsx` (two insertions)
 
@@ -3782,12 +3783,365 @@ git commit -m "fix: address phase 8 verification findings"
 
 ---
 
+# Phase 9 — Photo-based headgear reveal
+
+The Phase 8 headgear was built from code-generated shapes and read as clip art, and it let the face show through the cage. Phase 9 replaces it with a real photo of a STIX Arnis headgear. The reveal now works the way the landonorris.com helmet does: **wherever the blob is, the face is fully covered by the headgear.** When the cursor is away, only a faint line-art outline of the headgear's dome shows above the head.
+
+The swap also removes three.js, React Three Fiber, and drei entirely, cutting a ~258 KB gzipped chunk from the page. The new reveal is a single SVG, about 190 lines of client code, with no new dependencies.
+
+Every block below was type-checked, linted, built with Turbopack, and screenshot-verified in a production build in four states: desktop with the mouse away, desktop with the mouse over the face, a 390px touch-emulated phone, and reduced motion. All four had a clean console and no horizontal overflow. Copy the blocks exactly.
+
+**How it works:**
+
+| Piece | Mechanism |
+| --- | --- |
+| Coordinates | The SVG's `viewBox` is the portrait's own pixel size (`0 0 2048 1365`) and it covers the portrait's 3:2 box, so every position is written in portrait pixels and stays aligned at every screen size. |
+| Headgear | `headgear.webp` is drawn at a calibrated position (`HEADGEAR`) and masked. |
+| Gooey blob | Eight circles form the mask, run through an SVG filter that blurs them together and then sharpens the alpha back to a crisp edge. That merges them into one liquid shape. The filter is limited to the headgear's box, so the blur never processes the whole hero. |
+| Cursor | A `window` listener maps the pointer into portrait pixels with `getScreenCTM()`, which already accounts for the parallax and entrance transforms. A `requestAnimationFrame` loop moves the circles by setting SVG attributes directly, so there are no React re-renders per frame. |
+| Ghost | `headgear-ghost.webp` is edge-detected line art of the same photo, faded out below the brow, drawn at 22% opacity and never masked. |
+
+### Assets (already in the repository — do not regenerate)
+
+The architect has already added two files to `public/images/hero/`. They are untracked; Task 9.1 commits them.
+
+| File | Size | What it is |
+| --- | --- | --- |
+| `headgear.webp` | 648×700, ~97 KB | STIX red Arnis headgear, front view, white studio background removed (transparent WebP) |
+| `headgear-ghost.webp` | 648×700, ~15 KB | White edge-detected line art of the same image, alpha-faded to only the shell and the top of the cage |
+
+Source: STIX's product photo, as listed by Eljan Sports. See the handoff checklist regarding image rights.
+
+---
+
+### Task 9.1: Commit the headgear assets and replace the reveal component
+
+**Files:**
+- Commit (already added by the architect — do not edit): `public/images/hero/headgear.webp`, `public/images/hero/headgear-ghost.webp`
+- Modify: `components/sections/headgear-reveal.tsx` (full replacement)
+
+**Interfaces consumed:** `useMediaQuery` (from Task 8.3), `useInView` and `useReducedMotion` from `motion/react`.
+**Interfaces produced:** `HeadgearReveal` (no props), unchanged from Phase 8, so `hero-visual.tsx` needs no edit.
+
+- [x] **Step 1: Confirm the assets are present**
+
+```bash
+ls -la public/images/hero/headgear.webp public/images/hero/headgear-ghost.webp
+```
+
+Expected: both files exist, about 97 KB and 15 KB. If either is missing, stop and report — do not substitute another image.
+
+- [x] **Step 2: Replace `components/sections/headgear-reveal.tsx`**
+
+Details that must not change:
+
+- **`useId().replace(...)`**: React's generated ids can contain characters that break `url(#…)` references, which would silently disable the mask.
+- **Circles are updated with `setAttribute` inside the animation loop**, not through React state. State updates would re-render 60 times a second.
+- **Locally typed `trail` and `pointer` (`Point`)**: the `FACE` constant is `as const`, and without the annotation TypeScript infers the literal types `1029` / `520` and rejects any assignment.
+- **`HEADGEAR`, `FACE`, and `BLOB_RADIUS`** were calibrated from full-reveal screenshots against the actual portrait.
+
+```tsx
+"use client";
+
+import { useEffect, useId, useRef } from "react";
+import { useInView, useReducedMotion } from "motion/react";
+
+import { useMediaQuery } from "@/hooks/use-media-query";
+
+/*
+ * Every coordinate in this file is in hero-portrait.png pixels. The SVG uses
+ * the portrait's own dimensions as its viewBox and sits exactly on top of the
+ * portrait's 3:2 box, so these numbers stay aligned at every screen size.
+ */
+const PORTRAIT = { width: 2048, height: 1365 } as const;
+
+/**
+ * Where the headgear photo is drawn. Calibrated so the cage covers the face
+ * and the shell sits just above the hood. Re-tune only if either image changes.
+ */
+const HEADGEAR = { x: 419, y: 90, width: 1166, height: 1260 } as const;
+
+/** Middle of the face: where the reveal rests on touch devices. */
+const FACE = { x: 1029, y: 520 } as const;
+
+/** Circles in the cursor trail. Blob 0 leads; the rest follow, each smaller. */
+const BLOBS = 8;
+
+/**
+ * Radius of the lead blob in portrait pixels. The gooey filter's threshold
+ * eats roughly the outer 40% of each circle, so this is larger than it looks.
+ */
+const BLOB_RADIUS = 300;
+
+type RevealMode = "pointer" | "wander" | "static";
+
+function damp(current: number, target: number, lambda: number, dt: number) {
+  return current + (target - current) * (1 - Math.exp(-lambda * dt));
+}
+
+/**
+ * Reveals a photo of an Arnis headgear over the face in the hero portrait,
+ * inside a gooey blob that follows the cursor — the face is fully covered
+ * wherever the blob is. A faint line-art ghost of the headgear is always
+ * visible as a hint. Must be placed inside the same 3:2 box as the portrait.
+ */
+export function HeadgearReveal() {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const isVisible = useInView(svgRef);
+  const reduceMotion = useReducedMotion() ?? false;
+  const finePointer = useMediaQuery("(pointer: fine)");
+  const mode: RevealMode = finePointer ? "pointer" : reduceMotion ? "static" : "wander";
+
+  // useId output can contain characters that break `url(#…)` references.
+  const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const gooId = `headgear-goo-${id}`;
+  const maskId = `headgear-mask-${id}`;
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg || !isVisible) return;
+
+    const circles = Array.from(svg.querySelectorAll<SVGCircleElement>("[data-blob]"));
+    type Point = { x: number; y: number };
+    const trail: Point[] = circles.map(() => ({ x: FACE.x, y: FACE.y }));
+    const pointer: Point & { inside: boolean } = { x: FACE.x, y: FACE.y, inside: false };
+
+    function draw(strength: number) {
+      circles.forEach((circle, i) => {
+        circle.setAttribute("cx", trail[i].x.toFixed(1));
+        circle.setAttribute("cy", trail[i].y.toFixed(1));
+        const radius = BLOB_RADIUS * (1 - (i / BLOBS) * 0.6) * strength;
+        circle.setAttribute("r", radius.toFixed(1));
+      });
+    }
+
+    // Touch + reduced motion: one fixed reveal over the face, no animation.
+    if (mode === "static") {
+      draw(1);
+      return;
+    }
+
+    // Map viewport coordinates into portrait pixels. getScreenCTM accounts for
+    // the parallax and entrance transforms on the portrait's ancestors.
+    function onMove(event: PointerEvent) {
+      const matrix = svg?.getScreenCTM();
+      if (!matrix) return;
+      const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(
+        matrix.inverse(),
+      );
+      pointer.x = point.x;
+      pointer.y = point.y;
+      pointer.inside =
+        point.x >= 0 && point.y >= 0 && point.x <= PORTRAIT.width && point.y <= PORTRAIT.height;
+    }
+    function onLeave() {
+      pointer.inside = false;
+    }
+
+    let strength = mode === "pointer" ? 0 : 1;
+    let last = performance.now();
+    const start = last;
+    let frame = requestAnimationFrame(function tick(now) {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+
+      let targetX: number = FACE.x;
+      let targetY: number = FACE.y;
+      let targetStrength = 1;
+      if (mode === "pointer") {
+        targetX = pointer.x;
+        targetY = pointer.y;
+        targetStrength = pointer.inside ? 1 : 0;
+      } else {
+        const t = (now - start) / 1000;
+        targetX = FACE.x + Math.sin(t * 0.6) * 140;
+        targetY = FACE.y + Math.sin(t * 0.9) * 120;
+      }
+
+      strength = damp(strength, targetStrength, 6, dt);
+
+      // The lead blob chases the target; each follower chases the one ahead,
+      // slightly slower, so fast movement stretches the reveal into a tail.
+      trail[0].x = damp(trail[0].x, targetX, 16, dt);
+      trail[0].y = damp(trail[0].y, targetY, 16, dt);
+      for (let i = 1; i < trail.length; i++) {
+        trail[i].x = damp(trail[i].x, trail[i - 1].x, 14 - i, dt);
+        trail[i].y = damp(trail[i].y, trail[i - 1].y, 14 - i, dt);
+      }
+
+      draw(strength < 0.002 ? 0 : strength);
+      frame = requestAnimationFrame(tick);
+    });
+
+    if (mode === "pointer") {
+      window.addEventListener("pointermove", onMove, { passive: true });
+      document.documentElement.addEventListener("pointerleave", onLeave);
+    }
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("pointermove", onMove);
+      document.documentElement.removeEventListener("pointerleave", onLeave);
+    };
+  }, [isVisible, mode]);
+
+  return (
+    <svg
+      ref={svgRef}
+      viewBox={`0 0 ${PORTRAIT.width} ${PORTRAIT.height}`}
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden
+      className="pointer-events-none absolute inset-0 size-full"
+    >
+      <defs>
+        {/*
+         * Gooey metaball filter: blur the circles together, then crank alpha
+         * contrast so the soft union snaps back to a crisp edge. Limited to the
+         * headgear's box so the blur only ever processes that area.
+         */}
+        <filter
+          id={gooId}
+          filterUnits="userSpaceOnUse"
+          x={HEADGEAR.x}
+          y={HEADGEAR.y}
+          width={HEADGEAR.width}
+          height={HEADGEAR.height}
+          colorInterpolationFilters="sRGB"
+        >
+          <feGaussianBlur stdDeviation="24" />
+          <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" />
+        </filter>
+        <mask
+          id={maskId}
+          maskUnits="userSpaceOnUse"
+          x="0"
+          y="0"
+          width={PORTRAIT.width}
+          height={PORTRAIT.height}
+        >
+          <g filter={`url(#${gooId})`}>
+            {Array.from({ length: BLOBS }, (_, i) => (
+              <circle key={i} data-blob="" cx={FACE.x} cy={FACE.y} r="0" fill="#fff" />
+            ))}
+          </g>
+        </mask>
+      </defs>
+
+      {/* Always-visible hint, like the wireframe dome on landonorris.com. */}
+      <image href="/images/hero/headgear-ghost.webp" {...HEADGEAR} opacity="0.22" />
+      <image href="/images/hero/headgear.webp" {...HEADGEAR} mask={`url(#${maskId})`} />
+    </svg>
+  );
+}
+```
+
+- [x] **Step 3: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+At http://localhost:3000 at 1440×900, on the production build:
+
+- **Mouse away from the portrait:** the face is fully visible, and a faint line-art outline of the headgear's dome sits above the hood. There are **no** lines across the face.
+- **Mouse over the face:** a round, gooey-edged area shows the real headgear photo — red padding band, black horizontal cage bars — and **the face is completely hidden inside that area**.
+- **Moving the mouse quickly:** the area stretches into a tail, then catches up. Moving off the portrait shrinks it away smoothly.
+- **Hero headline and buttons:** still clickable.
+
+At 390px in DevTools device mode with touch emulation, the revealed area drifts slowly over the face on its own. With touch emulation plus "prefers-reduced-motion: reduce", it sits still over the face.
+
+`components/three/` still exists after this task but nothing imports it any more. Task 9.2 deletes it.
+
+- [x] **Step 4: Commit**
+
+```bash
+git add public/images/hero/headgear.webp public/images/hero/headgear-ghost.webp components/sections/headgear-reveal.tsx
+git commit -m "feat(hero): photo-based headgear reveal with svg gooey mask"
+```
+
+---
+
+### Task 9.2: Remove the 3D stack
+
+**Files:**
+- Delete: `components/three/` (the whole directory: `headgear-geometry.ts`, `headgear-model.tsx`, `reveal-material.ts`, `headgear-reveal-scene.tsx`)
+- Modify: `package.json`, `package-lock.json`
+
+`hooks/use-media-query.ts` stays; the new reveal uses it.
+
+- [ ] **Step 1: Confirm nothing still imports the 3D code**
+
+```bash
+grep -rn "components/three\|@react-three\|from \"three\"" --include=*.ts --include=*.tsx app components hooks lib data
+```
+
+Expected: matches only inside `components/three/` itself. Any match elsewhere means Task 9.1 is incomplete — stop and fix that first.
+
+- [ ] **Step 2: Delete the directory and uninstall the packages**
+
+```bash
+rm -rf components/three
+npm uninstall three @react-three/fiber @react-three/drei @types/three
+```
+
+- [ ] **Step 3: Verify**
+
+```bash
+grep -rn "@react-three\|\"three\"" package.json
+grep -rn "components/three\|@react-three\|from \"three\"" --include=*.ts --include=*.tsx app components hooks lib data
+npx tsc --noEmit
+npm run lint
+rm -rf .next
+npm run build
+```
+
+Expected: both `grep` commands print nothing, and type check, lint, and build all pass. If the build fails with `next/font: error` / `Error while requesting resource`, that is Google Fonts being unreachable, not a code problem — re-run `npm run build`.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add -A components/three package.json package-lock.json
+git commit -m "chore: remove three.js stack replaced by photo headgear reveal"
+```
+
+---
+
+### Task 9.3: Phase 9 verification pass
+
+**Files:** none created; fix whatever this task surfaces.
+
+- [ ] **Step 1: Production build walk**
+
+```bash
+npm run start
+```
+
+With DevTools open:
+
+- [ ] **Console:** completely clean, both normally and with reduced motion emulated. The old `THREE.Clock` warning must be gone.
+- [ ] **Network, filtered to JS:** there is no ~250 KB 3D chunk and no `<canvas>` element on the page (`document.querySelectorAll("canvas").length === 0`).
+- [ ] **Hero:** the ghost dome is visible while idle; hovering the face reveals the headgear and hides the face; the telemetry clock ticks; the watermark and portrait parallax still separate on scroll.
+- [ ] **Project cards:** they stack, tilt, and spotlight, and there is no hydration error with reduced motion.
+- [ ] `document.documentElement.scrollWidth === window.innerWidth` is `true` at 375px, 768px, and 1440px.
+
+- [ ] **Step 2: Commit any fixes**
+
+```bash
+git add -A
+git commit -m "fix: address phase 9 verification findings"
+```
+
+---
+
 ## Handoff checklist
 
-Report these to the repository owner when Phase 8 is done:
+Report these to the repository owner when Phase 9 is done:
 
 1. `data/site.ts` — name, initials, email, GitHub URL, and site URL are placeholders. Also confirm `availability.isAvailable`, `timeZone` / `timeZoneLabel` (set to `Asia/Manila` / `GMT+8`), and the `watermark` word (sized for ~9 characters).
 2. `data/projects.ts` — three structurally complete example projects need replacing with real ones. Adding or removing entries automatically changes the scroll-stack height; no component edits needed.
 3. `public/resume.pdf` — a minimal placeholder PDF; replace with the real résumé.
-4. `public/images/hero/hero-portrait.png` — the 3D headgear is calibrated to this exact image. If the portrait is ever replaced, re-tune the three `HEAD_FIT` numbers in `components/three/headgear-reveal-scene.tsx`, and nothing else.
+4. `public/images/hero/headgear.webp` and `headgear-ghost.webp` — cut out from STIX's product photo (red variant, front view) as sold by Eljan Sports. That photo belongs to STIX/the retailer; replacing it with your own photo of your headgear removes the copyright risk. If either the portrait or the headgear image changes, re-tune the `HEADGEAR` and `FACE` constants in `components/sections/headgear-reveal.tsx`, and nothing else.
 5. Optional next steps, not in scope for v1: a `/projects/[slug]` detail route, and the Supabase swap (replace the two function bodies in `lib/queries.ts`; the `Project` and `SkillCategory` fields map 1:1 to columns, snake_case in Postgres).
