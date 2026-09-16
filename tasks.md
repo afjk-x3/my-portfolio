@@ -766,7 +766,7 @@ git commit -m "feat(data): add query seam, resume placeholder and image assets"
 
 **Interfaces produced:** `SmoothScrollProvider` (props `{ children: React.ReactNode }`).
 
-- [ ] **Step 1: Create `components/providers/smooth-scroll-provider.tsx`**
+- [x] **Step 1: Create `components/providers/smooth-scroll-provider.tsx`**
 
 ```tsx
 "use client";
@@ -802,7 +802,7 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
 }
 ```
 
-- [ ] **Step 2: Replace `app/layout.tsx`**
+- [x] **Step 2: Replace `app/layout.tsx`**
 
 Keep `LayoutProps<"/">` — it is a Next.js 16 generated global, not an import. Note there is deliberately no `data-scroll-behavior` attribute and no `scroll-behavior` CSS: Lenis owns scrolling.
 
@@ -848,7 +848,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 }
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -859,7 +859,7 @@ npm run dev
 
 Expected in the browser: scrolling the starter page feels eased rather than instant, and `<html>` has the `lenis` class in DevTools. Set "Emulate CSS prefers-reduced-motion: reduce" in DevTools → Rendering and reload — the `lenis` class should be gone and scrolling native.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/providers app/layout.tsx
