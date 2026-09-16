@@ -4651,7 +4651,7 @@ git commit -m "feat(preloader): add gothic monogram telemetry preloader"
 
 **Interfaces consumed:** `Preloader` (Task 10.2).
 
-- [ ] **Step 1: Replace `app/page.tsx`**
+- [x] **Step 1: Replace `app/page.tsx`**
 
 `<Preloader />` must be the **first** element: its gate script has to run before the browser parses, and can paint, any page content. It is mounted here rather than in `app/layout.tsx` on purpose. If it were in the layout, the 404 page would also lock scrolling and show the intro.
 
@@ -4682,7 +4682,7 @@ export default function Home() {
 }
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -4698,7 +4698,7 @@ At `http://localhost:3000`, in a fresh tab:
 - Reloading the tab goes straight to the page, with no black frame.
 - To replay it, run `sessionStorage.removeItem("portfolio_preloaded")` in the DevTools console and reload. A new tab also replays it, because sessionStorage is per tab.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add app/page.tsx
