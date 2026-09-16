@@ -1135,7 +1135,7 @@ git commit -m "feat(hero): add hero section with portrait and actions"
 **Files:**
 - Modify: `app/page.tsx` (full replacement — the entire starter template contents are discarded)
 
-- [ ] **Step 1: Replace `app/page.tsx`**
+- [x] **Step 1: Replace `app/page.tsx`**
 
 ```tsx
 import { SiteHeader } from "@/components/layout/site-header";
@@ -1153,7 +1153,7 @@ export default function Home() {
 }
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npm run build
@@ -1162,7 +1162,7 @@ npm run dev
 
 Expected at http://localhost:3000: dark page, "Full Stack Developer" headline with "Developer" in accent orange, portrait rendered without cropping, both buttons working (GitHub opens in a new tab, Resume downloads the placeholder PDF). The header pill gains a blurred background after scrolling ~32px. Nav links will not visibly move the page yet — their target sections do not exist until Phases 4–6. Check the 375px-wide viewport too: the portrait stacks below the copy and the nav collapses to a menu button.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add app/page.tsx
