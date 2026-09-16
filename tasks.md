@@ -322,7 +322,7 @@ git commit -m "feat(theme): replace starter styles with dark token system"
 
 **Interfaces produced:** `Button` (standard `button` props plus `variant: "primary" | "outline" | "ghost"`, `size: "sm" | "md" | "lg"`, `asChild?: boolean`), `buttonVariants(opts)`, `Badge` (standard `span` props), `SectionHeading` (props `eyebrow: string`, `title: string`, `className?: string`). Phases 3–6 import all three.
 
-- [ ] **Step 1: Create `components/ui/button.tsx`**
+- [x] **Step 1: Create `components/ui/button.tsx`**
 
 ```tsx
 import * as React from "react";
@@ -377,7 +377,7 @@ export function Button({
 export { buttonVariants };
 ```
 
-- [ ] **Step 2: Create `components/ui/badge.tsx`**
+- [x] **Step 2: Create `components/ui/badge.tsx`**
 
 ```tsx
 import * as React from "react";
@@ -397,7 +397,7 @@ export function Badge({ className, ...props }: React.ComponentProps<"span">) {
 }
 ```
 
-- [ ] **Step 3: Create `components/ui/section-heading.tsx`**
+- [x] **Step 3: Create `components/ui/section-heading.tsx`**
 
 ```tsx
 import { cn } from "@/lib/utils";
@@ -423,7 +423,7 @@ export function SectionHeading({ eyebrow, title, className }: SectionHeadingProp
 }
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -431,7 +431,7 @@ npm run lint
 npm run build
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add components/ui
