@@ -4711,7 +4711,7 @@ git commit -m "feat(preloader): mount preloader on the home page"
 
 **Files:** none created; fix whatever this task surfaces.
 
-- [ ] **Step 1: Production build walk**
+- [x] **Step 1: Production build walk**
 
 ```bash
 npm run build
@@ -4720,17 +4720,17 @@ npm run start
 
 With DevTools open, and after clearing the storage key before each first-visit check:
 
-- [ ] **Console:** clean on the first visit and on reload; no hydration warning and no `Encountered a script tag` warning.
-- [ ] **Scroll lock:** during the counter, the mouse wheel and the keyboard (Space, Page Down) do not move the page. Scrolling works immediately after the wipe finishes. The header links do nothing while the overlay is up, because the overlay covers them.
-- [ ] **No flash on reload:** in the Performance panel, or by throttling the network to "Slow 4G" and reloading, the overlay never appears on a reload in the same tab.
-- [ ] **Slow network, first visit:** with "Slow 4G" and the key cleared, the first paint is the overlay (at `00%`), never the hero.
-- [ ] **Reduced motion** (Rendering panel → emulate `prefers-reduced-motion: reduce`): the counter still runs, the overlay fades out instead of wiping, and scrolling is locked until then.
-- [ ] **JavaScript disabled** (Command Menu → "Disable JavaScript"): the page renders normally with no overlay.
-- [ ] **Hero after the wipe:** the telemetry clock ticks, the headgear reveal follows the cursor, and the parallax still separates on scroll.
-- [ ] `document.documentElement.scrollWidth === window.innerWidth` is `true` at 375px, 768px, and 1440px, both during and after the preloader.
-- [ ] After the wipe, `document.documentElement.hasAttribute("data-preloader-active")` is `false` and `document.querySelector("[data-preloader]")` is `null`.
+- [x] **Console:** clean on the first visit and on reload; no hydration warning and no `Encountered a script tag` warning.
+- [x] **Scroll lock:** during the counter, the mouse wheel and the keyboard (Space, Page Down) do not move the page. Scrolling works immediately after the wipe finishes. The header links do nothing while the overlay is up, because the overlay covers them.
+- [x] **No flash on reload:** in the Performance panel, or by throttling the network to "Slow 4G" and reloading, the overlay never appears on a reload in the same tab.
+- [x] **Slow network, first visit:** with "Slow 4G" and the key cleared, the first paint is the overlay (at `00%`), never the hero.
+- [x] **Reduced motion** (Rendering panel → emulate `prefers-reduced-motion: reduce`): the counter still runs, the overlay fades out instead of wiping, and scrolling is locked until then.
+- [x] **JavaScript disabled** (Command Menu → "Disable JavaScript"): the page renders normally with no overlay.
+- [x] **Hero after the wipe:** the telemetry clock ticks, the headgear reveal follows the cursor, and the parallax still separates on scroll.
+- [x] `document.documentElement.scrollWidth === window.innerWidth` is `true` at 375px, 768px, and 1440px, both during and after the preloader.
+- [x] After the wipe, `document.documentElement.hasAttribute("data-preloader-active")` is `false` and `document.querySelector("[data-preloader]")` is `null`.
 
-- [ ] **Step 2: Commit any fixes**
+- [x] **Step 2: Commit any fixes**
 
 ```bash
 git add -A
