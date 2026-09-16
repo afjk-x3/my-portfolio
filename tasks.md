@@ -1415,7 +1415,7 @@ git commit -m "feat(projects): add scroll-driven sticky card stack"
 **Interfaces consumed:** `SkillCategory`, `Badge`.
 **Interfaces produced:** `TechStackCard` with props `{ category: SkillCategory; className?: string }`.
 
-- [ ] **Step 1: Create `components/sections/tech-stack-card.tsx`**
+- [x] **Step 1: Create `components/sections/tech-stack-card.tsx`**
 
 ```tsx
 import { Badge } from "@/components/ui/badge";
@@ -1450,14 +1450,14 @@ export function TechStackCard({ category, className }: TechStackCardProps) {
 }
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npx tsc --noEmit
 npm run lint
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/sections/tech-stack-card.tsx
