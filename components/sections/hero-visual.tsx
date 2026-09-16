@@ -1,30 +1,93 @@
 "use client";
 
+import { useRef } from "react";
 import Image from "next/image";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 
-export function HeroVisual() {
+const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
+
+export function HeroVisual({ watermark }: { watermark: string }) {
+  const stageRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
 
+  // 0 while the stage top is at the viewport top, 1 once the stage has
+  // scrolled fully out above it.
+  const { scrollYProgress } = useScroll({
+    target: stageRef,
+    offset: ["start start", "end start"],
+  });
+
+  // The portrait sinks slowly and the watermark rises against it. The
+  // watermark is nested inside the portrait layer, so its offset stacks on top
+  // of the portrait's and the two visibly separate in depth while scrolling.
+  const portraitY = useTransform(scrollYProgress, [0, 1], ["0%", "12%"]);
+  const watermarkY = useTransform(scrollYProgress, [0, 1], ["0%", "-80%"]);
+
   return (
-    <motion.div
-      initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      className="relative aspect-[3/2] w-full max-w-xl"
-    >
+    <div ref={stageRef} className="relative flex flex-1 items-end justify-center">
+      {/* Layer 0: accent bloom behind everything. */}
       <div
         aria-hidden
-        className="glow absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2"
+        className="glow absolute bottom-[15%] left-1/2 size-[28rem] -translate-x-1/2"
       />
-      <Image
-        src="/images/hero/hero-portrait.png"
-        alt=""
-        fill
-        priority
-        sizes="(min-width: 1024px) 40vw, 90vw"
-        className="relative object-contain"
+
+      {/*
+       * Width is the smallest of: 140% of the container, 64rem, and whatever
+       * width keeps the 3:2 portrait's height inside the viewport minus the
+       * hero's top padding, telemetry bar, and bottom padding (~12rem).
+       *
+       * 140% is safe because the subject only occupies the middle ~55% of the
+       * PNG; the transparent margins bleed off-screen and the section's
+       * `overflow-hidden` clips them. On phones this is what makes the portrait
+       * large enough to read.
+       */}
+      <motion.div
+        style={{ y: reduceMotion ? 0 : portraitY }}
+        className="relative w-[min(140%,64rem,calc((100svh_-_12rem)*1.5))] shrink-0"
+      >
+        {/*
+         * Layer 1: outline watermark. It comes first in the DOM, so the
+         * portrait after it paints on top. `justify-center` on an overflowing
+         * flex item bleeds equally off both sides, which is intended.
+         */}
+        <motion.div
+          aria-hidden
+          style={{ y: reduceMotion ? 0 : watermarkY }}
+          className="pointer-events-none absolute inset-x-0 top-[16%] flex select-none justify-center"
+        >
+          <motion.p
+            initial={reduceMotion ? false : { opacity: 0, y: 48 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.1, ease: EASE_OUT_EXPO }}
+            className="whitespace-nowrap font-display text-[clamp(4.5rem,21vw,22rem)] uppercase leading-[0.8] text-outline"
+          >
+            {watermark}
+          </motion.p>
+        </motion.div>
+
+        {/* Layer 2: the transparent cutout portrait, in front of the watermark. */}
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.9, delay: 0.15, ease: EASE_OUT_EXPO }}
+          className="relative aspect-[3/2] w-full"
+        >
+          <Image
+            src="/images/hero/hero-portrait.png"
+            alt=""
+            fill
+            preload
+            sizes="(min-width: 1024px) 1024px, 100vw"
+            className="object-contain object-bottom"
+          />
+        </motion.div>
+      </motion.div>
+
+      {/* The portrait is cut off at the waist; fade that edge into the page. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-bg via-bg/70 to-transparent"
       />
-    </motion.div>
+    </div>
   );
 }

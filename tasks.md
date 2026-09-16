@@ -2358,7 +2358,7 @@ Composition, back to front:
 
 On scroll the portrait sinks and the watermark rises, so the layers separate in depth. With reduced motion both stay still and the entrance animations are skipped.
 
-- [ ] **Step 1: Replace `components/sections/hero-visual.tsx`**
+- [x] **Step 1: Replace `components/sections/hero-visual.tsx`**
 
 Two details that must not change:
 
@@ -2461,7 +2461,7 @@ export function HeroVisual({ watermark }: { watermark: string }) {
 }
 ```
 
-- [ ] **Step 2: Replace `components/sections/hero.tsx`**
+- [x] **Step 2: Replace `components/sections/hero.tsx`**
 
 `lg:min-h-svh` is deliberate: the hero is a full-viewport stage only on large screens. On phones a forced full height left a large empty band above the portrait.
 
@@ -2522,7 +2522,7 @@ export function Hero() {
 }
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -2542,7 +2542,7 @@ Expected at 375px (DevTools device toolbar): the portrait is large and centered 
 
 With "Emulate CSS prefers-reduced-motion: reduce": no entrance animation, no parallax, and the status dot is solid with no ring.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/sections/hero-visual.tsx components/sections/hero.tsx
