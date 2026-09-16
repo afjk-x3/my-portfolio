@@ -131,7 +131,7 @@ git commit -m "chore: add motion, lenis, lucide and shadcn utility deps"
 - Create: `lib/utils.ts`
 - Create: `components.json`
 
-- [ ] **Step 1: Create `lib/utils.ts`**
+- [x] **Step 1: Create `lib/utils.ts`**
 
 ```ts
 import { clsx, type ClassValue } from "clsx";
@@ -143,7 +143,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 ```
 
-- [ ] **Step 2: Create `components.json`**
+- [x] **Step 2: Create `components.json`**
 
 Nothing we write by hand reads this file, but it lets the owner run `npx shadcn@latest add <component>` later and have it land in the right directories with the right alias.
 
@@ -173,14 +173,14 @@ Nothing we write by hand reads this file, but it lets the owner run `npx shadcn@
 
 `"tailwind.config": ""` is intentional — Tailwind v4 is CSS-first and this project has no `tailwind.config.*`.
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
 npm run lint
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add lib/utils.ts components.json
