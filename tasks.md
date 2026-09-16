@@ -2769,7 +2769,7 @@ git commit -m "feat(projects): mouse-tracked card tilt with neon spotlight"
 
 **Files:** none created; fix whatever this task surfaces.
 
-- [ ] **Step 1: Clean build, lint, type check**
+- [x] **Step 1: Clean build, lint, type check**
 
 ```bash
 rm -rf .next
@@ -2780,26 +2780,26 @@ npx tsc --noEmit
 
 Expected: all clean, and no `priority` deprecation warning in the build output.
 
-- [ ] **Step 2: Walk the five signature elements on the production build**
+- [x] **Step 2: Walk the five signature elements on the production build**
 
 ```bash
 npm run start
 ```
 
-- [ ] **Layered typography:** at 1440px, 768px, and 375px, the hood and face overlap the hollow "DEVELOPER" watermark.
-- [ ] **Neon accent:** badges, primary buttons, focus rings, the live dot, and hover glows are `#ccff00`; the page background is `#09090b`.
-- [ ] **Telemetry:** the clock ticks every second in GMT+8 and matches the actual time in Manila; the status dot pulses.
-- [ ] **Tilt + spotlight:** project cards tilt and spotlight under the mouse, and do not tilt on touch.
-- [ ] **Noise + grid:** grain is faintly visible over the whole page including the header, and the grid stays fixed while scrolling. Neither blocks clicks: every nav link, button, and card link still works.
+- [x] **Layered typography:** at 1440px, 768px, and 375px, the hood and face overlap the hollow "DEVELOPER" watermark.
+- [x] **Neon accent:** badges, primary buttons, focus rings, the live dot, and hover glows are `#ccff00`; the page background is `#09090b`.
+- [x] **Telemetry:** the clock ticks every second in GMT+8 and matches the actual time in Manila; the status dot pulses.
+- [x] **Tilt + spotlight:** project cards tilt and spotlight under the mouse, and do not tilt on touch.
+- [x] **Noise + grid:** grain is faintly visible over the whole page including the header, and the grid stays fixed while scrolling. Neither blocks clicks: every nav link, button, and card link still works.
 
-- [ ] **Step 3: Regression checks from Task 6.2**
+- [x] **Step 3: Regression checks from Task 6.2**
 
-- [ ] `document.documentElement.scrollWidth === window.innerWidth` is `true` at 375px, 768px, and 1440px.
-- [ ] All four nav links still scroll to their sections.
-- [ ] Reduced motion: no Lenis, no parallax, no entrance animations, no tilt, no pulse ring.
-- [ ] Keyboard: every link and button still shows the (now neon) focus ring; the Arnis card still swaps photos on focus.
+- [x] `document.documentElement.scrollWidth === window.innerWidth` is `true` at 375px, 768px, and 1440px.
+- [x] All four nav links still scroll to their sections.
+- [x] Reduced motion: no Lenis, no parallax, no entrance animations, no tilt, no pulse ring.
+- [x] Keyboard: every link and button still shows the (now neon) focus ring; the Arnis card still swaps photos on focus.
 
-- [ ] **Step 4: Commit any fixes**
+- [x] **Step 4: Commit any fixes**
 
 ```bash
 git add -A
