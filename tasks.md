@@ -3246,7 +3246,7 @@ git commit -m "feat(hero): procedural arnis headgear model"
 - `use-media-query.ts`: `useMediaQuery(query: string): boolean`.
 - `headgear-reveal.tsx`: `HeadgearReveal` (no props). Task 8.4 renders it.
 
-- [ ] **Step 1: Create `components/three/reveal-material.ts`**
+- [x] **Step 1: Create `components/three/reveal-material.ts`**
 
 The reveal is a small patch to three's built-in `MeshStandardMaterial` shader. For every pixel it sums `r² / d²` over the trail blobs and discards the pixel when the sum is below 1. Summing makes nearby blobs merge into one gooey shape instead of overlapping circles.
 
@@ -3301,7 +3301,7 @@ if (revealField < 1.0) discard;`,
 }
 ```
 
-- [ ] **Step 2: Create `components/three/headgear-reveal-scene.tsx`**
+- [x] **Step 2: Create `components/three/headgear-reveal-scene.tsx`**
 
 Four details in this file were each found by testing, and each must stay exactly as written:
 
@@ -3564,7 +3564,7 @@ function FittedHeadgear({ mode }: { mode: RevealMode }) {
 }
 ```
 
-- [ ] **Step 3: Create `hooks/use-media-query.ts`**
+- [x] **Step 3: Create `hooks/use-media-query.ts`**
 
 Same `useSyncExternalStore` pattern as `use-local-time.ts`: `false` on the server and during hydration, so markup always matches.
 
@@ -3593,7 +3593,7 @@ export function useMediaQuery(query: string): boolean {
 }
 ```
 
-- [ ] **Step 4: Create `components/sections/headgear-reveal.tsx`**
+- [x] **Step 4: Create `components/sections/headgear-reveal.tsx`**
 
 This is the only file outside `components/three/` that references the 3D code, and it does so only through `next/dynamic`. `ssr: false` is required: WebGL does not exist on the server, and Next.js 16 allows `ssr: false` only inside a Client Component, which this file is.
 
@@ -3650,7 +3650,7 @@ export function HeadgearReveal() {
 
 `import type` from the scene file is safe: type-only imports are erased at build time and do not pull three.js into the main bundle.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -3660,7 +3660,7 @@ npm run build
 
 Nothing renders the layer until Task 8.4.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add components/three/reveal-material.ts components/three/headgear-reveal-scene.tsx hooks/use-media-query.ts components/sections/headgear-reveal.tsx
