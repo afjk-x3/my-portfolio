@@ -517,7 +517,7 @@ git commit -m "feat(data): add site config and navigation links"
 
 The three entries below are structurally complete examples covering all three required categories. Their content is the owner's to replace; the shape is not. Flag this file in your handoff.
 
-- [ ] **Step 1: Create `data/projects.ts`**
+- [x] **Step 1: Create `data/projects.ts`**
 
 ```ts
 import type { Project } from "@/types";
@@ -574,7 +574,7 @@ export const projects: Project[] = [
 ];
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -583,7 +583,7 @@ npm run lint
 
 Expected: no type errors. If one appears, the entry is missing a required field from `types/index.ts`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add data/projects.ts
