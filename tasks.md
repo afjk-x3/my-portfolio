@@ -4113,7 +4113,7 @@ git commit -m "chore: remove three.js stack replaced by photo headgear reveal"
 
 **Files:** none created; fix whatever this task surfaces.
 
-- [ ] **Step 1: Production build walk**
+- [x] **Step 1: Production build walk**
 
 ```bash
 npm run start
@@ -4121,13 +4121,13 @@ npm run start
 
 With DevTools open:
 
-- [ ] **Console:** completely clean, both normally and with reduced motion emulated. The old `THREE.Clock` warning must be gone.
-- [ ] **Network, filtered to JS:** there is no ~250 KB 3D chunk and no `<canvas>` element on the page (`document.querySelectorAll("canvas").length === 0`).
-- [ ] **Hero:** the ghost dome is visible while idle; hovering the face reveals the headgear and hides the face; the telemetry clock ticks; the watermark and portrait parallax still separate on scroll.
-- [ ] **Project cards:** they stack, tilt, and spotlight, and there is no hydration error with reduced motion.
-- [ ] `document.documentElement.scrollWidth === window.innerWidth` is `true` at 375px, 768px, and 1440px.
+- [x] **Console:** completely clean, both normally and with reduced motion emulated. The old `THREE.Clock` warning must be gone.
+- [x] **Network, filtered to JS:** there is no ~250 KB 3D chunk and no `<canvas>` element on the page (`document.querySelectorAll("canvas").length === 0`).
+- [x] **Hero:** the ghost dome is visible while idle; hovering the face reveals the headgear and hides the face; the telemetry clock ticks; the watermark and portrait parallax still separate on scroll.
+- [x] **Project cards:** they stack, tilt, and spotlight, and there is no hydration error with reduced motion.
+- [x] `document.documentElement.scrollWidth === window.innerWidth` is `true` at 375px, 768px, and 1440px.
 
-- [ ] **Step 2: Commit any fixes**
+- [x] **Step 2: Commit any fixes**
 
 ```bash
 git add -A
