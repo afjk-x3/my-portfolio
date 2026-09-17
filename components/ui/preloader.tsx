@@ -11,6 +11,8 @@ import {
   useTransform,
 } from "motion/react";
 
+import { baybayin } from "@/data/baybayin";
+
 /** Present in sessionStorage once the preloader has played in this tab. */
 const STORAGE_KEY = "portfolio_preloaded";
 
@@ -184,7 +186,11 @@ export function Preloader() {
                 </span>
               </span>
 
-              <div className="mt-10 flex items-baseline font-mono tabular-nums">
+              <span className="animate-status-in mt-4 font-baybayin text-2xl text-accent/80 md:text-3xl">
+                {baybayin.name.text}
+              </span>
+
+              <div className="mt-8 flex items-baseline font-mono tabular-nums">
                 <motion.span className="text-5xl font-medium tracking-tight text-fg md:text-6xl">
                   {percent}
                 </motion.span>

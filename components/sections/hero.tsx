@@ -3,6 +3,7 @@ import { CodeXml, Download } from "lucide-react";
 import { HeroVisual } from "@/components/sections/hero-visual";
 import { TelemetryBar } from "@/components/sections/telemetry-bar";
 import { Button } from "@/components/ui/button";
+import { baybayin } from "@/data/baybayin";
 import { siteConfig } from "@/data/site";
 
 export function Hero() {
@@ -31,6 +32,14 @@ export function Hero() {
               Full Stack
               <span className="block text-accent">Developer</span>
             </h1>
+            <p className="flex flex-col items-center gap-1 whitespace-nowrap sm:flex-row sm:items-baseline sm:gap-3 lg:justify-start">
+              <span aria-hidden className="font-baybayin text-lg text-muted">
+                {baybayin.motto.text}
+              </span>
+              <span className="font-mono text-[0.65rem] uppercase tracking-[0.3em] text-muted">
+                Diligence &amp; discipline
+              </span>
+            </p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
