@@ -26,6 +26,8 @@
   --color-accent: #ccff00;
   --color-accent-soft: #e2fd52;
   --color-accent-ink: #09090b;
+  /* Strike scars: semi-transparent accent for healed cuts on dividers. */
+  --color-scar: #ccff0044;
 
   --radius-card: 1.5rem;
 
