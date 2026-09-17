@@ -32,7 +32,7 @@ export function ProjectCard({ project, index, total, progress }: ProjectCardProp
   const { handlers, tiltStyle, spotlight } = usePointerTilt({ disabled: reduceMotion });
 
   return (
-    <div className="sticky top-0 flex h-screen items-center justify-center px-6">
+    <div className="sticky top-0 flex h-screen items-start justify-center px-6 pt-28">
       {/*
        * Scroll layer: stack scale and offset. It is also the pointer
        * measurement box, which is why it must never rotate.
