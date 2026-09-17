@@ -1267,7 +1267,7 @@ git commit -m "feat(strike): make strike dividers an interactive sword-slash rhy
 
 **Interfaces consumed:** the clip paths in `lib/strike-audio.ts` (Task 16.1).
 
-The architect sources the clips (CC0 only), trims and shrinks them, and places them in `public/audio/strikes/` with `CREDITS.md` listing each clip's source URL, author, and licence. **If that folder does not exist yet, skip this task, leave its boxes unchecked, and say so in your summary.**
+The architect has already placed the four clips and `CREDITS.md` in `public/audio/strikes/` (uncommitted). They are derived from the CC0 pack "20 Sword Sound Effects (Attacks and Clashes)" by StarNinjas; `CREDITS.md` records the source and every edit. **If that folder is missing, skip this task, leave its boxes unchecked, and say so in your summary.**
 
 - [ ] **Step 1: Check the files**
 
@@ -1275,7 +1275,7 @@ The architect sources the clips (CC0 only), trims and shrinks them, and places t
 ls -la public/audio/strikes
 ```
 
-Expected: `slash.wav`, `stab.wav`, `finisher.wav`, `miss.wav`, and `CREDITS.md`; each `.wav` under about 60 KB.
+Expected: `slash.wav` (≈16 KB), `stab.wav` (≈19 KB), `finisher.wav` (≈51 KB), `miss.wav` (≈20 KB), and `CREDITS.md`.
 
 - [ ] **Step 2: Verify**
 
@@ -1284,7 +1284,7 @@ npm run build
 npm run start
 ```
 
-- [ ] First press on a sword button: a sword whoosh plays (it may be silent on the very first press if the clips were still loading; the second press must play).
+- [ ] Hover a sword button, then press it: a sword whoosh plays on that first press.
 - [ ] Thrust strikes play a sharp stab/clash; PERFECT presses add a short high ring; MISS plays a dull thud; the finisher plays a heavier slash sound.
 - [ ] The speaker button mutes all dividers at once and shows a crossed-out speaker; the choice survives a reload.
 - [ ] No sound plays before the first press on the page.
