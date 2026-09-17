@@ -83,14 +83,17 @@ export function HeroVisual({ watermark }: { watermark: string }) {
           />
           {/* Layer 3: headgear photo over the face, revealed by the ink trail. */}
           <HeadgearReveal />
+          {/*
+           * Layer 4: the portrait is cut off at the waist; fade that edge into
+           * the page. It lives in the portrait box so it moves with the
+           * parallax. On the stage it stayed put while the portrait sank past it.
+           */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-bg via-bg/70 to-transparent"
+          />
         </motion.div>
       </motion.div>
-
-      {/* The portrait is cut off at the waist; fade that edge into the page. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-bg via-bg/70 to-transparent"
-      />
     </div>
   );
 }
