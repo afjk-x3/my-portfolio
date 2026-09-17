@@ -4,11 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLenis } from "lenis/react";
-import { CodeXml, Mail, Menu, X } from "lucide-react";
+import { CodeXml, Mail, Menu, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { navLinks } from "@/data/navigation";
 import { siteConfig, socialLinks } from "@/data/site";
+import { setCommandPaletteOpen, useModifierKeyLabel } from "@/hooks/use-command-palette";
 import { cn } from "@/lib/utils";
 
 // lucide-react v1 removed brand icons (no `Github` export), so the "Github"
@@ -39,12 +40,23 @@ function NavButton({ href, onHome, onNavigate, className, children }: NavButtonP
   );
 }
 
+/** Two-line name wordmark, like a racing driver's logo. */
+function Wordmark() {
+  return (
+    <span className="flex flex-col font-display text-lg uppercase leading-[0.85] tracking-wide text-fg">
+      <span>{siteConfig.wordmark[0]}</span>
+      <span>{siteConfig.wordmark[1]}</span>
+    </span>
+  );
+}
+
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   // Section anchors only exist on the home page. Elsewhere, links navigate to
   // `/#anchor` instead of smooth-scrolling.
   const onHome = usePathname() === "/";
+  const modifierKey = useModifierKeyLabel();
 
   const lenis = useLenis(({ scroll }) => {
     setScrolled(scroll > 32);
@@ -64,7 +76,7 @@ export function SiteHeader() {
       <nav
         aria-label="Primary"
         className={cn(
-          "flex w-full max-w-3xl items-center justify-between gap-4 rounded-full border px-4 py-2 transition-colors duration-300",
+          "flex w-full max-w-4xl items-center justify-between gap-4 rounded-full border py-2 pr-2 pl-5 transition-colors duration-300",
           scrolled
             ? "border-line bg-surface/70 backdrop-blur-xl"
             : "border-transparent bg-transparent",
@@ -73,17 +85,19 @@ export function SiteHeader() {
         {onHome ? (
           <button
             type="button"
+            aria-label="Back to top"
             onClick={() => lenis?.scrollTo(0)}
-            className="rounded-full px-2 font-mono text-sm font-semibold tracking-[0.2em] text-fg"
+            className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
           >
-            {siteConfig.initials}
+            <Wordmark />
           </button>
         ) : (
           <Link
             href="/"
-            className="rounded-full px-2 font-mono text-sm font-semibold tracking-[0.2em] text-fg"
+            aria-label="Home"
+            className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
           >
-            {siteConfig.initials}
+            <Wordmark />
           </Link>
         )}
 
@@ -98,6 +112,20 @@ export function SiteHeader() {
         </ul>
 
         <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 px-2"
+            aria-label="Open command palette"
+            aria-keyshortcuts="Control+K Meta+K"
+            onClick={() => setCommandPaletteOpen(true)}
+          >
+            <Search aria-hidden />
+            <kbd className="hidden rounded-md border border-line px-1.5 py-0.5 font-mono text-[0.625rem] tracking-normal sm:inline">
+              {modifierKey} K
+            </kbd>
+          </Button>
+
           {socialLinks.map((link) => {
             const Icon = socialIcons[link.icon as keyof typeof socialIcons];
             return (

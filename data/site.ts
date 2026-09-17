@@ -1,14 +1,16 @@
 import type { SocialLink } from "@/types";
 
 export const siteConfig = {
-  name: "Your Name",
-  initials: "YN",
+  name: "John Paul R. Garaza",
+  initials: "JP",
+  /** Two-line header wordmark, set in Anton. Keep each line short. */
+  wordmark: ["John Paul", "Garaza"],
   role: "Full Stack Developer",
   description:
     "Full Stack Developer building web applications, games, and the systems behind them.",
   url: "https://example.com",
   email: "you@example.com",
-  githubUrl: "https://github.com/your-handle",
+  githubUrl: "https://github.com/afjk-x3/",
   resumePath: "/resume.pdf",
   /**
    * Giant outline word layered behind the hero portrait. The type size is
