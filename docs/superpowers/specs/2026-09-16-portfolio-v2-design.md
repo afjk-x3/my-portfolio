@@ -35,8 +35,8 @@ v2 turns that recreation into the owner's own brand while making it useful for j
 | Sequencing | Identity system first, then case studies, then new home sections, then polish. Nothing is styled twice. |
 | Case study content | Typed data extending `Project` in `data/projects.ts`, not MDX. Keeps the `lib/queries.ts` Supabase seam. |
 | Timeline | No deadline. Quality first; each phase ships and is verified before the next. |
-| Home sections | Four candidates are designed (§6). **The owner picks which to build before Phase 16 is planned.** |
-| Analytics | Vercel Web Analytics, added in Phase 17. |
+| Home sections | Four candidates are designed (§6). **The owner picks which to build before Phase 17 is planned.** |
+| Analytics | Vercel Web Analytics, added in Phase 18. |
 
 ---
 
@@ -49,8 +49,9 @@ v2 turns that recreation into the owner's own brand while making it useful for j
 | 13 | Hero refinement + command palette (§4b, added 2026-09-17) | 11, 12 |
 | 14 | Remove case studies + slash-cut strike lines (§4c, added 2026-09-17) | 11, 12 |
 | 15 | Targeted fixes: intro on every load, hero on reload, projects gap, discipline card (§4d, added 2026-09-17) | 13, 14 |
-| 16 | New home sections (owner's selection) | 11 |
-| 17 | Polish and reach | 11–16 |
+| 16 | Interactive sword-slash dividers (§4e, added 2026-09-17) | 14 |
+| 17 | New home sections (owner's selection) | 11 |
+| 18 | Polish and reach | 11–17 |
 
 Each phase is written into `tasks.md` as atomic builder tasks only when the previous phase is verified.
 
@@ -66,7 +67,7 @@ Telemetry is the structure; Filipino/Arnis identity is the texture. Motifs appea
 
 - **Font:** Noto Sans Tagalog via `next/font/google` (confirmed available in the installed Next.js font data), exposed as `--font-baybayin` / `font-baybayin`.
 - **Single source of truth:** `data/baybayin.ts` exports every baybayin string used on the site. Each entry has `id`, `text` (baybayin), `latin` (romanised source), `meaning` (English), and `reviewed: boolean`.
-- **Review gate:** transliteration errors are easy to make and publicly embarrassing. The owner or a baybayin reader confirms every entry and flips `reviewed` to `true` before launch. Phase 17 verification fails if any entry is unreviewed.
+- **Review gate:** transliteration errors are easy to make and publicly embarrassing. The owner or a baybayin reader confirms every entry and flips `reviewed` to `true` before launch. Phase 18 verification fails if any entry is unreviewed.
 - **Placements:**
   - Preloader: the owner's name in baybayin beneath the monogram.
   - Section eyebrows: `SectionHeading` gains an optional `script` prop rendered beside the index and English label, e.g. `01 · <baybayin> · PROJECTS`.
@@ -76,7 +77,7 @@ Telemetry is the structure; Filipino/Arnis identity is the texture. Motifs appea
 ### 4.3 Arnis strike lines
 
 - **Component:** `components/ui/strike-line.tsx` — an SVG diagonal that draws in (`pathLength` 0→1) when scrolled into view, with an optional telemetry label such as `ANGLE 01 // 45°`.
-- **Angles:** `data/strike-angles.ts` maps angle numbers to degrees. The owner competes in sport Arnis (live stick, padded stick, and anyo) with a Modern Arnis background, so numbering follows the twelve basic strikes as taught for sport Arnis anyo. Numbering differs between systems, so the owner confirms each number-to-degree entry; until then the file carries `confirmed: false` and the Phase 17 gate treats it like unreviewed baybayin.
+- **Angles:** `data/strike-angles.ts` maps angle numbers to degrees. The owner competes in sport Arnis (live stick, padded stick, and anyo) with a Modern Arnis background, so numbering follows the twelve basic strikes as taught for sport Arnis anyo. Numbering differs between systems, so the owner confirms each number-to-degree entry; until then the file carries `confirmed: false` and the Phase 18 gate treats it like unreviewed baybayin.
 - **Placements:** section dividers (replacing plain borders), button hover (a diagonal slash wipe replaces the flat fill change), and the case study page entry wipe (Phase 12).
 - **Reduced motion:** lines render fully drawn; wipes become fades.
 
@@ -164,6 +165,66 @@ The Phase 11 dividers read as separators, not strikes. Approved redesign of `Str
 
 ---
 
+## 4e. Phase 16 — Interactive sword-slash dividers (added 2026-09-17)
+
+The Phase 14 strike line dividers become a small rhythm game. Each divider is independent.
+
+### Slashes
+
+- **First view:** the divider auto-cuts its own strike once, the first time it scrolls into view (as in Phase 14).
+- **Look:** a crescent sword slash — thin at both tips, thickest in the middle, white core, lime glow, and a short afterimage trail — sweeping in about 0.2 s, rotated to the strike's angle and curving in the direction that strike swings (angles 1 and 2 bow opposite ways). It flashes, sends the Phase 14 pulse along the hairline, and cools to a thin, faint crescent scar.
+- **Thrusts (5, 6, 7, 10, 11):** a sword stab — a narrow bright spike jabs into the line with a ring burst and leaves a small dot scar.
+- **Horizontal strikes (3, 4):** the arc is tilted about 12° so it still reads as a swing.
+- **Order and position:** each press cuts the next strike in the 12-strike order (wrapping 12 → 1), at a random point along the line.
+- **Scars:** stay until reload; at most 12 per divider, oldest fading out first.
+- **Layers:** the bright effect renders unclipped (large slashes spill over neighbouring content, never intercepting pointer events); scars are clipped to the divider band.
+
+### Button
+
+- One round, lime-outlined beat button with a sword icon at the right end of each divider, with a small speaker toggle beside it.
+- Squashes on press, flashes lime on PERFECT, shakes on MISS.
+- Space or Enter strikes while it has focus. Its accessible name includes the current strike.
+
+### Rhythm and combo
+
+- **Beat:** fixed 100 BPM (600 ms). The first press cuts a slash and starts the beat; a ring pulses out from the button on each beat.
+- **Grading:** a press within ±60 ms of a beat is PERFECT, within ±150 ms is GOOD. Both add 1 to the combo.
+- **Slash size by combo level:** 1–3 → 1×, 4–6 → 1.3×, 7–9 → 1.6×, 10–12 → 2×. A PERFECT press is one size step larger than its level, with a white flash and a "PERFECT" pop.
+- **Off-beat press:** "MISS", a dull thud, the combo resets, a normal-size slash is still cut, and the beat restarts from that press.
+- **No press for a whole beat window:** the combo ends quietly and the ring stops.
+- **Finisher:** 12 consecutive on-beat presses (one full strike cycle) play an X-shaped double slash across the full viewport width, a flash, the finisher sound, and "ANYO COMPLETE"; then the combo resets.
+- **Readout:** the divider label shows the current strike, `COMBO ×n` while a combo runs, and `BEST ×n`.
+- **Best combo:** remembered per browser (`localStorage`, read and written defensively; the feature works without it).
+- **First-press hint:** "PRESS ON THE BEAT" for a few seconds, the first time a visitor ever presses a STRIKE button (remembered per browser).
+
+### Sound
+
+- **Source:** short CC0 (public domain) clips in `public/audio/strikes/`, each ≤ ~40 KB, with source URL and licence recorded in `public/audio/strikes/CREDITS.md`. The architect asks the owner before downloading any clip.
+- **Set:** slash whoosh (louder and slightly higher-pitched as the combo grows); stab hit for thrusts, plus a short ring on PERFECT; finisher; soft thud on MISS. No beat tick.
+- **Playback:** Web Audio API, clips decoded once on the first press (browsers block audio before a user gesture).
+- **Default:** silent until the first press, then on; the speaker toggle mutes, and the choice is remembered per browser.
+
+### Reduced motion
+
+The rhythm still works. The beat ring blinks instead of expanding; slashes and stabs appear directly as scars; the finisher shows its text without the screen-wide X; no shake or squash.
+
+### Accessibility
+
+Decorative SVG stays `aria-hidden`. Only the finisher is announced, through a polite live region; PERFECT, GOOD, and MISS are not announced.
+
+### Units
+
+| Unit | Responsibility |
+| --- | --- |
+| `hooks/use-strike-rhythm.ts` | Beat clock, PERFECT/GOOD/MISS grading, combo level, best combo. No rendering. |
+| `lib/strike-audio.ts` | Lazily loads and decodes the clips, plays them with volume and pitch, mute state. |
+| `components/ui/strike-mark.tsx` | Renders one crescent slash or stab: bright effect layer plus scar. |
+| `components/ui/strike-button.tsx` | Round beat button, beat ring, feedback pops, mute toggle. |
+| `components/ui/strike-finisher.tsx` | Full-width X-slash overlay and "ANYO COMPLETE". |
+| `components/ui/strike-line.tsx` | The divider: owns the list of cuts, wires button, rhythm, audio, marks, and finisher. Keeps its `{ angle, at, className }` props (the first automatic cut). |
+
+---
+
 ## 5. Phase 12 — Project case studies (removed in Phase 14; record only)
 
 ### 5.1 Route
@@ -218,7 +279,7 @@ No special mode. The owner writes confidential case studies without the company 
 
 ---
 
-## 6. Phase 16 — New home sections (owner selects)
+## 6. Phase 17 — New home sections (owner selects)
 
 Each section is independent: its own data file, query, and component. Any subset can ship.
 
@@ -271,7 +332,7 @@ The header shows at most five links, chosen from the built sections in this prio
 
 ---
 
-## 7. Phase 17 — Polish and reach
+## 7. Phase 18 — Polish and reach
 
 ### 7.1 Motion
 
@@ -310,7 +371,7 @@ Code cannot provide these. The builder uses clearly marked placeholders until th
 4. Headgear photo: the owner does not own a headgear. Short term, the STIX product cut-out stays with its logo removed. Recommended later: borrow a teammate's or club headgear and photograph it (front view, plain background, even light), then re-tune `HEADGEAR` / `FACE`.
 5. Baybayin strings reviewed by a reader.
 6. Strike-angle degree mapping for sport Arnis anyo, as the owner learned it.
-7. For selected Phase 16 sections: about copy, OJT and school timeline, Arnis competition record and photos, "now" list, and a GitHub token.
+7. For selected Phase 17 sections: about copy, OJT and school timeline, Arnis competition record and photos, "now" list, and a GitHub token.
 
 ---
 
@@ -318,7 +379,7 @@ Code cannot provide these. The builder uses clearly marked placeholders until th
 
 | Risk | Mitigation |
 | --- | --- |
-| Incorrect baybayin | Single data file with a `reviewed` flag; launch gate in Phase 17. |
+| Incorrect baybayin | Single data file with a `reviewed` flag; launch gate in Phase 18. |
 | Cultural misuse of weaving patterns | Generic geometry only; no t'nalak reproduction. |
 | Reveal filter cost on large screens | Filter regions bounded to live drops; loop paused when the hero is off-screen; 60 fps acceptance test. |
 | Watermark fill misalignment | Outline and fill share one SVG `<text>` geometry. |
@@ -330,4 +391,4 @@ Code cannot provide these. The builder uses clearly marked placeholders until th
 
 ## 10. Open decision
 
-**Which Phase 16 sections to build** (About, Experience, Arnis, Now — any subset). Needed before Phase 16 is written into `tasks.md`; Phases 11 and 12 can be planned without it.
+**Which Phase 17 sections to build** (About, Experience, Arnis, Now — any subset). Needed before Phase 17 is written into `tasks.md`; Phases 11 and 12 can be planned without it.
