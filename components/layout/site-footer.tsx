@@ -12,7 +12,7 @@ export function SiteFooter() {
     <footer className="relative overflow-hidden px-6 pt-4 pb-10">
       <div aria-hidden className="bg-weave pointer-events-none absolute inset-0 opacity-[0.04]" />
 
-      <StrikeLine angle={12} className="mb-10 px-0" />
+      <StrikeLine angle={12} at={0.5} className="mb-6 px-0" />
 
       <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 sm:flex-row">
         <p className="font-mono text-xs text-muted">
