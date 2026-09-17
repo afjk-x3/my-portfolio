@@ -1,178 +1,201 @@
 "use client";
 
-import { useId } from "react";
-import { motion, useReducedMotion, type Variants } from "motion/react";
+import { useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
+import { StrikeButton, type StrikeFeedback } from "@/components/ui/strike-button";
+import { StrikeFinisher } from "@/components/ui/strike-finisher";
+import { StrikeMark, type StrikeCut } from "@/components/ui/strike-mark";
 import { getStrike } from "@/data/strike-angles";
+import { FINISHER_COMBO, takeFirstStrike, useStrikeRhythm } from "@/hooks/use-strike-rhythm";
+import {
+  playStrikeSound,
+  preloadStrikeAudio,
+  setStrikeMuted,
+  unlockStrikeAudio,
+  useStrikeMuted,
+} from "@/lib/strike-audio";
 import { cn } from "@/lib/utils";
 
-/** Full length of the blade in px. Longer than the band, so both ends run off it. */
-const BLADE_LENGTH = 480;
+/** Scars kept per divider; the oldest fades out beyond this. */
+const MAX_SCARS = 12;
 
-/** Thickness of the blade where the stick enters, in px. It tapers to a point. */
-const BLADE_WIDTH = 7;
+/** Slash size by combo level (1–3, 4–6, 7–9, 10–12), plus one step for PERFECT. */
+const SIZES = [1, 1.3, 1.6, 2, 2.3];
 
-/** Seconds the blade takes to cut from entry to tip. */
-const CUT_DURATION = 0.22;
+function sizeFor(combo: number, perfect: boolean) {
+  const level = Math.min(3, Math.floor((combo - 1) / 3));
+  return SIZES[level + (perfect ? 1 : 0)];
+}
 
-/** Seconds until the blade crosses the hairline: the middle of the cut. */
-const IMPACT_AT = CUT_DURATION / 2;
+function labelFor(strike: number) {
+  const { degrees } = getStrike(strike);
+  const number = String(strike).padStart(2, "0");
+  return `ANGLE ${number} // ${degrees === null ? "THRUST" : `${degrees}°`}`;
+}
 
-const cut: Variants = {
-  hidden: { pathLength: 0 },
-  strike: { pathLength: 1, transition: { duration: CUT_DURATION, ease: [0.2, 0.8, 0.2, 1] } },
-  rest: { pathLength: 1 },
-};
+function nextAfter(strike: number) {
+  return (strike % 12) + 1;
+}
 
-/** The blade cools from full neon to a faint scar that stays. */
-const scar: Variants = {
-  hidden: { opacity: 1 },
-  strike: { opacity: 0.25, transition: { delay: 0.55, duration: 0.6 } },
-  rest: { opacity: 0.25 },
-};
-
-/** Blurred motion streak that flares while the blade cuts. */
-const streak: Variants = {
-  hidden: { opacity: 0 },
-  strike: { opacity: [0, 0.8, 0], transition: { duration: 0.35, times: [0, 0.4, 1] } },
-  rest: { opacity: 0 },
-};
-
-/** Flash where the blade meets the hairline. */
-const flash: Variants = {
-  hidden: { scale: 0, opacity: 0 },
-  strike: {
-    scale: [0, 1.6],
-    opacity: [1, 0],
-    transition: { delay: IMPACT_AT, duration: 0.4, ease: "easeOut" },
-  },
-  rest: { scale: 0, opacity: 0 },
-};
-
-/** Brightness pulse running outward along the hairline from the impact. */
-const pulse: Variants = {
-  hidden: { scaleX: 0, opacity: 0 },
-  strike: {
-    scaleX: [0, 1],
-    opacity: [1, 0],
-    transition: { delay: IMPACT_AT, duration: 0.7, ease: "easeOut" },
-  },
-  rest: { scaleX: 1, opacity: 0 },
-};
-
-const label: Variants = {
-  hidden: { opacity: 0, y: 4 },
-  strike: { opacity: 1, y: 0, transition: { delay: 0.5, duration: 0.4 } },
-  rest: { opacity: 1, y: 0 },
-};
+const pulse = {
+  initial: { scaleX: 0, opacity: 1 },
+  animate: { scaleX: 1, opacity: 0 },
+  transition: { delay: 0.1, duration: 0.7, ease: "easeOut" },
+} as const;
 
 export interface StrikeLineProps {
-  /**
-   * Strike number from `data/strike-angles.ts`. Only diagonal and overhead
-   * strikes (1, 2, 8, 9, 12) are allowed; thrusts and horizontal strikes throw.
-   */
+  /** Strike number (1–12) of the automatic first cut. */
   angle: number;
-  /** Where the blade crosses the line, from 0 (left) to 1 (right). Keep within 0.15–0.85. */
+  /** Where the first cut lands along the line, 0 (left) to 1 (right). */
   at?: number;
   className?: string;
 }
 
 /**
- * Section divider cut by a real Arnis strike. The first time it scrolls into
- * view, a tapered neon blade slashes across the hairline at the strike's angle
- * with a motion streak, flashes on impact, sends a pulse along the line, and
- * cools to a faint scar beside a telemetry label. With reduced motion it
- * renders straight away as the scar.
+ * Interactive section divider. It cuts its own strike automatically the first
+ * time it scrolls into view. Its STRIKE button then cuts the next Arnis strike
+ * on every press: crescent sword slashes (stabs for thrusts) that leave scars,
+ * grow with a combo kept at your own pace, and end in a finisher after 12 in a row.
  */
 export function StrikeLine({ angle, at = 0.5, className }: StrikeLineProps) {
   const reduceMotion = useReducedMotion() ?? false;
-  const maskId = `strike-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  const muted = useStrikeMuted();
+  const { combo, bestCombo, cue, press } = useStrikeRhythm();
 
-  const strike = getStrike(angle);
-  if (strike.degrees === null) {
-    throw new Error(`Strike ${angle} is a thrust and has no line to draw`);
-  }
-  if (strike.degrees % 180 === 0) {
-    throw new Error(`Strike ${angle} is horizontal and reads as a plain line`);
+  const [cuts, setCuts] = useState<StrikeCut[]>([]);
+  const [lastStrike, setLastStrike] = useState(angle);
+  const [nextStrike, setNextStrike] = useState(nextAfter(angle));
+  // Mirrors `nextStrike` for presses that land before React re-renders.
+  const nextStrikeRef = useRef(nextAfter(angle));
+  const [feedback, setFeedback] = useState<StrikeFeedback | null>(null);
+  const [finisher, setFinisher] = useState<number | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const [hint, setHint] = useState(false);
+  const idRef = useRef(0);
+
+  function addCut(strike: number, where: number, scale: number, perfect: boolean) {
+    idRef.current += 1;
+    const cut: StrikeCut = { id: idRef.current, strike, at: where, scale, perfect, animate: !reduceMotion };
+    setCuts((list) => [...list, cut].slice(-MAX_SCARS));
+    setLastStrike(strike);
+    return cut.id;
   }
 
-  const half = BLADE_LENGTH / 2;
-  // Drawn along the x axis, then rotated to the strike's direction of travel:
-  // wide where the stick enters (-half), sharp where it exits (+half).
-  const blade = `${-half},${-BLADE_WIDTH / 2} ${half},0 ${-half},${BLADE_WIDTH / 2}`;
-  const streakShape = `${-half},${-BLADE_WIDTH * 1.5} ${half},0 ${-half},${BLADE_WIDTH * 1.5}`;
-  const text = `ANGLE ${String(strike.number).padStart(2, "0")} // ${strike.degrees}°`;
-  const percent = `${at * 100}%`;
+  function firstView() {
+    if (idRef.current === 0) addCut(angle, at, 1, false);
+  }
+
+  function strike() {
+    unlockStrikeAudio();
+    const result = press();
+    const current = nextStrikeRef.current;
+    nextStrikeRef.current = nextAfter(current);
+    const perfect = result.grade === "perfect";
+    const id = addCut(current, 0.12 + Math.random() * 0.76, sizeFor(result.combo, perfect), perfect);
+    setNextStrike(nextStrikeRef.current);
+    setFeedback({ id, grade: result.grade });
+
+    const thrust = getStrike(current).degrees === null;
+    playStrikeSound(thrust ? "stab" : "slash", {
+      volume: Math.min(1, 0.55 + result.combo * 0.04),
+      rate: 1 + (result.combo - 1) * 0.02,
+    });
+    if (perfect) playStrikeSound("stab", { volume: 0.35, rate: 1.8 });
+    if (result.grade === "miss") playStrikeSound("miss", { volume: 0.7 });
+    if (result.finisher) {
+      setFinisher(id);
+      playStrikeSound("finisher");
+      setAnnouncement(`Anyo complete: ${FINISHER_COMBO} strikes in a row.`);
+    }
+    if (takeFirstStrike()) {
+      setHint(true);
+      window.setTimeout(() => setHint(false), 3500);
+    }
+  }
+
+  const latest = cuts.at(-1);
 
   return (
-    <div aria-hidden className={cn("mx-auto w-full max-w-6xl px-6", className)}>
-      <motion.div
-        initial={reduceMotion ? "rest" : "hidden"}
-        whileInView={reduceMotion ? "rest" : "strike"}
-        viewport={{ once: true, margin: "0px 0px -20% 0px" }}
-        className="relative h-24 overflow-hidden sm:h-32"
-      >
-        <span className="absolute inset-x-0 top-1/2 h-px bg-line" />
-        <motion.span
-          variants={pulse}
-          style={{ width: percent }}
-          className="absolute top-1/2 left-0 h-px origin-right bg-linear-to-l from-accent to-transparent"
-        />
-        <motion.span
-          variants={pulse}
-          style={{ left: percent }}
-          className="absolute top-1/2 right-0 h-px origin-left bg-linear-to-r from-accent to-transparent"
-        />
-
-        <svg className="absolute inset-0 size-full overflow-visible">
-          {/* A nested <svg> puts the origin on the hairline at `at`. */}
-          <svg x={percent} y="50%" overflow="visible">
-            <g transform={`rotate(${strike.degrees})`}>
-              <defs>
-                <mask
-                  id={maskId}
-                  maskUnits="userSpaceOnUse"
-                  x={-half - 20}
-                  y={-40}
-                  width={BLADE_LENGTH + 40}
-                  height={80}
-                >
-                  {/* Drawing this line from entry to tip is what cuts the blade in. */}
-                  <motion.path
-                    d={`M ${-half} 0 L ${half} 0`}
-                    stroke="#fff"
-                    strokeWidth={60}
-                    fill="none"
-                    variants={cut}
-                  />
-                </mask>
-              </defs>
-              <motion.polygon
-                points={streakShape}
-                mask={`url(#${maskId})`}
-                style={{ filter: "blur(6px)" }}
-                className="fill-accent"
-                variants={streak}
-              />
-              <motion.polygon
-                points={blade}
-                mask={`url(#${maskId})`}
-                className="fill-accent"
-                variants={scar}
-              />
-            </g>
-            <motion.circle r={22} className="fill-accent" variants={flash} />
-          </svg>
-        </svg>
-
-        <motion.span
-          variants={label}
-          style={at > 0.6 ? { right: `calc(${(1 - at) * 100}% + 32px)` } : { left: `calc(${percent} + 32px)` }}
-          className="absolute top-1/2 -translate-y-[calc(100%+12px)] font-mono text-[0.65rem] tracking-[0.25em] whitespace-nowrap text-muted"
+    <div className={cn("relative z-10 mx-auto w-full max-w-6xl px-6", className)}>
+      <div className="flex h-24 items-center gap-4 sm:h-32">
+        <motion.div
+          onViewportEnter={firstView}
+          viewport={{ once: true, margin: "0px 0px -20% 0px" }}
+          aria-hidden
+          className="relative h-full flex-1"
         >
-          {text}
-        </motion.span>
-      </motion.div>
+          <span className="absolute inset-x-0 top-1/2 h-px bg-line" />
+
+          {/* Scars stay inside the band. */}
+          <div className="absolute inset-0 overflow-hidden">
+            <AnimatePresence>
+              {cuts.map((cut) => (
+                <StrikeMark key={cut.id} cut={cut} layer="scar" />
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {/* Bright slashes may spill over neighbouring content. */}
+          <div className="pointer-events-none absolute inset-0">
+            {cuts.map((cut) => (
+              <StrikeMark key={cut.id} cut={cut} layer="effect" />
+            ))}
+            {latest?.animate ? (
+              <div key={latest.id}>
+                <motion.span
+                  {...pulse}
+                  style={{ width: `${latest.at * 100}%` }}
+                  className="absolute top-1/2 left-0 h-px origin-right bg-linear-to-l from-accent to-transparent"
+                />
+                <motion.span
+                  {...pulse}
+                  style={{ left: `${latest.at * 100}%` }}
+                  className="absolute top-1/2 right-0 h-px origin-left bg-linear-to-r from-accent to-transparent"
+                />
+              </div>
+            ) : null}
+          </div>
+        </motion.div>
+
+        <div className="relative flex shrink-0 items-center gap-3">
+          <div className="hidden flex-col items-end gap-1 font-mono text-[0.65rem] tracking-[0.25em] text-muted sm:flex">
+            <span>{labelFor(lastStrike)}</span>
+            <span className={cn("text-accent", combo > 1 ? "opacity-100" : "opacity-0")}>
+              COMBO ×{Math.max(combo, 1)}
+            </span>
+            {bestCombo > 1 ? <span>BEST ×{bestCombo}</span> : null}
+          </div>
+
+          <StrikeButton
+            label={`Strike ${nextStrike}: ${getStrike(nextStrike).target}`}
+            cue={cue}
+            feedback={feedback}
+            muted={muted}
+            onStrike={strike}
+            onToggleMute={() => setStrikeMuted(!muted)}
+            onPrime={preloadStrikeAudio}
+          />
+
+          <AnimatePresence>
+            {hint ? (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="pointer-events-none absolute top-full right-0 mt-1 font-mono text-[0.6rem] tracking-[0.25em] whitespace-nowrap text-accent"
+              >
+                KEEP YOUR PACE
+              </motion.p>
+            ) : null}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      <p aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
+      {finisher !== null ? <StrikeFinisher key={finisher} onDone={() => setFinisher(null)} /> : null}
     </div>
   );
 }

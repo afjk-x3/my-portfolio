@@ -76,6 +76,24 @@
     }
   }
 
+  /*
+   * Strike approach ring: shrinks steadily onto the STRIKE button and touches
+   * it when the next press is due. Linear, so its speed is easy to read; the
+   * component sets `animation-duration` to the visitor's tempo.
+   */
+  --animate-approach-ring: approach-ring 0.6s linear both;
+
+  @keyframes approach-ring {
+    from {
+      transform: scale(2.6);
+      opacity: 0.15;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
   @keyframes status-in {
     from {
       transform: translateY(6px);
