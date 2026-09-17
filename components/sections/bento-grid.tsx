@@ -13,7 +13,7 @@ export async function BentoGrid() {
         <SectionHeading eyebrow="Toolkit" title="Stack & Discipline" script={baybayin.stack} />
 
         <div className="grid auto-rows-[minmax(11rem,auto)] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
-          <DisciplineCard className="min-h-80 sm:col-span-2 lg:col-span-3 lg:row-span-2" />
+          <DisciplineCard className="aspect-4/5 sm:col-span-2 sm:aspect-4/3 lg:col-span-3 lg:row-span-2 lg:aspect-auto lg:min-h-[36rem]" />
 
           {categories.map((category, index) => (
             <TechStackCard
