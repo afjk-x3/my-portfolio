@@ -74,6 +74,21 @@
     }
   }
 
+  /*
+   * Case study arrival: a skewed panel with a neon leading edge slides off to
+   * the right, uncovering the page. CSS-only, so it also runs without JS.
+   */
+  --animate-strike-wipe: strike-wipe 0.9s cubic-bezier(0.76, 0, 0.24, 1) 0.05s both;
+
+  @keyframes strike-wipe {
+    from {
+      transform: skewX(-12deg) translateX(0);
+    }
+    to {
+      transform: skewX(-12deg) translateX(110%);
+    }
+  }
+
   @keyframes status-in {
     from {
       transform: translateY(6px);
