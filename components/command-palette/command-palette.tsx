@@ -12,7 +12,6 @@ import {
   CodeXml,
   CornerDownLeft,
   Download,
-  FileText,
   Hash,
   RotateCcw,
   Search,
@@ -24,15 +23,6 @@ import { navLinks } from "@/data/navigation";
 import { siteConfig } from "@/data/site";
 import { setCommandPaletteOpen, useCommandPaletteOpen } from "@/hooks/use-command-palette";
 import { INK_STRIKE_EVENT } from "@/hooks/use-ink-trail";
-
-/** The slice of a project the palette needs. Built on the server in the root layout. */
-export interface PaletteProject {
-  slug: string;
-  title: string;
-  /** Human-readable category, e.g. "Full-Stack". */
-  category: string;
-  techStack: string[];
-}
 
 /** Characters typed before the hidden commands start matching. */
 const SECRET_MIN_QUERY = 2;
@@ -67,11 +57,10 @@ function PaletteItem({ value, keywords, icon: Icon, hint, onSelect, children }: 
 
 /**
  * Site-wide command palette, opened with Ctrl+K / ⌘K or any button that calls
- * `setCommandPaletteOpen(true)`. Jumps to sections, opens case studies (search
- * by name or tech), runs quick actions, and hides two easter eggs that only
- * match once something is typed.
+ * `setCommandPaletteOpen(true)`. Jumps to sections, runs quick actions, and
+ * hides two easter eggs that only match once something is typed.
  */
-export function CommandPalette({ projects }: { projects: PaletteProject[] }) {
+export function CommandPalette() {
   const open = useCommandPaletteOpen();
   const [search, setSearch] = useState("");
   const [copied, setCopied] = useState(false);
@@ -188,7 +177,7 @@ export function CommandPalette({ projects }: { projects: PaletteProject[] }) {
               <Command.Input
                 value={search}
                 onValueChange={setSearch}
-                placeholder="Jump to a section, search projects, run a command…"
+                placeholder="Jump to a section or run a command…"
                 className="h-14 flex-1 bg-transparent text-sm text-fg placeholder:text-muted focus:outline-none"
               />
               <kbd className="rounded-md border border-line px-1.5 py-0.5 font-mono text-[0.625rem] text-muted">
@@ -224,23 +213,6 @@ export function CommandPalette({ projects }: { projects: PaletteProject[] }) {
                   </PaletteItem>
                 ))}
               </Command.Group>
-
-              {projects.length > 0 ? (
-                <Command.Group heading="Case studies">
-                  {projects.map((project) => (
-                    <PaletteItem
-                      key={project.slug}
-                      value={`Case study ${project.title}`}
-                      keywords={[project.category, ...project.techStack]}
-                      icon={FileText}
-                      hint={project.category}
-                      onSelect={() => run(() => router.push(`/projects/${project.slug}`))}
-                    >
-                      {project.title}
-                    </PaletteItem>
-                  ))}
-                </Command.Group>
-              ) : null}
 
               <Command.Group heading="Actions">
                 <PaletteItem
