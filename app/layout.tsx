@@ -5,8 +5,6 @@ import { Backdrop } from "@/components/layout/backdrop";
 import { CommandPalette } from "@/components/command-palette/command-palette";
 import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
 import { siteConfig } from "@/data/site";
-import { getCaseStudyProjects } from "@/lib/queries";
-import { PROJECT_CATEGORY_LABELS } from "@/types";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -55,15 +53,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  // Only what the palette needs, so the full case study text stays on the server.
-  const paletteProjects = (await getCaseStudyProjects()).map((project) => ({
-    slug: project.slug,
-    title: project.title,
-    category: PROJECT_CATEGORY_LABELS[project.category],
-    techStack: project.techStack,
-  }));
-
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
@@ -76,7 +66,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <Backdrop />
         <SmoothScrollProvider>
           {children}
-          <CommandPalette projects={paletteProjects} />
+          <CommandPalette />
         </SmoothScrollProvider>
       </body>
     </html>

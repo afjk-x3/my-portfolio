@@ -43,51 +43,6 @@ export interface Project {
   year: number;
   /** Ascending sort key for the scroll stack. Lower renders first. */
   order: number;
-  /**
-   * Long-form write-up rendered at `/projects/[slug]`. `null` keeps the
-   * project card-only. Becomes a single `case_study` jsonb column in Supabase.
-   */
-  caseStudy: CaseStudy | null;
-}
-
-/** A titled paragraph: one approach step or one technical highlight. */
-export interface CaseStudyStep {
-  title: string;
-  body: string;
-}
-
-/** A headline number on the case study, e.g. { value: "3×", label: "Faster reports" }. */
-export interface CaseStudyResult {
-  value: string;
-  label: string;
-}
-
-/** A screenshot in the case study gallery. `src` is a path under /public. */
-export interface CaseStudyImage {
-  src: string;
-  alt: string;
-  caption: string;
-  width: number;
-  height: number;
-}
-
-/**
- * The case study body. Empty strings and empty arrays hide their section, so a
- * write-up can ship before every part is ready.
- */
-export interface CaseStudy {
-  /** e.g. "Full-stack developer". */
-  role: string;
-  /** e.g. "Jan–Apr 2026". */
-  timeframe: string;
-  /** e.g. "Solo" or "Team of 4". */
-  team: string;
-  problem: string;
-  approach: CaseStudyStep[];
-  highlights: CaseStudyStep[];
-  results: CaseStudyResult[];
-  gallery: CaseStudyImage[];
-  lessons: string;
 }
 
 /** Groups the bento tech-stack cards. */

@@ -28,17 +28,10 @@ export const skillCategories: SkillCategory[] = [
     skills: [{ name: "PostgreSQL" }, { name: "Supabase" }, { name: "MySQL" }],
   },
   {
-    id: "skills-game-dev",
-    group: "game-dev",
-    label: "Game Dev",
-    order: 4,
-    skills: [{ name: "Unity" }, { name: "C#" }, { name: "Godot" }],
-  },
-  {
     id: "skills-devops",
     group: "devops",
     label: "DevOps & Tools",
-    order: 5,
+    order: 4,
     skills: [{ name: "Git" }, { name: "Vercel" }, { name: "Docker" }],
   },
 ];
