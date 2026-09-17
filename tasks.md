@@ -5,37 +5,41 @@
 > **Verify** block, then commit. Do not skip ahead, do not batch phases, and do
 > not "improve" adjacent files that the task does not list.
 
-> **Status:** Phases 1–9 are complete and committed. **Start at Phase 10** (the
-> first-visit monogram preloader). Later phases modify files that earlier phases
-> created; where an earlier task's code block no longer matches the target
-> design, that task carries a "Superseded" note pointing at the task that
-> replaces it. Never re-run a completed task's code over a newer version.
+> **Status:** Phases 1–10 are complete and committed. **Start at Phase 11**
+> (identity system and full-hero cursor reveal), then Phase 12 (project case
+> studies). The design these phases implement is
+> `docs/superpowers/specs/2026-09-16-portfolio-v2-design.md`; read it only if a
+> task does not answer a question. The step-by-step history of Phases 1–10 was
+> removed from this file; read it with `git show 633c7fb:tasks.md` only if a task
+> explicitly tells you to.
 
-**Goal:** Ship a single-page, dark, motion-driven developer portfolio on Next.js 16 App Router, deployed to Vercel.
+**Goal:** A single-page, dark, motion-driven developer portfolio on Next.js 16 App Router with per-project case study pages, deployed to Vercel.
 
-**Architecture:** All page content is composed in `app/page.tsx` from section components under `components/sections/`. Every section that renders content is an async Server Component that awaits a function from `lib/queries.ts`; those functions currently return local typed arrays but their signatures are already `Promise`-returning, so swapping them for Supabase queries in Phase 2 is a data-layer edit with zero UI churn. Client-side interactivity (smooth scroll, scroll-linked animation, mobile nav) is isolated in leaf `"use client"` components so the page stays mostly server-rendered.
+**Architecture:** `app/page.tsx` composes the home page from section components in `components/sections/`. Every section that renders data is an async Server Component that awaits a function from `lib/queries.ts`. Those functions return local typed arrays today, but they already return `Promise`s, so the Supabase swap only changes the data layer and no UI code. Client-side interactivity (smooth scroll, scroll-linked animation, cursor effects, the preloader, the mobile nav) is isolated in leaf `"use client"` components.
 
-**Tech Stack:** Next.js 16.3.5 (App Router, Turbopack), React 19.2.8, TypeScript 5 (strict), Tailwind CSS v4.3.3, `motion` v13 (the current package name for Framer Motion), `lenis` v1.3 for smooth scroll, `lucide-react` for icons, shadcn/ui conventions (`cn()` + `cva` + `components/ui/`). (Phase 8 added three.js for the hero headgear; Phase 9 removes it again in favour of a photo inside an SVG mask.)
+**Tech Stack:** Next.js 16.3.5 (App Router, Turbopack), React 19.2.8, TypeScript 5 (strict), Tailwind CSS v4, `motion` v13 (the current package name for Framer Motion, imported from `motion/react`), `lenis` v1.3, `lucide-react` v1, shadcn/ui conventions (`cn()` + `cva` + `components/ui/`). No three.js, no WebGL.
 
 ---
 
 ## Global Constraints
 
-Copy these exactly; they apply to every task.
+These apply to every task.
 
 - **Node.js 24.19.0, npm 11.17.0.** Verified working versions for this repo.
-- **No `src/` directory.** Everything lives at the repository root: `app/`, `components/`, `data/`, `lib/`, `types/`, `public/`.
+- **No `src/` directory.** Everything lives at the repository root: `app/`, `components/`, `data/`, `hooks/`, `lib/`, `types/`, `public/`.
 - **Import alias is `@/*` → repository root.** Import as `@/components/ui/button`, `@/types`, `@/lib/utils`. Never use deep relative paths like `../../..`.
-- **Next.js 16 conventions are mandatory.** Before writing framework code, consult `node_modules/next/dist/docs/` as `AGENTS.md` requires. The rules that matter here: `params`, `searchParams`, `cookies()`, and `headers()` are async-only; route component props use the generated globals `PageProps<"/">` / `LayoutProps<"/">` (already used in `app/layout.tsx`) rather than hand-written prop types.
-- **`next/image` `quality` is restricted in Next 16.** The default allowed set is `[75]` only. Never pass a `quality` prop unless you also add `images.qualities` to `next.config.ts`. Passing `quality={90}` silently coerces to 75.
-- **Dark theme only.** There is no light mode and no theme toggle. Do not write `dark:` variants; write the dark values directly using the theme tokens in `app/globals.css` (see the token table in Phase 7).
-- **Accent is electric neon lime (`#ccff00`).** Use it for badges, borders, the live dot, and hover glows. When it is a background fill, the text on it is always `text-accent-ink`. Hover glows use the arbitrary shadow `shadow-[0_0_32px_-6px_var(--color-accent)]` (verified to compile in Tailwind v4.3).
+- **Next.js 16 conventions are mandatory.** Before writing framework code, consult `node_modules/next/dist/docs/` as `AGENTS.md` requires. `params`, `searchParams`, `cookies()`, and `headers()` are async-only. Route component props use the generated globals `PageProps<"/route">` / `LayoutProps<"/route">` rather than hand-written prop types. These globals are generated into `.next/types`; if `npx tsc --noEmit` reports `Cannot find name 'PageProps'`, run `npx next typegen` once and re-run it.
+- **`next/image` `quality` is restricted in Next 16.** The default allowed set is `[75]` only. Never pass a `quality` prop unless you also add `images.qualities` to `next.config.ts`.
 - **`next/image` `priority` is deprecated in Next 16.** Use `preload` for the single above-the-fold LCP image (the hero portrait) and nothing else.
-- **`lucide-react` v1 has no brand icons.** There is no `Github` export. The GitHub link uses `CodeXml` (already in place in the header, hero, and cards); do not try to import `Github`.
-- **No `scroll-behavior: smooth` in CSS.** Lenis drives scrolling; a CSS smooth-scroll rule fights it. Anchor navigation goes through the Lenis instance (Task 3.2).
-- **Respect `prefers-reduced-motion`.** Every scroll-linked or entrance animation must degrade to a static layout. Tasks that add motion say exactly how.
+- **Dark theme only.** No light mode, no theme toggle, no `dark:` variants. Use the tokens in [Design system](#design-system).
+- **Accent is electric neon lime (`#ccff00`).** Use it for badges, borders, the live dot, strike lines, and hover glows. When it is a background fill, the text on it is always `text-accent-ink`. Hover glows use `shadow-[0_0_32px_-6px_var(--color-accent)]`. Filipino/Arnis motifs never add a new colour.
+- **SVG colours come from Tailwind classes, not `var()` attributes.** Write `className="stroke-accent"` / `fill-accent`, not `stroke="var(--color-accent)"`.
+- **`lucide-react` v1 has no brand icons.** There is no `Github` export. GitHub links use `CodeXml`.
+- **No `scroll-behavior: smooth` in CSS.** Lenis drives scrolling. Anchor navigation on the home page goes through the Lenis instance (`lenis.scrollTo(href, { offset: -96 })` in `components/layout/site-header.tsx`).
+- **Respect `prefers-reduced-motion`.** Every scroll-linked or entrance animation must degrade to a static layout. Lenis is disabled entirely under reduced motion, and a global rule in `app/globals.css` shortens every CSS animation and transition to near zero.
+- **Baybayin is decorative.** Every baybayin string comes from `data/baybayin.ts`, is rendered with `font-baybayin`, is `aria-hidden`, and sits next to English. Never type baybayin characters anywhere else, and never flip `reviewed` to `true`.
 - **Accessibility floor.** Every `<Image>` has meaningful `alt` (or `alt=""` when purely decorative). Every icon-only link or button has an `aria-label`. Every section has an `id` that matches its nav anchor.
-- **Commit after every task** using Conventional Commits, e.g. `feat(hero): add hero section`.
+- **Commit after every task** using Conventional Commits and the exact message the task gives. Stage only the files the task lists; the working tree may contain unrelated uncommitted files (such as `.claude/`) that must not be committed.
 
 ### Verification commands
 
@@ -48,971 +52,365 @@ npm run build       # production build (Turbopack)
 npm run dev         # visual check at http://localhost:3000
 ```
 
-There is no test runner in this project and this plan does not add one. Verification is type check + lint + build + the explicit visual checks each task lists.
+There is no test runner and none should be added. Verification is type check + lint + build + the explicit visual checks each task lists.
 
-### Content owned by the repository owner
-
-Three files hold personal content that only the owner can supply. Create them with the structure and example rows given in the tasks below, then flag them in your handoff so the owner can replace the values:
-
-1. `data/site.ts` — name, initials, GitHub URL, email.
-2. `data/projects.ts` — the real project entries.
-3. `public/resume.pdf` — currently **missing** from the repository. Task 2.4 adds a placeholder so the download button is never a dead link.
+To replay the preloader while testing: `sessionStorage.removeItem("portfolio_preloaded")` and reload. To skip it: `sessionStorage.setItem("portfolio_preloaded", "1")` and reload.
 
 ---
 
-## Target file structure
+## Current file structure
+
+Files marked **[11]** or **[12]** are created or changed by that phase.
 
 ```
 app/
-  layout.tsx                 # fonts (Geist, Geist Mono, Anton, UnifrakturCook), metadata, <Backdrop>, <SmoothScrollProvider>
-  page.tsx                   # <Preloader> first, then the header and the five sections
-  globals.css                # Tailwind v4 theme tokens, custom utilities, Lenis base styles
+  layout.tsx                 # fonts (Geist, Geist Mono, Anton, UnifrakturCook, Noto Sans Tagalog [11]), metadata, <Backdrop>, <SmoothScrollProvider>
+  page.tsx                   # <Preloader>, <SiteHeader>, sections separated by <StrikeLine> [11], <SiteFooter>
+  globals.css                # theme tokens, utilities (bg-weave [11]), animations (strike-wipe [12]), Lenis base, preloader gate
+  not-found.tsx              # "DNF // Did not finish" 404 [12]
+  projects/[slug]/page.tsx   # case study page, statically generated [12]
 components/
+  case-study/                # [12]
+    case-study-header.tsx    # title band: weave, Anton title, spec row, links
+    case-study-body.tsx      # numbered sections; empty ones are hidden
+    next-lap.tsx             # next case study card + back link
   layout/
-    backdrop.tsx             # page-wide fixed grid + noise layers (server)         [Phase 7]
-    site-header.tsx          # floating glass nav (client)
-    site-footer.tsx          # footer (server)
+    backdrop.tsx             # page-wide fixed grid + noise layers (server)
+    site-header.tsx          # floating glass nav; smooth-scroll on home, links elsewhere [12] (client)
+    site-footer.tsx          # footer with weave texture and strike line [11] (server)
   sections/
-    hero.tsx                 # server shell: telemetry bar, visual stage, copy
-    hero-visual.tsx          # watermark type + glow + portrait, parallax (client)
-    headgear-reveal.tsx      # headgear photo revealed over the face via SVG gooey mask (client) [Phase 9]
-    telemetry-bar.tsx        # live status dot + local clock (client)                [Phase 7]
-    projects-showcase.tsx    # server: awaits getProjects()
+    hero.tsx                 # <InkRevealSection> [11]: backdrop reveal, telemetry bar, visual stage, copy, motto [11]
+    hero-visual.tsx          # watermark + glow + portrait, parallax (client)
+    hero-watermark.tsx       # SVG outline word + ink-revealed neon fill [11] (client)
+    hero-backdrop-reveal.tsx # ink-revealed weave + strike slashes across the hero [11] (client)
+    headgear-reveal.tsx      # ink-revealed headgear photo over the face [11] (client)
+    ink-reveal.tsx           # InkRevealSection, InkMask, paintInkMask, useInkMaskLayer [11] (client)
+    telemetry-bar.tsx        # live status dot + local clock (client)
+    projects-showcase.tsx    # server: awaits getProjects() (id="projects")
     projects-stack.tsx       # sticky scroll stack (client)
-    project-card.tsx         # one card in the stack, tilt + spotlight (client)
-    bento-grid.tsx           # server: awaits getSkillCategories()
+    project-card.tsx         # one card in the stack, tilt + spotlight, case study links [12] (client)
+    bento-grid.tsx           # server: awaits getSkillCategories() (id="stack")
     tech-stack-card.tsx      # one skill group card (server)
-    discipline-card.tsx      # Arnis photo card (client, hover swap)
-    contact.tsx              # contact CTA (server)
+    discipline-card.tsx      # Arnis photo card, hover/focus cross-fade (client, id="discipline")
+    contact.tsx              # contact CTA (server, id="contact")
   providers/
     smooth-scroll-provider.tsx  # Lenis root (client)
   ui/
-    button.tsx               # cva + Radix Slot, shadcn convention
+    button.tsx               # cva + Radix Slot, neon variants, strike wipe on hover [11]
     badge.tsx                # tech-stack pill
-    section-heading.tsx      # shared eyebrow + title
-    preloader.tsx            # first-visit monogram + counter overlay, inline gate script (client) [Phase 10]
+    section-heading.tsx      # eyebrow + optional baybayin script [11] + title
+    strike-line.tsx          # divider cut at an Arnis strike angle [11] (client)
+    preloader.tsx            # first-visit monogram + baybayin name [11] + counter overlay (client)
 data/
-  site.ts                    # identity + social links
+  site.ts                    # siteConfig (identity, watermark, availability, time zone) + socialLinks
   navigation.ts              # nav anchors
-  projects.ts                # Project[]
+  projects.ts                # Project[] with case studies [12]
   skills.ts                  # SkillCategory[] + discipline photos
+  baybayin.ts                # every baybayin string, with review flags [11]
+  strike-angles.ts           # the 12 Arnis strikes, with confirmation flags [11]
 hooks/
-  use-local-time.ts          # ticking clock via useSyncExternalStore               [Phase 7]
-  use-media-query.ts         # matchMedia via useSyncExternalStore                  [Phase 8]
-  use-pointer-tilt.ts        # mouse-tracked 3D tilt + spotlight motion values      [Phase 7]
+  use-ink-trail.ts           # shared cursor ink trail engine [11]
+  use-local-time.ts          # ticking clock via useSyncExternalStore
+  use-media-query.ts         # matchMedia via useSyncExternalStore
+  use-pointer-tilt.ts        # mouse-tracked 3D tilt + spotlight motion values
 lib/
   utils.ts                   # cn()
   queries.ts                 # async data access seam (Supabase swap point)
 types/
-  index.ts                   # ALREADY CREATED — do not rewrite
+  index.ts                   # shared domain types — extend, do not rewrite
+public/
+  resume.pdf                 # placeholder
+  images/hero/               # hero-portrait.png (2048×1365), headgear.webp (logo removed), headgear-ghost.webp
+  images/about/              # arnis-stance.jpg, arnis-action.jpg
 ```
 
 ---
 
-# Phase 1 — Environment, dependencies, theme tokens
+## Design system
 
-### Task 1.1: Install dependencies
+All tokens live in `app/globals.css`. Use the Tailwind classes; never hard-code the hex values.
 
-**Files:**
-- Modify: `package.json`, `package-lock.json`
+| Token | Value | Tailwind classes | Use |
+| --- | --- | --- | --- |
+| `--color-bg` | `#09090b` | `bg-bg`, `from-bg` | Page background |
+| `--color-surface` | `#0f0f12` | `bg-surface` | Cards |
+| `--color-elevated` | `#17171b` | `bg-elevated` | Default badges |
+| `--color-line` | `#27272a` | `border-line` | Card borders, telemetry rules |
+| `--color-line-strong` | `#3f3f46` | `border-line-strong`, `stroke-line-strong` | Outline buttons, watermark stroke |
+| `--color-fg` | `#fafafa` | `text-fg` | Primary text |
+| `--color-muted` | `#a1a1aa` | `text-muted` | Secondary text |
+| `--color-accent` | `#ccff00` | `bg-accent`, `text-accent`, `border-accent/50`, `stroke-accent`, `fill-accent` | Neon: badges, borders, live dot, glows, strike lines |
+| `--color-accent-soft` | `#e2fd52` | `hover:bg-accent-soft` | Hover state of accent fills |
+| `--color-accent-ink` | `#09090b` | `text-accent-ink` | Text on accent fills |
 
-- [x] **Step 1: Install runtime dependencies**
+| Font class | Face | Use |
+| --- | --- | --- |
+| `font-sans` | Geist | Body |
+| `font-mono` | Geist Mono | Telemetry, labels, counters |
+| `font-display` | Anton | Watermark, hero headline, case study titles |
+| `font-gothic` | UnifrakturCook | Preloader monogram only |
+| `font-baybayin` | Noto Sans Tagalog | Baybayin from `data/baybayin.ts` only **[11]** |
 
-```bash
-npm install motion@^13 lenis@^1.3 lucide-react@^1 clsx@^2 tailwind-merge@^3 class-variance-authority@^0.7 @radix-ui/react-slot@^1
-```
+| Utility / class | Effect |
+| --- | --- |
+| `text-outline` | Transparent fill, 1px `line-strong` stroke — hollow display type |
+| `text-outline-accent` | Same, with a 60% neon stroke |
+| `bg-grid` | 80px faint grid, radially faded toward the viewport edges |
+| `bg-noise` | Tiled SVG grain; set strength with `opacity-*` |
+| `bg-weave` | Tiled woven diamond lattice in white; always on its own `aria-hidden` layer at `opacity-[0.03]`–`opacity-[0.05]` **[11]** |
+| `.glow` | 22% neon radial glow |
+| `animate-pulse-dot` | Live status dot ring |
+| `animate-monogram-in`, `animate-monogram-breathe`, `animate-status-in` | Preloader entrance animations |
+| `animate-strike-wipe` | Case study arrival wipe **[12]** |
 
-Notes on why these exact packages: `motion` is the current published name of Framer Motion (v13 — the `framer-motion` package is now an alias of it); import from `motion/react`. `clsx` + `tailwind-merge` + `class-variance-authority` + `@radix-ui/react-slot` are the four packages shadcn/ui components depend on, installed directly so no CLI codegen step is needed.
-
-- [x] **Step 2: Verify**
-
-```bash
-npx tsc --noEmit
-npm run build
-```
-
-Expected: build succeeds, unchanged starter page renders.
-
-- [x] **Step 3: Commit**
-
-```bash
-git add package.json package-lock.json
-git commit -m "chore: add motion, lenis, lucide and shadcn utility deps"
-```
-
----
-
-### Task 1.2: Add the `cn()` utility and shadcn config
-
-**Files:**
-- Create: `lib/utils.ts`
-- Create: `components.json`
-
-- [x] **Step 1: Create `lib/utils.ts`**
-
-```ts
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-/** Merge conditional class names, with later Tailwind utilities winning. */
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-```
-
-- [x] **Step 2: Create `components.json`**
-
-Nothing we write by hand reads this file, but it lets the owner run `npx shadcn@latest add <component>` later and have it land in the right directories with the right alias.
-
-```json
-{
-  "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "new-york",
-  "rsc": true,
-  "tsx": true,
-  "tailwind": {
-    "config": "",
-    "css": "app/globals.css",
-    "baseColor": "zinc",
-    "cssVariables": true,
-    "prefix": ""
-  },
-  "iconLibrary": "lucide",
-  "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
-  }
-}
-```
-
-`"tailwind.config": ""` is intentional — Tailwind v4 is CSS-first and this project has no `tailwind.config.*`.
-
-- [x] **Step 3: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-```
-
-- [x] **Step 4: Commit**
-
-```bash
-git add lib/utils.ts components.json
-git commit -m "chore: add cn() utility and shadcn components.json"
-```
+**Stacking order:** header `z-50`, preloader overlay and case study wipe `z-90`, page-wide film grain `z-100`.
 
 ---
 
-### Task 1.3: Replace `app/globals.css` with the dark theme token system
+## How the key pieces work
 
-> **Superseded by the Phase 7 token update.** The architect has already rewritten `app/globals.css` with the neon palette and new utilities; Task 7.1 commits it. The code block below is the historical Phase 1 version — do not re-apply it.
+Read this before changing any of these files.
+
+- **Projects stack** (`projects-stack.tsx`, `project-card.tsx`): the section is `projects.length × 100vh` tall. Each card sits in a `sticky top-0 h-screen` wrapper, so cards pin and stack. A shared `useScroll` progress value scales each card down as the next arrives. Adding or removing projects needs no component edits.
+- **Preloader** (`preloader.tsx`, gate styles in `globals.css`):
+  - The overlay is always in the server HTML but CSS keeps it `display: none` unless `<html>` has `data-preloader-active`. An inline script, rendered first on the page, sets that attribute during parsing only when `sessionStorage` lacks `portfolio_preloaded`. That is why `<html>` has `suppressHydrationWarning`. Do not add a `flex` class to the overlay; `display` belongs to the gate.
+  - React reads storage through `useSyncExternalStore` with `true` as the server snapshot.
+  - `animate()` tweens a motion value 0→100 over `COUNT_DURATION` (1.6 s); holds `EXIT_HOLD` (0.2 s); exits with `y: "-100%"` over 0.8 s, or a fade under reduced motion. On exit completion the storage key is written and the scroll lock released.
+  - Scroll lock is CSS `overflow: hidden` on `<html>` plus `lenis.stop()`.
+- **Ink reveal** (Phase 11; `use-ink-trail.ts`, `ink-reveal.tsx`, and the three hero layers):
+  - `InkRevealSection` renders the hero `<section>` and owns one **ink trail**: a single `requestAnimationFrame` loop, running only while the hero is on screen, that drops "ink" along the cursor's path. Each drop shrinks away over 900 ms. Positions are in viewport pixels. Nothing in the loop causes a React render.
+  - Each masked layer is an SVG containing an `<InkMask>` (a gooey filter plus a mask of circles). `useInkMaskLayer` registers the SVG with the trail; every frame `paintInkMask` converts the drops into that SVG's own coordinates with `getScreenCTM()` — which already includes parallax and entrance transforms — and resizes the filter region to fit only the live drops.
+  - There is one masked SVG per coordinate space because the watermark and the portrait move at different parallax speeds: `HeroBackdropReveal` (whole hero: weave + strike slashes), `HeroWatermark` (outline word + neon fill, drawn from identical `<text>`), and `HeadgearReveal` (portrait pixels: headgear photo over the face).
+  - Modes: a fine pointer drives the trail (`pointer`); touch screens get a drop that drifts over the face (`wander`), using the face position that `HeadgearReveal` reports through `setHome`; touch plus reduced motion shows one fixed headgear reveal (`static`) and nothing else.
+  - If the portrait or headgear image changes, re-tune only `HEADGEAR` and `FACE` in `headgear-reveal.tsx`.
+- **Case studies** (Phase 12): a project with `caseStudy: null` stays card-only. Projects with a case study get a statically generated page at `/projects/<slug>`; `dynamicParams = false` makes every other slug a 404. In `CaseStudyBody`, empty strings and empty arrays hide their section, and the remaining sections are numbered consecutively.
+
+---
+
+## Completed phases
+
+1. Environment, dependencies, theme tokens, `cn()`, base UI components.
+2. Types, data files, `lib/queries.ts` seam, placeholder `resume.pdf`.
+3. Lenis provider, floating glass header, hero, page composition.
+4. Scroll-pinned projects stack.
+5. Bento grid: tech stack cards and the Arnis discipline card.
+6. Contact section, footer, full-site verification. (The Task 6.2 visual walk was re-run by the architect on the Phase 10 production build at 375 / 768 / 1440px and all items passed.)
+7. Signature visual upgrade: neon tokens, Anton display type, backdrop grid/noise, telemetry bar, layered hero, card tilt + spotlight.
+8. 3D headgear reveal with three.js — **superseded by Phase 9, fully removed.**
+9. Photo-based headgear reveal via SVG gooey mask; three.js dependencies removed.
+10. Gothic monogram telemetry preloader (first visit per browser session).
+
+---
+
+# Phase 11 — Identity system and full-hero cursor reveal
+
+This phase blends Filipino/Arnis identity into the telemetry design — baybayin accents, Arnis strike lines, and a woven diamond texture — and rebuilds the hero reveal so it works like landonorris.com: the cursor leaves a lingering ink trail **anywhere** in the hero, and inside that trail you see a hidden layer (woven texture, neon strike slashes, the watermark filled in lime, and the headgear over the face).
+
+Every block below was type-checked, linted, and built with Turbopack in a scratch copy of this repository at commit `a5ce8f3`, then checked in a production build: the reveal was exercised with a real mouse at 1440px (lime watermark fill, headgear, weave, and slash fragments all showed inside the trail; the SVG watermark lands on the exact position of the old HTML one), the page had no horizontal overflow at 375px, and the console was clean. The touch (`wander`) and reduced-motion (`static`) modes and the frame-rate check could not be exercised there and are covered by Task 11.7. Copy the blocks exactly.
+
+**Rules for this phase:**
+
+- The only new dependency is the Noto Sans Tagalog font through `next/font/google`. No npm installs.
+- Never type baybayin characters outside `data/baybayin.ts`, and do not edit its strings: they are written as Unicode escapes on purpose.
+- `components/sections/ink-reveal.tsx` must stay free of per-frame React state. Layers paint by setting SVG attributes directly.
+
+### Task 11.1: Add the baybayin font, weave texture, motif data, and logo-free headgear
 
 **Files:**
-- Modify: `app/globals.css` (full replacement)
+- Commit (already modified by the architect — do not edit): `public/images/hero/headgear.webp`
+- Modify: `app/layout.tsx`
+- Modify: `app/globals.css` (two insertions)
+- Modify: `types/index.ts` (append)
+- Create: `data/baybayin.ts`
+- Create: `data/strike-angles.ts`
 
-Two things in the current file are actively wrong for this design and must go: the `@media (prefers-color-scheme: dark)` block (the site is dark unconditionally) and `body { font-family: Arial, Helvetica, sans-serif; }`, which overrides the Geist fonts wired up by `next/font` in the root layout.
+**Interfaces produced:**
+- Tailwind classes `font-baybayin` and `bg-weave`.
+- Types `BaybayinEntry` and `StrikeAngle` from `@/types`.
+- `baybayin` from `@/data/baybayin`, with keys `name`, `motto`, `projects`, `stack`, `contact`, each a `BaybayinEntry`.
+- `strikeAngles: StrikeAngle[]` and `getStrike(number: number): StrikeAngle` from `@/data/strike-angles`. `getStrike` throws for numbers outside 1–12.
 
-- [x] **Step 1: Replace the entire contents of `app/globals.css`**
+The architect already replaced `public/images/hero/headgear.webp` with a copy whose STIX logo patch is painted over with the surrounding red padding texture. Same file name and 648×700 size, so `HEADGEAR` and `FACE` do not change. It shows as modified in `git status`; this task commits it.
+
+- [ ] **Step 1: Load the baybayin font in `app/layout.tsx`**
+
+Replace the `next/font/google` import line:
+
+```tsx
+import { Anton, Geist, Geist_Mono, UnifrakturCook } from "next/font/google";
+```
+
+with:
+
+```tsx
+import { Anton, Geist, Geist_Mono, Noto_Sans_Tagalog, UnifrakturCook } from "next/font/google";
+```
+
+Insert this block directly above `export const metadata`:
+
+```tsx
+// Baybayin script for the decorative accents in `data/baybayin.ts`. Only the
+// Tagalog subset is loaded, so Latin text never falls back to this face.
+const notoTagalog = Noto_Sans_Tagalog({
+  variable: "--font-noto-tagalog",
+  subsets: ["tagalog"],
+  weight: "400",
+});
+
+```
+
+In the `<html>` `className`, replace `${unifraktur.variable} h-full antialiased` with `${unifraktur.variable} ${notoTagalog.variable} h-full antialiased`.
+
+- [ ] **Step 2: Add the font token and the weave utility to `app/globals.css`**
+
+In the `@theme inline` block, add one line after `--font-gothic: var(--font-unifraktur);`:
 
 ```css
-@import "tailwindcss";
+  --font-baybayin: var(--font-noto-tagalog);
+```
 
+Insert this block directly above the comment that starts `/*` followed by ` * Ambient accent bloom`:
+
+```css
 /*
- * Literal design tokens. Plain `@theme` (not `@theme inline`) so Tailwind also
- * emits them as real CSS custom properties — the radial glow helpers below
- * reference them directly.
+ * Woven diamond texture, loosely inspired by Ilocano inabel: an interlocking
+ * diamond lattice with a smaller diamond inside each cell. Deliberately generic
+ * geometry, not a copy of any specific textile. Drawn in white; consumers set
+ * the strength with an `opacity-*` utility on a dedicated decorative layer.
  */
-@theme {
-  --color-bg: #05060a;
-  --color-surface: #0b0d14;
-  --color-elevated: #12151f;
-  --color-line: #1e2230;
-  --color-fg: #f5f6f8;
-  --color-muted: #8a90a2;
-  --color-accent: #ff4d17;
-  --color-accent-soft: #ff8a5c;
-
-  --radius-card: 1.5rem;
+@utility bg-weave {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Cg fill='none' stroke='%23fff' stroke-width='1'%3E%3Cpath d='M16 0 32 16 16 32 0 16Z'/%3E%3Cpath d='M16 9 23 16 16 23 9 16Z'/%3E%3C/g%3E%3Cpath fill='%23fff' d='M16 14.5 17.5 16 16 17.5 14.5 16Z'/%3E%3C/svg%3E");
+  background-size: 32px 32px;
 }
 
-/*
- * `inline` is required here: these point at the CSS variables that
- * `next/font/google` generates in app/layout.tsx, so the value must be
- * referenced rather than copied at build time.
- */
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-:root {
-  color-scheme: dark;
-}
-
-body {
-  background-color: var(--color-bg);
-  color: var(--color-fg);
-  -webkit-font-smoothing: antialiased;
-}
-
-::selection {
-  background-color: var(--color-accent);
-  color: #05060a;
-}
-
-/*
- * Lenis base styles, inlined rather than imported from the package so there is
- * no dependency on its dist layout.
- */
-html.lenis,
-html.lenis body {
-  height: auto;
-}
-
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-
-.lenis.lenis-stopped {
-  overflow: clip;
-}
-
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
-}
-
-/* Faint telemetry grid used behind the hero. */
-.grid-backdrop {
-  background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.04) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
-}
-
-/* Ambient accent bloom, positioned by the consuming component. */
-.glow {
-  background: radial-gradient(
-    circle at center,
-    color-mix(in oklab, var(--color-accent) 45%, transparent) 0%,
-    transparent 70%
-  );
-  filter: blur(80px);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
 ```
 
-- [x] **Step 2: Verify**
+- [ ] **Step 3: Append the motif types to `types/index.ts`**
 
-```bash
-npm run build
-npm run dev
-```
-
-Expected: the starter page now renders on a near-black background in the Geist typeface (not Arial). Some starter-page text will look wrong against the dark background — that is expected and gets replaced in Phase 3.
-
-- [x] **Step 3: Commit**
-
-```bash
-git add app/globals.css
-git commit -m "feat(theme): replace starter styles with dark token system"
-```
-
----
-
-### Task 1.4: Add `button.tsx`, `badge.tsx`, and `section-heading.tsx`
-
-> **Partially superseded by Task 7.2**, which replaces `button.tsx` and `badge.tsx` with neon-accent variants. `section-heading.tsx` is unchanged.
-
-**Files:**
-- Create: `components/ui/button.tsx`
-- Create: `components/ui/badge.tsx`
-- Create: `components/ui/section-heading.tsx`
-
-**Interfaces produced:** `Button` (standard `button` props plus `variant: "primary" | "outline" | "ghost"`, `size: "sm" | "md" | "lg"`, `asChild?: boolean`), `buttonVariants(opts)`, `Badge` (standard `span` props), `SectionHeading` (props `eyebrow: string`, `title: string`, `className?: string`). Phases 3–6 import all three.
-
-- [x] **Step 1: Create `components/ui/button.tsx`**
-
-```tsx
-import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
-
-import { cn } from "@/lib/utils";
-
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
-  {
-    variants: {
-      variant: {
-        primary: "bg-fg text-bg hover:bg-white",
-        outline:
-          "border border-line bg-transparent text-fg hover:border-accent hover:text-accent",
-        ghost: "text-muted hover:text-fg",
-      },
-      size: {
-        sm: "h-9 px-4 text-sm",
-        md: "h-11 px-6 text-sm",
-        lg: "h-13 px-8 text-base",
-      },
-    },
-    defaultVariants: {
-      variant: "primary",
-      size: "md",
-    },
-  },
-);
-
-export interface ButtonProps
-  extends React.ComponentProps<"button">,
-    VariantProps<typeof buttonVariants> {
-  /** Render the child element instead of a <button> — use for <a> links. */
-  asChild?: boolean;
-}
-
-export function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: ButtonProps) {
-  const Comp = asChild ? Slot : "button";
-  return (
-    <Comp className={cn(buttonVariants({ variant, size, className }))} {...props} />
-  );
-}
-
-export { buttonVariants };
-```
-
-- [x] **Step 2: Create `components/ui/badge.tsx`**
-
-```tsx
-import * as React from "react";
-
-import { cn } from "@/lib/utils";
-
-export function Badge({ className, ...props }: React.ComponentProps<"span">) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full border border-line bg-elevated px-3 py-1 font-mono text-xs tracking-tight text-muted",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-```
-
-- [x] **Step 3: Create `components/ui/section-heading.tsx`**
-
-```tsx
-import { cn } from "@/lib/utils";
-
-export interface SectionHeadingProps {
-  eyebrow: string;
-  title: string;
-  className?: string;
-}
-
-export function SectionHeading({ eyebrow, title, className }: SectionHeadingProps) {
-  return (
-    <div className={cn("flex flex-col gap-3", className)}>
-      <span className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.25em] text-accent">
-        <span aria-hidden className="h-px w-8 bg-accent" />
-        {eyebrow}
-      </span>
-      <h2 className="text-balance text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
-        {title}
-      </h2>
-    </div>
-  );
-}
-```
-
-- [x] **Step 4: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-```
-
-- [x] **Step 5: Commit**
-
-```bash
-git add components/ui
-git commit -m "feat(ui): add button, badge and section heading primitives"
-```
-
----
-
-# Phase 2 — Types, data layer, asset verification
-
-`types/index.ts` **already exists** and defines `Project`, `ProjectCategory`, `PROJECT_CATEGORY_LABELS`, `Skill`, `SkillGroup`, `SkillCategory`, `DisciplinePhoto`, `NavLink`, and `SocialLink`. Read it before starting this phase. Do not rewrite it; if a task here needs a field it does not have, that is a plan bug — stop and report it.
-
-### Task 2.1: Create `data/site.ts` and `data/navigation.ts`
-
-**Files:**
-- Create: `data/site.ts`
-- Create: `data/navigation.ts`
-
-**Interfaces produced:** `siteConfig` (object literal), `navLinks: NavLink[]`, `socialLinks: SocialLink[]`.
-
-- [x] **Step 1: Create `data/site.ts`**
-
-The string values here are the repository owner's to set. Use these defaults verbatim, then list this file in your handoff as needing real values.
+Add to the end of the file:
 
 ```ts
-import type { SocialLink } from "@/types";
-
-export const siteConfig = {
-  name: "Your Name",
-  initials: "YN",
-  role: "Full Stack Developer",
-  description:
-    "Full Stack Developer building web applications, games, and the systems behind them.",
-  url: "https://example.com",
-  email: "you@example.com",
-  githubUrl: "https://github.com/your-handle",
-  resumePath: "/resume.pdf",
-} as const;
-
-export const socialLinks: SocialLink[] = [
-  { label: "GitHub", href: siteConfig.githubUrl, icon: "Github" },
-  { label: "Email", href: `mailto:${siteConfig.email}`, icon: "Mail" },
-];
-```
-
-- [x] **Step 2: Create `data/navigation.ts`**
-
-Each `href` must match a section `id` rendered in Phases 3–6.
-
-```ts
-import type { NavLink } from "@/types";
-
-export const navLinks: NavLink[] = [
-  { label: "Projects", href: "#projects" },
-  { label: "Stack", href: "#stack" },
-  { label: "Discipline", href: "#discipline" },
-  { label: "Contact", href: "#contact" },
-];
-```
-
-- [x] **Step 3: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-```
-
-- [x] **Step 4: Commit**
-
-```bash
-git add data/site.ts data/navigation.ts
-git commit -m "feat(data): add site config and navigation links"
-```
-
----
-
-### Task 2.2: Create `data/projects.ts`
-
-**Files:**
-- Create: `data/projects.ts`
-
-**Interfaces produced:** `projects: Project[]`.
-
-The three entries below are structurally complete examples covering all three required categories. Their content is the owner's to replace; the shape is not. Flag this file in your handoff.
-
-- [x] **Step 1: Create `data/projects.ts`**
-
-```ts
-import type { Project } from "@/types";
-
-export const projects: Project[] = [
-  {
-    id: "project-ledger",
-    slug: "ledger",
-    title: "Ledger",
-    category: "full-stack",
-    summary: "Real-time expense tracking with shared household budgets.",
-    description:
-      "A full-stack budgeting application with authenticated multi-user households, live balance updates, and monthly reporting. Built around server components with optimistic client updates on the transaction list.",
-    techStack: ["Next.js", "TypeScript", "PostgreSQL", "Tailwind CSS"],
-    liveUrl: "https://example.com",
-    repoUrl: "https://github.com/your-handle/ledger",
-    imageUrl: null,
-    imageAlt: null,
-    year: 2025,
-    order: 1,
-  },
-  {
-    id: "project-driftline",
-    slug: "driftline",
-    title: "Driftline",
-    category: "game-dev",
-    summary: "A top-down arcade racer with procedurally generated circuits.",
-    description:
-      "A 2D racing game featuring a custom drift physics model, lap ghosting, and a seeded track generator. Includes a replay system that records and plays back input frames rather than transforms.",
-    techStack: ["Unity", "C#", "Shader Graph"],
-    liveUrl: null,
-    repoUrl: "https://github.com/your-handle/driftline",
-    imageUrl: null,
-    imageAlt: null,
-    year: 2024,
-    order: 2,
-  },
-  {
-    id: "project-fleetdesk",
-    slug: "fleetdesk",
-    title: "FleetDesk",
-    category: "internship",
-    summary: "Internal dispatch dashboard built during on-the-job training.",
-    description:
-      "An operations dashboard for coordinating vehicle dispatch and driver assignments, delivered during an OJT placement. Replaced a spreadsheet workflow used daily by the dispatch team.",
-    techStack: ["React", "Node.js", "Express", "MySQL"],
-    liveUrl: null,
-    repoUrl: null,
-    imageUrl: null,
-    imageAlt: null,
-    year: 2024,
-    order: 3,
-  },
-];
-```
-
-- [x] **Step 2: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-```
-
-Expected: no type errors. If one appears, the entry is missing a required field from `types/index.ts`.
-
-- [x] **Step 3: Commit**
-
-```bash
-git add data/projects.ts
-git commit -m "feat(data): add project entries"
-```
-
----
-
-### Task 2.3: Create `data/skills.ts`
-
-**Files:**
-- Create: `data/skills.ts`
-
-**Interfaces produced:** `skillCategories: SkillCategory[]`, `disciplinePhotos: DisciplinePhoto[]`.
-
-The `width`/`height` on the discipline photos are the real intrinsic dimensions of the files on disk (3024×4032, a 3:4 portrait). Use them exactly — `next/image` needs them to reserve layout space.
-
-- [x] **Step 1: Create `data/skills.ts`**
-
-```ts
-import type { DisciplinePhoto, SkillCategory } from "@/types";
-
-export const skillCategories: SkillCategory[] = [
-  {
-    id: "skills-frontend",
-    group: "frontend",
-    label: "Frontend",
-    order: 1,
-    skills: [
-      { name: "React" },
-      { name: "Next.js" },
-      { name: "TypeScript" },
-      { name: "Tailwind CSS" },
-    ],
-  },
-  {
-    id: "skills-backend",
-    group: "backend",
-    label: "Backend",
-    order: 2,
-    skills: [{ name: "Node.js" }, { name: "Express" }, { name: "REST APIs" }],
-  },
-  {
-    id: "skills-database",
-    group: "database",
-    label: "Databases",
-    order: 3,
-    skills: [{ name: "PostgreSQL" }, { name: "Supabase" }, { name: "MySQL" }],
-  },
-  {
-    id: "skills-game-dev",
-    group: "game-dev",
-    label: "Game Dev",
-    order: 4,
-    skills: [{ name: "Unity" }, { name: "C#" }, { name: "Godot" }],
-  },
-  {
-    id: "skills-devops",
-    group: "devops",
-    label: "DevOps & Tools",
-    order: 5,
-    skills: [{ name: "Git" }, { name: "Vercel" }, { name: "Docker" }],
-  },
-];
-
-export const disciplinePhotos: DisciplinePhoto[] = [
-  {
-    src: "/images/about/arnis-stance.jpg",
-    alt: "Competing in Arnis, holding a ready stance before an exchange",
-    width: 3024,
-    height: 4032,
-  },
-  {
-    src: "/images/about/arnis-action.jpg",
-    alt: "Mid-exchange during an Arnis competition bout",
-    width: 3024,
-    height: 4032,
-  },
-];
-```
-
-- [x] **Step 2: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-```
-
-- [x] **Step 3: Commit**
-
-```bash
-git add data/skills.ts
-git commit -m "feat(data): add skill categories and discipline photos"
-```
-
----
-
-### Task 2.4: Create the `lib/queries.ts` data seam and verify assets
-
-**Files:**
-- Create: `lib/queries.ts`
-- Create: `public/resume.pdf`
-
-**Interfaces produced:** `getProjects(): Promise<Project[]>`, `getSkillCategories(): Promise<SkillCategory[]>`. **Every section component in Phases 4 and 5 must call these — no section may import from `data/` directly.** That rule is the entire reason the Supabase migration will not touch the UI.
-
-- [x] **Step 1: Create `lib/queries.ts`**
-
-```ts
-import { projects } from "@/data/projects";
-import { skillCategories } from "@/data/skills";
-import type { Project, SkillCategory } from "@/types";
-
 /**
- * Data access seam.
+ * One decorative baybayin string. Baybayin is always `aria-hidden` and always
+ * sits beside English, so `meaning` is documentation, not rendered alt text.
+ */
+export interface BaybayinEntry {
+  /** Baybayin characters (Unicode Tagalog block, U+1700–U+171F). */
+  text: string;
+  /** The Filipino word(s) the characters spell. */
+  latin: string;
+  /** English meaning. */
+  meaning: string;
+  /**
+   * Flipped to `true` only after someone who reads baybayin has checked the
+   * `text`. The launch gate fails while any entry is `false`.
+   */
+  reviewed: boolean;
+}
+
+/** One of the twelve basic Arnis strikes. */
+export interface StrikeAngle {
+  /** 1–12, as numbered in the owner's sport Arnis anyo. */
+  number: number;
+  /** Where the strike lands on the opponent, e.g. "Left temple". */
+  target: string;
+  /**
+   * Direction of the stick's path on screen, in degrees: 0 points right and
+   * angles grow clockwise, so 90 is straight down. `null` for thrusts, which
+   * travel toward the viewer and have no on-screen line.
+   */
+  degrees: number | null;
+  /** Flipped to `true` once the owner confirms this entry for their style. */
+  confirmed: boolean;
+}
+```
+
+- [ ] **Step 4: Create `data/baybayin.ts`**
+
+```ts
+import type { BaybayinEntry } from "@/types";
+
+/*
+ * Every baybayin string on the site lives here. Characters are written as
+ * Unicode escapes so that no editor, font, or copy-paste can silently change
+ * them. Conventions used:
  *
- * These are async today even though the local arrays are synchronous. That is
- * deliberate: when these are replaced with Supabase queries, the signatures do
- * not change and no consuming component needs editing.
+ * - Modern orthography with the krus-kudlit (U+1714) cancelling a final vowel.
+ * - The letter DA (U+1707) also writes RA, as in pre-colonial usage.
+ * - Z has no letter and is written with SA (U+1710).
+ *
+ * None of these have been checked by a baybayin reader yet. Do not flip
+ * `reviewed` to `true` without one.
  */
-
-export async function getProjects(): Promise<Project[]> {
-  return [...projects].sort((a, b) => a.order - b.order);
-}
-
-export async function getSkillCategories(): Promise<SkillCategory[]> {
-  return [...skillCategories].sort((a, b) => a.order - b.order);
-}
-```
-
-- [x] **Step 2: Confirm the image assets exist at the expected paths**
-
-```bash
-ls public/images/hero/hero-portrait.png public/images/about/arnis-stance.jpg public/images/about/arnis-action.jpg
-```
-
-Expected: all three listed. They are already present and untracked in git.
-
-Note their real dimensions, which later tasks depend on:
-
-| File | Dimensions | Note |
-| --- | --- | --- |
-| `hero-portrait.png` | 2048×1365 | **Landscape**, not a tall portrait crop. Task 3.3 frames it accordingly. |
-| `arnis-stance.jpg` | 3024×4032 | 3:4 portrait, ~2.0 MB |
-| `arnis-action.jpg` | 3024×4032 | 3:4 portrait, ~2.5 MB |
-
-- [x] **Step 3: Create a placeholder `public/resume.pdf`**
-
-`public/resume.pdf` does not exist, and Task 3.3 renders a download button pointing at it. Write a minimal valid one-page PDF so the link resolves; the owner replaces the file later.
-
-```bash
-printf '%%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj\ntrailer<</Root 1 0 R>>\n' > public/resume.pdf
-```
-
-- [x] **Step 4: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-```
-
-- [x] **Step 5: Commit**
-
-Image assets are currently untracked; commit them here alongside the code that will reference them.
-
-```bash
-git add lib/queries.ts public/resume.pdf public/images
-git commit -m "feat(data): add query seam, resume placeholder and image assets"
-```
-
----
-
-# Phase 3 — Smooth scroll, header, hero
-
-### Task 3.1: Add the Lenis smooth-scroll provider and wire the root layout
-
-**Files:**
-- Create: `components/providers/smooth-scroll-provider.tsx`
-- Modify: `app/layout.tsx` (full replacement)
-
-**Interfaces produced:** `SmoothScrollProvider` (props `{ children: React.ReactNode }`).
-
-- [x] **Step 1: Create `components/providers/smooth-scroll-provider.tsx`**
-
-```tsx
-"use client";
-
-import { useEffect, useState } from "react";
-import { ReactLenis } from "lenis/react";
-
-/**
- * Mounts Lenis on the document root. Disabled entirely when the visitor has
- * requested reduced motion, in which case native scrolling is used.
- */
-export function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
-  const [reducedMotion, setReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(query.matches);
-
-    const onChange = (event: MediaQueryListEvent) => setReducedMotion(event.matches);
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
-  }, []);
-
-  if (reducedMotion) {
-    return <>{children}</>;
-  }
-
-  return (
-    <ReactLenis root options={{ duration: 1.1, smoothWheel: true }}>
-      {children}
-    </ReactLenis>
-  );
-}
-```
-
-- [x] **Step 2: Replace `app/layout.tsx`**
-
-Keep `LayoutProps<"/">` — it is a Next.js 16 generated global, not an import. Note there is deliberately no `data-scroll-behavior` attribute and no `scroll-behavior` CSS: Lenis owns scrolling.
-
-```tsx
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-
-import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
-import { siteConfig } from "@/data/site";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: `${siteConfig.name} — ${siteConfig.role}`,
-  description: siteConfig.description,
-  openGraph: {
-    title: `${siteConfig.name} — ${siteConfig.role}`,
-    description: siteConfig.description,
-    type: "website",
+export const baybayin = {
+  name: {
+    text: "\u1704\u1707\u1710",
+    latin: "Garaza",
+    meaning: "The owner's surname",
+    reviewed: false,
   },
-};
+  motto: {
+    text: "\u1710\u1712\u1709\u1704\u1714 \u1700\u1706\u1714 \u1707\u1712\u1710\u1712\u1709\u1714\u170E\u1712\u1708",
+    latin: "Sipag at Disiplina",
+    meaning: "Diligence and discipline",
+    reviewed: false,
+  },
+  projects: {
+    text: "\u1709\u1714\u1707\u1713\u170C\u1712\u1703\u1714\u1706\u1713",
+    latin: "Proyekto",
+    meaning: "Project",
+    reviewed: false,
+  },
+  stack: {
+    text: "\u1703\u1710\u1708\u170C\u1708\u1714",
+    latin: "Kasanayan",
+    meaning: "Skills",
+    reviewed: false,
+  },
+  contact: {
+    text: "\u1702\u1704\u1714\u1708\u170C\u1708\u1714",
+    latin: "Ugnayan",
+    meaning: "Connection, contact",
+    reviewed: false,
+  },
+} satisfies Record<string, BaybayinEntry>;
+```
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
-  return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full bg-bg font-sans text-fg">
-        <SmoothScrollProvider>{children}</SmoothScrollProvider>
-      </body>
-    </html>
-  );
+- [ ] **Step 5: Create `data/strike-angles.ts`**
+
+```ts
+import type { StrikeAngle } from "@/types";
+
+/*
+ * The twelve basic strikes, numbered as commonly taught for sport Arnis anyo
+ * and Modern Arnis, from a right-handed striker's point of view. Numbering
+ * differs between systems, so every entry stays `confirmed: false` until the
+ * owner checks it against their own training.
+ */
+export const strikeAngles: StrikeAngle[] = [
+  { number: 1, target: "Left temple", degrees: 135, confirmed: false },
+  { number: 2, target: "Right temple", degrees: 45, confirmed: false },
+  { number: 3, target: "Left side of the body", degrees: 180, confirmed: false },
+  { number: 4, target: "Right side of the body", degrees: 0, confirmed: false },
+  { number: 5, target: "Stomach (thrust)", degrees: null, confirmed: false },
+  { number: 6, target: "Left chest (thrust)", degrees: null, confirmed: false },
+  { number: 7, target: "Right chest (thrust)", degrees: null, confirmed: false },
+  { number: 8, target: "Left knee", degrees: 135, confirmed: false },
+  { number: 9, target: "Right knee", degrees: 45, confirmed: false },
+  { number: 10, target: "Left eye (thrust)", degrees: null, confirmed: false },
+  { number: 11, target: "Right eye (thrust)", degrees: null, confirmed: false },
+  { number: 12, target: "Crown of the head", degrees: 90, confirmed: false },
+];
+
+/** Looks up a strike by number. Throws on a number outside 1–12. */
+export function getStrike(number: number): StrikeAngle {
+  const strike = strikeAngles.find((entry) => entry.number === number);
+  if (!strike) throw new Error(`Unknown strike angle: ${number}`);
+  return strike;
 }
 ```
 
-- [x] **Step 3: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run dev
-```
-
-Expected in the browser: scrolling the starter page feels eased rather than instant, and `<html>` has the `lenis` class in DevTools. Set "Emulate CSS prefers-reduced-motion: reduce" in DevTools → Rendering and reload — the `lenis` class should be gone and scrolling native.
-
-- [x] **Step 4: Commit**
-
-```bash
-git add components/providers app/layout.tsx
-git commit -m "feat(scroll): add lenis smooth scroll provider"
-```
-
----
-
-### Task 3.2: Build the floating glass header
-
-**Files:**
-- Create: `components/layout/site-header.tsx`
-
-**Interfaces consumed:** `navLinks`, `socialLinks`, `siteConfig`, `Button`, `cn()`.
-**Interfaces produced:** `SiteHeader` (no props).
-
-Behavior: fixed, centered, glassmorphism pill. Transparent at the top of the page; gains background blur and a border once scrolled past 32px. Anchor clicks are routed through the Lenis instance so they ease rather than jump. Below `md` the anchor links collapse into a toggle button.
-
-- [x] **Step 1: Create `components/layout/site-header.tsx`**
-
-```tsx
-"use client";
-
-import { useState } from "react";
-import { useLenis } from "lenis/react";
-import { Github, Mail, Menu, X } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import { navLinks } from "@/data/navigation";
-import { siteConfig, socialLinks } from "@/data/site";
-import { cn } from "@/lib/utils";
-
-const socialIcons = { Github, Mail } as const;
-
-export function SiteHeader() {
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const lenis = useLenis(({ scroll }) => {
-    setScrolled(scroll > 32);
-  });
-
-  function scrollTo(href: string) {
-    setMenuOpen(false);
-    if (lenis) {
-      lenis.scrollTo(href, { offset: -96 });
-      return;
-    }
-    document.querySelector(href)?.scrollIntoView();
-  }
-
-  return (
-    <header className="fixed inset-x-0 top-4 z-50 flex justify-center px-4">
-      <nav
-        aria-label="Primary"
-        className={cn(
-          "flex w-full max-w-3xl items-center justify-between gap-4 rounded-full border px-4 py-2 transition-colors duration-300",
-          scrolled
-            ? "border-line bg-surface/70 backdrop-blur-xl"
-            : "border-transparent bg-transparent",
-        )}
-      >
-        <button
-          type="button"
-          onClick={() => lenis?.scrollTo(0)}
-          className="rounded-full px-2 font-mono text-sm font-semibold tracking-[0.2em] text-fg"
-        >
-          {siteConfig.initials}
-        </button>
-
-        <ul className="hidden items-center gap-1 md:flex">
-          {navLinks.map((link) => (
-            <li key={link.href}>
-              <Button variant="ghost" size="sm" onClick={() => scrollTo(link.href)}>
-                {link.label}
-              </Button>
-            </li>
-          ))}
-        </ul>
-
-        <div className="flex items-center gap-1">
-          {socialLinks.map((link) => {
-            const Icon = socialIcons[link.icon as keyof typeof socialIcons];
-            return (
-              <Button key={link.href} asChild variant="ghost" size="sm" className="px-2">
-                <a
-                  href={link.href}
-                  aria-label={link.label}
-                  target={link.href.startsWith("http") ? "_blank" : undefined}
-                  rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                >
-                  <Icon aria-hidden />
-                </a>
-              </Button>
-            );
-          })}
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="px-2 md:hidden"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            {menuOpen ? <X aria-hidden /> : <Menu aria-hidden />}
-          </Button>
-        </div>
-      </nav>
-
-      {menuOpen ? (
-        <ul className="absolute top-16 w-[calc(100%-2rem)] max-w-3xl space-y-1 rounded-3xl border border-line bg-surface/95 p-3 backdrop-blur-xl md:hidden">
-          {navLinks.map((link) => (
-            <li key={link.href}>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => scrollTo(link.href)}
-              >
-                {link.label}
-              </Button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </header>
-  );
-}
-```
-
-- [x] **Step 2: Verify**
+- [ ] **Step 6: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1020,722 +418,179 @@ npm run lint
 npm run build
 ```
 
-The header is not rendered on the page until Task 3.4 — these checks confirm it compiles.
+Expected: all three pass. Nothing on the page changes yet except that the build now downloads Noto Sans Tagalog. In `npm run dev`, confirm in DevTools → Elements that `<html>` has a class containing `noto_sans_tagalog`.
 
-- [x] **Step 3: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add components/layout/site-header.tsx
-git commit -m "feat(header): add floating glass navigation"
+git add public/images/hero/headgear.webp app/layout.tsx app/globals.css types/index.ts data/baybayin.ts data/strike-angles.ts
+git commit -m "feat(identity): add baybayin font, weave texture, and motif data"
 ```
 
 ---
 
-### Task 3.3: Build the hero section
-
-> **Superseded by Task 7.4** (layered hero). Both files below are fully replaced there. Also note the code below uses `priority`, which Next.js 16 deprecated — Task 7.4 uses `preload`.
+### Task 11.2: Add strike line dividers and the woven footer
 
 **Files:**
-- Create: `components/sections/hero-visual.tsx`
-- Create: `components/sections/hero.tsx`
+- Create: `components/ui/strike-line.tsx`
+- Modify: `app/page.tsx`
+- Modify: `components/layout/site-footer.tsx` (full replacement)
 
-**Interfaces consumed:** `siteConfig`, `Button`.
-**Interfaces produced:** `Hero` (no props), `HeroVisual` (no props).
+**Interfaces consumed:** `getStrike` (Task 11.1), `bg-weave` (Task 11.1), `cn`.
+**Interfaces produced:** `StrikeLine` with props `{ angle: number; className?: string }`. `angle` must be a strike with a line (1, 2, 3, 4, 8, 9, 12); a thrust number throws during render.
 
-Layout: full-viewport section, headline "Full Stack Developer" set very large and tight, GitHub and Resume buttons beneath it, portrait beside the copy on `lg` and above and below it on smaller screens. Backdrop uses the `grid-backdrop` and `glow` helpers from Task 1.3. No biography paragraph.
-
-The portrait is 2048×1365 — **landscape**. Frame it in a fixed-aspect box with `object-contain` so the cutout is never cropped; do not assume a tall 3:4 frame.
-
-- [x] **Step 1: Create `components/sections/hero-visual.tsx`**
-
-Split out as a client component purely so the entrance animation does not force the whole hero to the client.
+- [ ] **Step 1: Create `components/ui/strike-line.tsx`**
 
 ```tsx
 "use client";
 
-import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
 
-export function HeroVisual() {
-  const reduceMotion = useReducedMotion();
-
-  return (
-    <motion.div
-      initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      className="relative aspect-[3/2] w-full max-w-xl"
-    >
-      <div
-        aria-hidden
-        className="glow absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2"
-      />
-      <Image
-        src="/images/hero/hero-portrait.png"
-        alt=""
-        fill
-        priority
-        sizes="(min-width: 1024px) 40vw, 90vw"
-        className="relative object-contain"
-      />
-    </motion.div>
-  );
-}
-```
-
-`alt=""` is correct here: the portrait is decorative because the adjacent heading already names the person and the role.
-
-- [x] **Step 2: Create `components/sections/hero.tsx`**
-
-```tsx
-import { Download, Github } from "lucide-react";
-
-import { HeroVisual } from "@/components/sections/hero-visual";
-import { Button } from "@/components/ui/button";
-import { siteConfig } from "@/data/site";
-
-export function Hero() {
-  return (
-    <section
-      id="hero"
-      className="relative flex min-h-screen items-center overflow-hidden px-6 pt-32 pb-20"
-    >
-      <div aria-hidden className="grid-backdrop absolute inset-0" />
-
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center gap-12 lg:flex-row lg:justify-between">
-        <div className="flex flex-col items-center gap-8 text-center lg:items-start lg:text-left">
-          <span className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
-            {siteConfig.name}
-          </span>
-
-          <h1 className="text-balance text-5xl font-semibold leading-[0.95] tracking-tighter text-fg sm:text-7xl lg:text-8xl">
-            Full Stack
-            <span className="block text-accent">Developer</span>
-          </h1>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button asChild size="lg">
-              <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer">
-                <Github aria-hidden />
-                GitHub
-              </a>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <a href={siteConfig.resumePath} download>
-                <Download aria-hidden />
-                Resume
-              </a>
-            </Button>
-          </div>
-        </div>
-
-        <HeroVisual />
-      </div>
-    </section>
-  );
-}
-```
-
-- [x] **Step 3: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-```
-
-- [x] **Step 4: Commit**
-
-```bash
-git add components/sections/hero.tsx components/sections/hero-visual.tsx
-git commit -m "feat(hero): add hero section with portrait and actions"
-```
-
----
-
-### Task 3.4: Replace `app/page.tsx` with the header and hero
-
-**Files:**
-- Modify: `app/page.tsx` (full replacement — the entire starter template contents are discarded)
-
-- [x] **Step 1: Replace `app/page.tsx`**
-
-```tsx
-import { SiteHeader } from "@/components/layout/site-header";
-import { Hero } from "@/components/sections/hero";
-
-export default function Home() {
-  return (
-    <>
-      <SiteHeader />
-      <main>
-        <Hero />
-      </main>
-    </>
-  );
-}
-```
-
-- [x] **Step 2: Verify**
-
-```bash
-npm run build
-npm run dev
-```
-
-Expected at http://localhost:3000: dark page, "Full Stack Developer" headline with "Developer" in accent orange, portrait rendered without cropping, both buttons working (GitHub opens in a new tab, Resume downloads the placeholder PDF). The header pill gains a blurred background after scrolling ~32px. Nav links will not visibly move the page yet — their target sections do not exist until Phases 4–6. Check the 375px-wide viewport too: the portrait stacks below the copy and the nav collapses to a menu button.
-
-- [x] **Step 3: Commit**
-
-```bash
-git add app/page.tsx
-git commit -m "feat(page): render header and hero"
-```
-
----
-
-# Phase 4 — Scroll-interactive projects showcase
-
-The mechanism: the section is `projects.length × 100vh` tall. Each card sits in a `sticky top-0 h-screen` wrapper, so cards pin in turn and stack on top of one another. A shared `useScroll` progress value drives a downward scale on each card as the next one arrives, producing the layered deck effect. There is no `/projects/[slug]` route in v1.
-
-### Task 4.1: Build the project card
-
-> **Superseded by Task 7.5** (tilt + spotlight), which fully replaces `project-card.tsx`.
-
-**Files:**
-- Create: `components/sections/project-card.tsx`
-
-**Interfaces consumed:** `Project`, `PROJECT_CATEGORY_LABELS`, `Badge`, `Button`.
-**Interfaces produced:** `ProjectCard` with props `{ project: Project; index: number; total: number; progress: MotionValue<number> }`. Task 4.2 renders it.
-
-- [x] **Step 1: Create `components/sections/project-card.tsx`**
-
-```tsx
-"use client";
-
-import { ArrowUpRight, Github } from "lucide-react";
-import {
-  motion,
-  useReducedMotion,
-  useTransform,
-  type MotionValue,
-} from "motion/react";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { PROJECT_CATEGORY_LABELS, type Project } from "@/types";
-
-export interface ProjectCardProps {
-  project: Project;
-  index: number;
-  total: number;
-  /** Scroll progress of the whole stack, 0 at the top and 1 at the bottom. */
-  progress: MotionValue<number>;
-}
-
-export function ProjectCard({ project, index, total, progress }: ProjectCardProps) {
-  const reduceMotion = useReducedMotion();
-
-  // Each card shrinks slightly once the next card begins covering it, so the
-  // stack reads as a physical deck rather than a flat overlay.
-  const targetScale = 1 - (total - index) * 0.04;
-  const scale = useTransform(progress, [index / total, 1], [1, targetScale]);
-
-  return (
-    <div className="sticky top-0 flex h-screen items-center justify-center px-6">
-      <motion.article
-        style={{
-          scale: reduceMotion ? 1 : scale,
-          top: `${index * 1.5}rem`,
-        }}
-        className="relative flex w-full max-w-4xl flex-col gap-6 rounded-card border border-line bg-surface p-8 sm:p-12"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Badge className="border-accent/40 text-accent">
-            {PROJECT_CATEGORY_LABELS[project.category]}
-          </Badge>
-          <span className="font-mono text-xs text-muted">{project.year}</span>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <h3 className="text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
-            {project.title}
-          </h3>
-          <p className="text-lg text-fg/80">{project.summary}</p>
-          <p className="max-w-2xl text-sm leading-relaxed text-muted">
-            {project.description}
-          </p>
-        </div>
-
-        <ul className="flex flex-wrap gap-2">
-          {project.techStack.map((tech) => (
-            <li key={tech}>
-              <Badge>{tech}</Badge>
-            </li>
-          ))}
-        </ul>
-
-        <div className="flex flex-wrap gap-3">
-          {project.liveUrl ? (
-            <Button asChild size="sm">
-              <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
-                Live Demo
-                <ArrowUpRight aria-hidden />
-              </a>
-            </Button>
-          ) : null}
-          {project.repoUrl ? (
-            <Button asChild variant="outline" size="sm">
-              <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
-                <Github aria-hidden />
-                Repository
-              </a>
-            </Button>
-          ) : null}
-        </div>
-      </motion.article>
-    </div>
-  );
-}
-```
-
-Both link buttons render conditionally because `liveUrl` and `repoUrl` are `string | null` — the game and internship entries in `data/projects.ts` exercise both null cases.
-
-`Project.imageUrl` and `Project.imageAlt` are deliberately not rendered in v1. The fields exist so screenshots can be added later without a data migration; leave them out of this card.
-
-- [x] **Step 2: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-```
-
-- [x] **Step 3: Commit**
-
-```bash
-git add components/sections/project-card.tsx
-git commit -m "feat(projects): add project card"
-```
-
----
-
-### Task 4.2: Build the sticky stack and the section shell
-
-**Files:**
-- Create: `components/sections/projects-stack.tsx`
-- Create: `components/sections/projects-showcase.tsx`
-- Modify: `app/page.tsx`
-
-**Interfaces produced:** `ProjectsStack` with props `{ projects: Project[] }`; `ProjectsShowcase` (no props, async Server Component).
-
-- [x] **Step 1: Create `components/sections/projects-stack.tsx`**
-
-```tsx
-"use client";
-
-import { useRef } from "react";
-import { useScroll } from "motion/react";
-
-import { ProjectCard } from "@/components/sections/project-card";
-import type { Project } from "@/types";
-
-export function ProjectsStack({ projects }: { projects: Project[] }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // "start start" → the container top hits the viewport top (progress 0).
-  // "end end"     → the container bottom hits the viewport bottom (progress 1).
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  });
-
-  return (
-    <div ref={containerRef} className="relative">
-      {projects.map((project, index) => (
-        <ProjectCard
-          key={project.id}
-          project={project}
-          index={index}
-          total={projects.length}
-          progress={scrollYProgress}
-        />
-      ))}
-    </div>
-  );
-}
-```
-
-The container needs no explicit height: each child is `h-screen`, so the container is naturally `projects.length × 100vh` tall while the sticky cards pin inside it.
-
-- [x] **Step 2: Create `components/sections/projects-showcase.tsx`**
-
-```tsx
-import { ProjectsStack } from "@/components/sections/projects-stack";
-import { SectionHeading } from "@/components/ui/section-heading";
-import { getProjects } from "@/lib/queries";
-
-export async function ProjectsShowcase() {
-  const projects = await getProjects();
-
-  return (
-    <section id="projects" className="relative px-6 py-24">
-      <div className="mx-auto max-w-4xl">
-        <SectionHeading eyebrow="Selected Work" title="Projects" />
-      </div>
-      <ProjectsStack projects={projects} />
-    </section>
-  );
-}
-```
-
-This is the pattern every remaining content section follows: an async Server Component awaits `lib/queries.ts` and passes plain data into a client child.
-
-- [x] **Step 3: Add the section to `app/page.tsx`**
-
-```tsx
-import { SiteHeader } from "@/components/layout/site-header";
-import { Hero } from "@/components/sections/hero";
-import { ProjectsShowcase } from "@/components/sections/projects-showcase";
-
-export default function Home() {
-  return (
-    <>
-      <SiteHeader />
-      <main>
-        <Hero />
-        <ProjectsShowcase />
-      </main>
-    </>
-  );
-}
-```
-
-- [x] **Step 4: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run dev
-```
-
-Expected in the browser: scrolling past the hero pins each project card in turn; as the next card rises over it, the one beneath scales down slightly and its top edge stays visible as a stacked ledge. The "Projects" nav link now scrolls to this section. Enable "Emulate CSS prefers-reduced-motion: reduce" and reload — cards must still be readable one per screen, just without the scale effect.
-
-- [x] **Step 5: Commit**
-
-```bash
-git add components/sections/projects-stack.tsx components/sections/projects-showcase.tsx app/page.tsx
-git commit -m "feat(projects): add scroll-driven sticky card stack"
-```
-
----
-
-# Phase 5 — Bento grid: tech stack and Arnis discipline
-
-### Task 5.1: Build the tech stack card
-
-**Files:**
-- Create: `components/sections/tech-stack-card.tsx`
-
-**Interfaces consumed:** `SkillCategory`, `Badge`.
-**Interfaces produced:** `TechStackCard` with props `{ category: SkillCategory; className?: string }`.
-
-- [x] **Step 1: Create `components/sections/tech-stack-card.tsx`**
-
-```tsx
-import { Badge } from "@/components/ui/badge";
+import { getStrike } from "@/data/strike-angles";
 import { cn } from "@/lib/utils";
-import type { SkillCategory } from "@/types";
 
-export interface TechStackCardProps {
-  category: SkillCategory;
+const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
+
+/** Box the diagonal slash is drawn in, in px. */
+const SLASH_BOX = 40;
+
+export interface StrikeLineProps {
+  /** Strike number from `data/strike-angles.ts`. Thrusts (no line) are invalid. */
+  angle: number;
   className?: string;
 }
 
-export function TechStackCard({ category, className }: TechStackCardProps) {
+/**
+ * Section divider: two hairlines meeting at a short neon slash cut at a real
+ * Arnis strike angle, with a telemetry label. Draws itself in the first time it
+ * scrolls into view; with reduced motion it renders fully drawn.
+ */
+export function StrikeLine({ angle, className }: StrikeLineProps) {
+  const reduceMotion = useReducedMotion() ?? false;
+  const strike = getStrike(angle);
+  if (strike.degrees === null) {
+    throw new Error(`Strike ${angle} is a thrust and has no line to draw`);
+  }
+
+  // Unit vector of the stick's path. Screen y grows downward, which matches the
+  // clockwise degree convention in `data/strike-angles.ts`.
+  const radians = (strike.degrees * Math.PI) / 180;
+  const half = SLASH_BOX / 2 - 4;
+  const dx = Math.cos(radians) * half;
+  const dy = Math.sin(radians) * half;
+  const center = SLASH_BOX / 2;
+  const label = `ANGLE ${String(strike.number).padStart(2, "0")} // ${strike.degrees}°`;
+
+  const drawn = { pathLength: 1, scaleX: 1, opacity: 1 };
+  const hidden = reduceMotion ? drawn : { pathLength: 0, scaleX: 0, opacity: 0 };
+  const viewport = { once: true, margin: "0px 0px -15% 0px" } as const;
+
   return (
-    <article
-      className={cn(
-        "flex flex-col gap-4 rounded-card border border-line bg-surface p-6 transition-colors hover:border-accent/40",
-        className,
-      )}
+    <div
+      aria-hidden
+      className={cn("mx-auto flex w-full max-w-6xl items-center gap-4 px-6", className)}
     >
-      <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
-        {category.label}
-      </h3>
-      <ul className="flex flex-wrap gap-2">
-        {category.skills.map((skill) => (
-          <li key={skill.name}>
-            <Badge className="text-fg">{skill.name}</Badge>
-          </li>
-        ))}
-      </ul>
-    </article>
+      <motion.span
+        initial={{ scaleX: hidden.scaleX }}
+        whileInView={{ scaleX: 1 }}
+        viewport={viewport}
+        transition={{ duration: 0.9, ease: EASE_OUT_EXPO }}
+        className="h-px flex-1 origin-right bg-line"
+      />
+
+      <svg
+        width={SLASH_BOX}
+        height={SLASH_BOX}
+        viewBox={`0 0 ${SLASH_BOX} ${SLASH_BOX}`}
+        className="shrink-0 overflow-visible"
+      >
+        {/* The stick travels from the start of the path to its end. */}
+        <motion.path
+          d={`M ${center - dx} ${center - dy} L ${center + dx} ${center + dy}`}
+          className="stroke-accent"
+          strokeWidth={2}
+          strokeLinecap="round"
+          fill="none"
+          initial={{ pathLength: hidden.pathLength }}
+          whileInView={{ pathLength: 1 }}
+          viewport={viewport}
+          transition={{ duration: 0.5, delay: 0.35, ease: EASE_OUT_EXPO }}
+        />
+      </svg>
+
+      <motion.span
+        initial={{ opacity: hidden.opacity }}
+        whileInView={{ opacity: 1 }}
+        viewport={viewport}
+        transition={{ duration: 0.4, delay: 0.6 }}
+        className="shrink-0 font-mono text-[0.65rem] tracking-[0.25em] text-muted"
+      >
+        {label}
+      </motion.span>
+
+      <motion.span
+        initial={{ scaleX: hidden.scaleX }}
+        whileInView={{ scaleX: 1 }}
+        viewport={viewport}
+        transition={{ duration: 0.9, ease: EASE_OUT_EXPO }}
+        className="h-px flex-1 origin-left bg-line"
+      />
+    </div>
   );
 }
 ```
 
-- [x] **Step 2: Verify**
+- [ ] **Step 2: Put dividers between the home page sections**
 
-```bash
-npx tsc --noEmit
-npm run lint
-```
-
-- [x] **Step 3: Commit**
-
-```bash
-git add components/sections/tech-stack-card.tsx
-git commit -m "feat(bento): add tech stack card"
-```
-
----
-
-### Task 5.2: Build the Athletics & Discipline card
-
-**Files:**
-- Create: `components/sections/discipline-card.tsx`
-
-**Interfaces consumed:** `disciplinePhotos`.
-**Interfaces produced:** `DisciplineCard` with props `{ className?: string }`.
-
-This is the personality card: both Arnis photos, the stance shot as the resting image and the action shot revealed on hover or keyboard focus. It carries its own `id="discipline"` so the nav anchor lands on the card itself.
-
-The source files are ~2 MB each at 3024×4032. The `sizes` values below matter — without them `next/image` would serve a far larger variant than the card ever displays.
-
-- [x] **Step 1: Create `components/sections/discipline-card.tsx`**
+In `app/page.tsx`, add the import after the `Preloader` import:
 
 ```tsx
-"use client";
-
-import Image from "next/image";
-
-import { disciplinePhotos } from "@/data/skills";
-import { cn } from "@/lib/utils";
-
-const [stance, action] = disciplinePhotos;
-
-export function DisciplineCard({ className }: { className?: string }) {
-  return (
-    <article
-      id="discipline"
-      tabIndex={0}
-      className={cn(
-        "group relative flex flex-col justify-end overflow-hidden rounded-card border border-line bg-surface p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-        className,
-      )}
-    >
-      <Image
-        src={stance.src}
-        alt={stance.alt}
-        width={stance.width}
-        height={stance.height}
-        sizes="(min-width: 1024px) 50vw, 100vw"
-        className="absolute inset-0 h-full w-full object-cover object-top opacity-70 transition-opacity duration-500 group-hover:opacity-0 group-focus-visible:opacity-0"
-      />
-      <Image
-        src={action.src}
-        alt={action.alt}
-        width={action.width}
-        height={action.height}
-        sizes="(min-width: 1024px) 50vw, 100vw"
-        className="absolute inset-0 h-full w-full object-cover object-top opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100"
-      />
-
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-gradient-to-t from-bg via-bg/60 to-transparent"
-      />
-
-      <div className="relative flex flex-col gap-2">
-        <span className="font-mono text-xs uppercase tracking-[0.2em] text-accent">
-          Athletics &amp; Discipline
-        </span>
-        <h3 className="text-2xl font-semibold tracking-tight text-fg">
-          Competitive Arnis
-        </h3>
-        <p className="max-w-sm text-sm leading-relaxed text-muted">
-          Training and competing in Arnis — the same repetition, timing, and
-          composure under pressure that the work demands.
-        </p>
-      </div>
-    </article>
-  );
-}
+import { StrikeLine } from "@/components/ui/strike-line";
 ```
 
-Do not add a `quality` prop to either image. Next.js 16 restricts `images.qualities` to `[75]` by default and would silently coerce any other value.
-
-- [x] **Step 2: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-```
-
-- [x] **Step 3: Commit**
-
-```bash
-git add components/sections/discipline-card.tsx
-git commit -m "feat(bento): add arnis discipline card"
-```
-
----
-
-### Task 5.3: Assemble the bento grid section
-
-**Files:**
-- Create: `components/sections/bento-grid.tsx`
-- Modify: `app/page.tsx`
-
-**Interfaces produced:** `BentoGrid` (no props, async Server Component).
-
-Layout: a 6-column grid on `lg`. The discipline card spans 3 columns and 2 rows so it reads as the visual anchor; the five skill cards fill the remaining cells, with the first one widened to keep the grid balanced.
-
-- [x] **Step 1: Create `components/sections/bento-grid.tsx`**
+Replace the four section lines inside `<main>`:
 
 ```tsx
-import { DisciplineCard } from "@/components/sections/discipline-card";
-import { TechStackCard } from "@/components/sections/tech-stack-card";
-import { SectionHeading } from "@/components/ui/section-heading";
-import { getSkillCategories } from "@/lib/queries";
-
-export async function BentoGrid() {
-  const categories = await getSkillCategories();
-
-  return (
-    <section id="stack" className="relative px-6 py-24">
-      <div className="mx-auto flex max-w-6xl flex-col gap-12">
-        <SectionHeading eyebrow="Toolkit" title="Stack & Discipline" />
-
-        <div className="grid auto-rows-[minmax(11rem,auto)] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
-          <DisciplineCard className="min-h-80 sm:col-span-2 lg:col-span-3 lg:row-span-2" />
-
-          {categories.map((category, index) => (
-            <TechStackCard
-              key={category.id}
-              category={category}
-              className={index === 0 ? "lg:col-span-3" : "lg:col-span-1"}
-            />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-```
-
-- [x] **Step 2: Add the section to `app/page.tsx`**
-
-```tsx
-import { SiteHeader } from "@/components/layout/site-header";
-import { BentoGrid } from "@/components/sections/bento-grid";
-import { Hero } from "@/components/sections/hero";
-import { ProjectsShowcase } from "@/components/sections/projects-showcase";
-
-export default function Home() {
-  return (
-    <>
-      <SiteHeader />
-      <main>
         <Hero />
         <ProjectsShowcase />
         <BentoGrid />
-      </main>
-    </>
-  );
-}
+        <Contact />
 ```
 
-- [x] **Step 3: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run dev
-```
-
-Expected: a modular grid with the Arnis card dominating the left. Hovering it cross-fades the stance photo to the action photo; tabbing to it does the same. The "Stack" and "Discipline" nav links both scroll here. At 375px the grid collapses to one column with no horizontal overflow.
-
-- [x] **Step 4: Commit**
-
-```bash
-git add components/sections/bento-grid.tsx app/page.tsx
-git commit -m "feat(bento): assemble stack and discipline grid"
-```
-
----
-
-# Phase 6 — Contact, footer, full verification
-
-### Task 6.1: Build the contact section and footer
-
-**Files:**
-- Create: `components/sections/contact.tsx`
-- Create: `components/layout/site-footer.tsx`
-- Modify: `app/page.tsx`
-
-**Interfaces produced:** `Contact` (no props), `SiteFooter` (no props).
-
-- [x] **Step 1: Create `components/sections/contact.tsx`**
+with:
 
 ```tsx
-import { ArrowUpRight, Github, Mail } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import { SectionHeading } from "@/components/ui/section-heading";
-import { siteConfig } from "@/data/site";
-
-export function Contact() {
-  return (
-    <section id="contact" className="relative overflow-hidden px-6 py-32">
-      <div
-        aria-hidden
-        className="glow absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2"
-      />
-
-      <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-8 text-center">
-        <SectionHeading
-          eyebrow="Contact"
-          title="Let's build something."
-          className="items-center"
-        />
-
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Button asChild size="lg">
-            <a href={`mailto:${siteConfig.email}`}>
-              <Mail aria-hidden />
-              {siteConfig.email}
-            </a>
-          </Button>
-          <Button asChild variant="outline" size="lg">
-            <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer">
-              <Github aria-hidden />
-              GitHub
-              <ArrowUpRight aria-hidden />
-            </a>
-          </Button>
-        </div>
-      </div>
-    </section>
-  );
-}
+        <Hero />
+        <StrikeLine angle={1} className="py-6" />
+        <ProjectsShowcase />
+        <StrikeLine angle={2} className="py-6" />
+        <BentoGrid />
+        <StrikeLine angle={3} className="py-6" />
+        <Contact />
 ```
 
-- [x] **Step 2: Create `components/layout/site-footer.tsx`**
+- [ ] **Step 3: Replace `components/layout/site-footer.tsx`**
+
+The footer's top border becomes a strike line, over a faint woven texture.
 
 ```tsx
-import { Github, Mail } from "lucide-react";
+import { CodeXml, Mail } from "lucide-react";
 
+import { StrikeLine } from "@/components/ui/strike-line";
 import { siteConfig, socialLinks } from "@/data/site";
 
-const socialIcons = { Github, Mail } as const;
+// lucide-react v1 removed brand icons (no `Github` export), so the "Github"
+// key from `data/site.ts` maps to a generic code icon — same as the header.
+const socialIcons = { Github: CodeXml, Mail } as const;
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-line px-6 py-10">
-      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 sm:flex-row">
+    <footer className="relative overflow-hidden px-6 pt-4 pb-10">
+      <div aria-hidden className="bg-weave pointer-events-none absolute inset-0 opacity-[0.04]" />
+
+      <StrikeLine angle={12} className="mb-10 px-0" />
+
+      <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 sm:flex-row">
         <p className="font-mono text-xs text-muted">
           © {new Date().getFullYear()} {siteConfig.name}
         </p>
@@ -1764,242 +619,7 @@ export function SiteFooter() {
 }
 ```
 
-- [x] **Step 3: Complete `app/page.tsx`**
-
-```tsx
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
-import { BentoGrid } from "@/components/sections/bento-grid";
-import { Contact } from "@/components/sections/contact";
-import { Hero } from "@/components/sections/hero";
-import { ProjectsShowcase } from "@/components/sections/projects-showcase";
-
-export default function Home() {
-  return (
-    <>
-      <SiteHeader />
-      <main>
-        <Hero />
-        <ProjectsShowcase />
-        <BentoGrid />
-        <Contact />
-      </main>
-      <SiteFooter />
-    </>
-  );
-}
-```
-
-- [x] **Step 4: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-```
-
-- [x] **Step 5: Commit**
-
-```bash
-git add components/sections/contact.tsx components/layout/site-footer.tsx app/page.tsx
-git commit -m "feat(contact): add contact section and footer"
-```
-
----
-
-### Task 6.2: Full-site verification pass
-
-**Files:** none created; fix whatever this task surfaces.
-
-- [x] **Step 1: Clean production build**
-
-```bash
-rm -rf .next
-npm run build
-```
-
-Expected: build completes with no errors and no warnings about missing `alt`, missing `sizes`, or unused imports.
-
-- [x] **Step 2: Lint and type check**
-
-```bash
-npm run lint
-npx tsc --noEmit
-```
-
-Expected: both clean.
-
-- [x] **Step 3: Serve the production build and walk the page**
-
-```bash
-npm run start
-```
-
-At http://localhost:3000, confirm each item:
-
-- [ ] All four nav links scroll smoothly to their sections: `#projects`, `#stack`, `#discipline`, `#contact`.
-- [ ] The header is transparent at the top and gains a blurred background after scrolling.
-- [ ] The hero portrait is fully visible, never cropped, at 375px / 768px / 1440px widths.
-- [ ] The Resume button downloads `resume.pdf`.
-- [ ] Every project card pins and stacks correctly, and no card overlaps the bento section.
-- [ ] Cards with `liveUrl: null` or `repoUrl: null` render only the buttons they have.
-- [ ] The Arnis card cross-fades on hover and on keyboard focus.
-- [ ] The footer year is the current year.
-- [ ] No horizontal scrollbar at 375px in any section.
-
-- [x] **Step 4: Reduced-motion pass**
-
-In DevTools → Rendering, set "Emulate CSS prefers-reduced-motion: reduce" and reload. Confirm: Lenis is off (no `lenis` class on `<html>`), the hero portrait appears without an entrance animation, and every project card is still fully readable.
-
-- [x] **Step 5: Keyboard pass**
-
-Tab through the page from the top. Confirm every link and button shows a visible accent focus ring, and that the Arnis card receives focus and swaps its photo.
-
-- [x] **Step 6: Commit any fixes**
-
-```bash
-git add -A
-git commit -m "fix: address full-site verification findings"
-```
-
----
-
-# Phase 7 — Signature visual upgrade
-
-This phase pushes the site toward the landonorris.com feel with five signature elements: layered hero typography, an electric neon accent, a live telemetry bar, tilt-and-spotlight project cards, and page-wide grain and grid. Every code block below was type-checked, linted, built, and screenshot-verified at 375px, 768px, and 1440px before it was written into this plan. Copy the blocks exactly.
-
-### Design tokens (reference)
-
-The architect has **already rewritten `app/globals.css`** — it is modified but uncommitted in the working tree. Do not edit it. Task 7.1 commits it. Token names are unchanged from Phase 1, so every existing `bg-bg` / `text-accent` / `border-line` class picks up the new values automatically.
-
-| Token | Value | Tailwind classes | Use |
-| --- | --- | --- | --- |
-| `--color-bg` | `#09090b` | `bg-bg`, `from-bg` | Page background |
-| `--color-surface` | `#0f0f12` | `bg-surface` | Cards |
-| `--color-elevated` | `#17171b` | `bg-elevated` | Default badges |
-| `--color-line` | `#27272a` | `border-line` | Card borders, telemetry rules |
-| `--color-line-strong` | `#3f3f46` | `border-line-strong` | Outline buttons, watermark stroke |
-| `--color-fg` | `#fafafa` | `text-fg` | Primary text |
-| `--color-muted` | `#a1a1aa` | `text-muted` | Secondary text |
-| `--color-accent` | `#ccff00` | `bg-accent`, `text-accent`, `border-accent/50` | Neon: badges, borders, live dot, glows |
-| `--color-accent-soft` | `#e2fd52` | `hover:bg-accent-soft` | Hover state of accent fills |
-| `--color-accent-ink` | `#09090b` | `text-accent-ink` | Text on accent fills |
-| `--font-display` | Anton (via `--font-anton`) | `font-display` | Watermark and hero headline |
-| `--animate-pulse-dot` | 1.8s ring | `animate-pulse-dot` | Live status dot |
-
-Custom utilities defined in `globals.css` with `@utility`:
-
-| Utility | Effect |
-| --- | --- |
-| `text-outline` | Transparent fill, 1px `line-strong` stroke — hollow display type |
-| `text-outline-accent` | Same, with a 60% neon stroke |
-| `bg-grid` | 80px faint grid, radially faded toward the viewport edges |
-| `bg-noise` | Tiled SVG `feTurbulence` grain; set strength with `opacity-*` |
-
-The old `.grid-backdrop` class was **removed** — the page-wide `bg-grid` layer from Task 7.1 replaces it. The `.glow` class still exists, retuned to a 22% neon mix.
-
----
-
-### Task 7.1: Commit tokens, add the display font, and mount the backdrop layers
-
-**Files:**
-- Commit (already modified by the architect — do not edit): `app/globals.css`
-- Create: `components/layout/backdrop.tsx`
-- Modify: `app/layout.tsx` (full replacement)
-
-**Interfaces produced:** `Backdrop` (no props). The `font-display` utility becomes functional once `--font-anton` is defined by this task.
-
-- [x] **Step 1: Confirm the token update is present**
-
-```bash
-git diff --stat app/globals.css
-grep -n "ccff00\|@utility bg-noise\|--font-display" app/globals.css
-```
-
-Expected: `app/globals.css` shows as modified, and all three patterns match. If they do not match, stop and report — do not recreate the file.
-
-- [x] **Step 2: Create `components/layout/backdrop.tsx`**
-
-```tsx
-/**
- * Page-wide atmosphere layers, fixed to the viewport so content scrolls over
- * them.
- *
- * The grid sits at `-z-10`: behind every section, but still above the canvas,
- * because `<body>`'s background propagates to the canvas (`<html>` has no
- * background of its own). The noise sits at `z-100`, above everything including
- * the header, and ignores the pointer so it never intercepts clicks.
- */
-export function Backdrop() {
-  return (
-    <>
-      <div aria-hidden className="bg-grid pointer-events-none fixed inset-0 -z-10" />
-      <div
-        aria-hidden
-        className="bg-noise pointer-events-none fixed inset-0 z-100 opacity-[0.05]"
-      />
-    </>
-  );
-}
-```
-
-Do not add a background color to `<html>` anywhere. If `<html>` gets a background, the body background stops propagating to the canvas and paints over the `-z-10` grid.
-
-- [x] **Step 3: Replace `app/layout.tsx`**
-
-```tsx
-import type { Metadata } from "next";
-import { Anton, Geist, Geist_Mono } from "next/font/google";
-
-import { Backdrop } from "@/components/layout/backdrop";
-import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
-import { siteConfig } from "@/data/site";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// Condensed display face for the hero watermark and headline. Anton ships a
-// single static weight, so `weight` is required.
-const anton = Anton({
-  variable: "--font-anton",
-  subsets: ["latin"],
-  weight: "400",
-});
-
-export const metadata: Metadata = {
-  title: `${siteConfig.name} — ${siteConfig.role}`,
-  description: siteConfig.description,
-  openGraph: {
-    title: `${siteConfig.name} — ${siteConfig.role}`,
-    description: siteConfig.description,
-    type: "website",
-  },
-};
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
-  return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} h-full antialiased`}
-    >
-      <body className="min-h-full bg-bg font-sans text-fg">
-        <Backdrop />
-        <SmoothScrollProvider>{children}</SmoothScrollProvider>
-      </body>
-    </html>
-  );
-}
-```
-
-- [x] **Step 4: Verify**
+- [ ] **Step 4: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -2008,29 +628,31 @@ npm run build
 npm run dev
 ```
 
-Expected in the browser: every existing accent (the "Developer" headline word, category badges, focus rings, text selection) is now neon lime instead of orange. A faint 80px grid is visible across the whole page and stays fixed while content scrolls. A very subtle film grain sits over everything, including the header. The hero's old square grid is gone. Primary buttons are still white — that changes in Task 7.2.
+At http://localhost:3000, scroll slowly from the hero to the footer:
 
-- [x] **Step 5: Commit**
+- [ ] Between hero/projects, projects/stack, and stack/contact, a divider appears: two hairlines grow out from a short neon slash, then a label fades in. Labels read `ANGLE 01 // 135°`, `ANGLE 02 // 45°`, `ANGLE 03 // 180°`.
+- [ ] The slash for angle 01 runs from top-right to bottom-left, angle 02 from top-left to bottom-right, angle 03 is horizontal.
+- [ ] The footer has a divider labelled `ANGLE 12 // 90°` with a vertical slash, and a barely visible diamond texture behind the copyright line.
+- [ ] Each divider animates only the first time it enters the viewport.
+- [ ] With DevTools → Rendering → "Emulate CSS prefers-reduced-motion: reduce" and a reload, every divider is already fully drawn.
+
+- [ ] **Step 5: Commit**
 
 ```bash
-git add app/globals.css app/layout.tsx components/layout/backdrop.tsx
-git commit -m "feat(theme): neon accent tokens, display font and backdrop layers"
+git add components/ui/strike-line.tsx app/page.tsx components/layout/site-footer.tsx
+git commit -m "feat(identity): add strike line dividers and woven footer"
 ```
 
 ---
 
-### Task 7.2: Neon accent on buttons, badges, and skill cards
+### Task 11.3: Add the strike wipe to buttons
 
 **Files:**
 - Modify: `components/ui/button.tsx` (full replacement)
-- Modify: `components/ui/badge.tsx` (full replacement)
-- Modify: `components/sections/tech-stack-card.tsx` (full replacement)
 
-**Interfaces produced:** `Button` keeps its exact props (`variant: "primary" | "outline" | "ghost"`, `size`, `asChild`). `Badge` gains `variant?: "default" | "accent"` and exports `badgeVariants`. Existing `<Badge className="...">` call sites keep compiling.
+**Interfaces produced:** unchanged `Button` / `buttonVariants` API. `primary` and `outline` variants now clip their content (`overflow-hidden`) and create a stacking context (`isolate`).
 
-- [x] **Step 1: Replace `components/ui/button.tsx`**
-
-Primary becomes a neon fill with dark ink and a glow on hover. Outline gets a stronger hairline and a softer glow. `transition-colors` widens to include `box-shadow` so the glow animates.
+- [ ] **Step 1: Replace `components/ui/button.tsx`**
 
 ```tsx
 import * as React from "react";
@@ -2039,15 +661,23 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
+/*
+ * Strike wipe: `before:` is a skewed band parked off the left edge. On hover it
+ * slashes across to the right, like a stick cutting through. `isolate` plus
+ * `before:-z-10` paints the band above the button's own background but below
+ * its label and icon. The global reduced-motion rule shortens the transition to
+ * near zero, so the slash is simply skipped there.
+ */
+const strikeWipe =
+  "relative isolate overflow-hidden before:pointer-events-none before:absolute before:inset-y-0 before:left-0 before:-z-10 before:w-1/2 before:-translate-x-[150%] before:-skew-x-[30deg] before:transition-transform before:duration-500 before:ease-out hover:before:translate-x-[250%]";
+
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-tight transition-[color,background-color,border-color,box-shadow] duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        primary:
-          "bg-accent text-accent-ink hover:bg-accent-soft hover:shadow-[0_0_32px_-6px_var(--color-accent)]",
-        outline:
-          "border border-line-strong bg-transparent text-fg hover:border-accent hover:text-accent hover:shadow-[0_0_32px_-10px_var(--color-accent)]",
+        primary: `${strikeWipe} bg-accent text-accent-ink before:bg-white/45 hover:bg-accent-soft hover:shadow-[0_0_32px_-6px_var(--color-accent)]`,
+        outline: `${strikeWipe} border border-line-strong bg-transparent text-fg before:bg-accent/15 hover:border-accent hover:text-accent hover:shadow-[0_0_32px_-10px_var(--color-accent)]`,
         ghost: "text-muted hover:text-fg",
       },
       size: {
@@ -2086,78 +716,7 @@ export function Button({
 export { buttonVariants };
 ```
 
-- [x] **Step 2: Replace `components/ui/badge.tsx`**
-
-`BadgeProps` is a type alias rather than an empty `interface … extends` so the `@typescript-eslint/no-empty-object-type` rule never fires.
-
-```tsx
-import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
-
-import { cn } from "@/lib/utils";
-
-const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-3 py-1 font-mono text-xs tracking-tight transition-colors",
-  {
-    variants: {
-      variant: {
-        default: "border-line bg-elevated text-muted",
-        accent: "border-accent/40 bg-accent/10 text-accent",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  },
-);
-
-export type BadgeProps = React.ComponentProps<"span"> & VariantProps<typeof badgeVariants>;
-
-export function Badge({ className, variant, ...props }: BadgeProps) {
-  return <span className={cn(badgeVariants({ variant, className }))} {...props} />;
-}
-
-export { badgeVariants };
-```
-
-- [x] **Step 3: Replace `components/sections/tech-stack-card.tsx`**
-
-Adds a neon border and outer glow on hover, and lights the card label.
-
-```tsx
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import type { SkillCategory } from "@/types";
-
-export interface TechStackCardProps {
-  category: SkillCategory;
-  className?: string;
-}
-
-export function TechStackCard({ category, className }: TechStackCardProps) {
-  return (
-    <article
-      className={cn(
-        "group flex flex-col gap-4 rounded-card border border-line bg-surface p-6 transition-[border-color,box-shadow] duration-300 hover:border-accent/50 hover:shadow-[0_0_40px_-16px_var(--color-accent)]",
-        className,
-      )}
-    >
-      <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-muted transition-colors group-hover:text-accent">
-        {category.label}
-      </h3>
-      <ul className="flex flex-wrap gap-2">
-        {category.skills.map((skill) => (
-          <li key={skill.name}>
-            <Badge className="text-fg">{skill.name}</Badge>
-          </li>
-        ))}
-      </ul>
-    </article>
-  );
-}
-```
-
-- [x] **Step 4: Verify**
+- [ ] **Step 2: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -2166,207 +725,827 @@ npm run build
 npm run dev
 ```
 
-Expected: the hero GitHub button and the "Live Demo" buttons are neon with near-black text and glow on hover. Outline buttons turn neon on hover. Hovering a skill card in the bento grid gives it a neon border, a soft outer glow, and a neon label.
+- [ ] Hovering the hero **GitHub** button (primary) sends a pale diagonal band slashing left to right across it, under the label. The label and icon stay fully readable.
+- [ ] Hovering **Resume** (outline) sends a faint lime band across it the same way.
+- [ ] Moving the pointer off a button sends the band back. No band is ever visible outside the button's rounded edge.
+- [ ] Ghost buttons in the header nav have no band.
+- [ ] Keyboard focus still shows the accent outline ring around the whole button (the ring is not clipped).
 
-- [x] **Step 5: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
-git add components/ui/button.tsx components/ui/badge.tsx components/sections/tech-stack-card.tsx
-git commit -m "feat(ui): neon accent buttons, badges and skill card glow"
+git add components/ui/button.tsx
+git commit -m "feat(ui): add strike wipe to buttons"
 ```
 
 ---
 
-### Task 7.3: Build the telemetry bar
+### Task 11.4: Add baybayin accents to headings, the preloader, and the hero
 
 **Files:**
-- Modify: `data/site.ts` (full replacement)
-- Create: `hooks/use-local-time.ts`
-- Create: `components/sections/telemetry-bar.tsx`
+- Modify: `components/ui/section-heading.tsx` (full replacement)
+- Modify: `components/sections/projects-showcase.tsx`
+- Modify: `components/sections/bento-grid.tsx`
+- Modify: `components/sections/contact.tsx`
+- Modify: `components/ui/preloader.tsx`
+- Modify: `components/sections/hero.tsx`
 
-**Interfaces produced:** `siteConfig` gains `watermark: "DEVELOPER"`, `availability: { isAvailable: true; label: string }`, `timeZone: "Asia/Manila"`, `timeZoneLabel: "GMT+8"`. `useLocalTime(timeZone: string): string | null`. `TelemetryBar` (props `{ className?: string }`). Task 7.4 renders the bar and reads `siteConfig.watermark`.
+**Interfaces consumed:** `baybayin` and `BaybayinEntry` (Task 11.1), `font-baybayin`.
+**Interfaces produced:** `SectionHeading` gains an optional prop `script?: BaybayinEntry`.
 
-- [x] **Step 1: Replace `data/site.ts`**
-
-The existing fields are unchanged; four fields are added at the end of `siteConfig`.
-
-```ts
-import type { SocialLink } from "@/types";
-
-export const siteConfig = {
-  name: "Your Name",
-  initials: "YN",
-  role: "Full Stack Developer",
-  description:
-    "Full Stack Developer building web applications, games, and the systems behind them.",
-  url: "https://example.com",
-  email: "you@example.com",
-  githubUrl: "https://github.com/your-handle",
-  resumePath: "/resume.pdf",
-  /**
-   * Giant outline word layered behind the hero portrait. The type size is
-   * tuned for roughly 9 characters; much longer words bleed off both edges.
-   */
-  watermark: "DEVELOPER",
-  /** Drives the pulsing status dot in the hero telemetry bar. */
-  availability: {
-    isAvailable: true,
-    label: "Available for work",
-  },
-  /** IANA zone for the telemetry clock. Asia/Manila is GMT+8 with no DST. */
-  timeZone: "Asia/Manila",
-  timeZoneLabel: "GMT+8",
-} as const;
-
-export const socialLinks: SocialLink[] = [
-  { label: "GitHub", href: siteConfig.githubUrl, icon: "Github" },
-  { label: "Email", href: `mailto:${siteConfig.email}`, icon: "Mail" },
-];
-```
-
-- [x] **Step 2: Create `hooks/use-local-time.ts`**
-
-This uses `useSyncExternalStore`, not `useState` + `useEffect`. Two reasons: the server snapshot is `null`, so server-rendered and hydrated markup always match (a clock rendered on the server would be seconds stale and trigger a hydration mismatch); and it avoids calling `setState` inside an effect, which the React Compiler lint rules in this ESLint config discourage. Do not "simplify" it into an effect.
-
-```ts
-import { useSyncExternalStore } from "react";
-
-const formatters = new Map<string, Intl.DateTimeFormat>();
-
-function getFormatter(timeZone: string) {
-  let formatter = formatters.get(timeZone);
-  if (!formatter) {
-    formatter = new Intl.DateTimeFormat("en-GB", {
-      timeZone,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-    formatters.set(timeZone, formatter);
-  }
-  return formatter;
-}
-
-function subscribe(onStoreChange: () => void) {
-  const id = window.setInterval(onStoreChange, 1000);
-  return () => window.clearInterval(id);
-}
-
-/**
- * Current wall-clock time in `timeZone` as "HH:MM:SS", updating once a second.
- *
- * Returns null on the server and during hydration, so server and client markup
- * always match; callers render a placeholder for null. The snapshot is a
- * string, so React compares it by value and the component only re-renders when
- * the displayed second actually changes.
- */
-export function useLocalTime(timeZone: string): string | null {
-  return useSyncExternalStore(
-    subscribe,
-    () => getFormatter(timeZone).format(new Date()),
-    () => null,
-  );
-}
-```
-
-- [x] **Step 3: Create `components/sections/telemetry-bar.tsx`**
-
-Layout: status on the left, role in the center (`md` and up), clock on the right. The pulsing ring is a CSS animation, so the existing global `prefers-reduced-motion` rule in `globals.css` already stops it — the solid dot stays. Do **not** add `aria-live` to the clock; it would announce every second to screen readers.
+- [ ] **Step 1: Replace `components/ui/section-heading.tsx`**
 
 ```tsx
-"use client";
-
-import { siteConfig } from "@/data/site";
-import { useLocalTime } from "@/hooks/use-local-time";
 import { cn } from "@/lib/utils";
+import type { BaybayinEntry } from "@/types";
 
-export function TelemetryBar({ className }: { className?: string }) {
-  const time = useLocalTime(siteConfig.timeZone);
-  const { availability } = siteConfig;
+export interface SectionHeadingProps {
+  eyebrow: string;
+  title: string;
+  /** Decorative baybayin shown after the eyebrow. Pass an entry from `data/baybayin.ts`. */
+  script?: BaybayinEntry;
+  className?: string;
+}
 
+export function SectionHeading({ eyebrow, title, script, className }: SectionHeadingProps) {
   return (
-    <div
-      className={cn(
-        "flex items-center justify-between gap-4 border-y border-line py-3 font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-muted",
-        className,
-      )}
-    >
-      <p className="flex items-center gap-3">
-        <span aria-hidden className="relative flex size-2">
-          {availability.isAvailable ? (
-            <span className="absolute inset-0 animate-pulse-dot rounded-full bg-accent" />
-          ) : null}
-          <span
-            className={cn(
-              "relative size-2 rounded-full",
-              availability.isAvailable
-                ? "bg-accent shadow-[0_0_10px_var(--color-accent)]"
-                : "bg-muted",
-            )}
-          />
-        </span>
-        <span className={availability.isAvailable ? "text-fg" : undefined}>
-          {availability.label}
-        </span>
-      </p>
-
-      <p className="hidden md:block">{siteConfig.role}</p>
-
-      <p className="flex items-center gap-2 tabular-nums">
-        <span className="hidden sm:inline">Local</span>
-        <span className="text-fg">{time ?? "--:--:--"}</span>
-        <span className="text-accent">{siteConfig.timeZoneLabel}</span>
-      </p>
+    <div className={cn("flex flex-col gap-3", className)}>
+      <span className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.25em] text-accent">
+        <span aria-hidden className="h-px w-8 bg-accent" />
+        {eyebrow}
+        {script ? (
+          <span aria-hidden className="font-baybayin text-sm tracking-normal text-muted">
+            {script.text}
+          </span>
+        ) : null}
+      </span>
+      <h2 className="text-balance text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
+        {title}
+      </h2>
     </div>
   );
 }
 ```
 
-- [x] **Step 4: Verify**
+- [ ] **Step 2: Pass scripts from the three sections**
+
+In each file below, add this import directly after the `SectionHeading` import:
+
+```tsx
+import { baybayin } from "@/data/baybayin";
+```
+
+Then make these replacements:
+
+- `components/sections/projects-showcase.tsx`: `<SectionHeading eyebrow="Selected Work" title="Projects" />` → `<SectionHeading eyebrow="Selected Work" title="Projects" script={baybayin.projects} />`
+- `components/sections/bento-grid.tsx`: `<SectionHeading eyebrow="Toolkit" title="Stack & Discipline" />` → `<SectionHeading eyebrow="Toolkit" title="Stack & Discipline" script={baybayin.stack} />`
+- `components/sections/contact.tsx`: in the `<SectionHeading` props, add the line `script={baybayin.contact}` directly after `eyebrow="Contact"`.
+
+- [ ] **Step 3: Add the baybayin name to the preloader**
+
+In `components/ui/preloader.tsx`, add after the `motion/react` import block (after its closing `} from "motion/react";` line):
+
+```tsx
+
+import { baybayin } from "@/data/baybayin";
+```
+
+Then replace:
+
+```tsx
+              <div className="mt-10 flex items-baseline font-mono tabular-nums">
+```
+
+with:
+
+```tsx
+              <span className="animate-status-in mt-4 font-baybayin text-2xl text-accent/80 md:text-3xl">
+                {baybayin.name.text}
+              </span>
+
+              <div className="mt-8 flex items-baseline font-mono tabular-nums">
+```
+
+- [ ] **Step 4: Add the motto under the hero headline**
+
+In `components/sections/hero.tsx`, add this import directly above the `siteConfig` import:
+
+```tsx
+import { baybayin } from "@/data/baybayin";
+```
+
+Then replace:
+
+```tsx
+              <span className="block text-accent">Developer</span>
+            </h1>
+```
+
+with:
+
+```tsx
+              <span className="block text-accent">Developer</span>
+            </h1>
+            <p className="flex flex-col items-center gap-1 whitespace-nowrap sm:flex-row sm:items-baseline sm:gap-3 lg:justify-start">
+              <span aria-hidden className="font-baybayin text-lg text-muted">
+                {baybayin.motto.text}
+              </span>
+              <span className="font-mono text-[0.65rem] uppercase tracking-[0.3em] text-muted">
+                Diligence &amp; discipline
+              </span>
+            </p>
+```
+
+- [ ] **Step 5: Verify**
 
 ```bash
 npx tsc --noEmit
 npm run lint
 npm run build
+npm run dev
 ```
 
-The bar is not rendered until Task 7.4; these checks confirm it compiles.
+- [ ] The Projects, Stack & Discipline, and Contact eyebrows each end with a short line of baybayin in grey. It renders as baybayin letters, never as empty boxes (□).
+- [ ] With the preloader key cleared, the preloader shows three baybayin characters in lime between the "G" monogram and the counter.
+- [ ] Under the hero headline, a line of baybayin sits next to `DILIGENCE & DISCIPLINE`. At 375px the two stack vertically and neither wraps mid-line; from 640px up they sit side by side.
+- [ ] No horizontal scrollbar at 375px: `document.documentElement.scrollWidth === document.documentElement.clientWidth` is `true`.
 
-- [x] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add data/site.ts hooks/use-local-time.ts components/sections/telemetry-bar.tsx
-git commit -m "feat(hero): add live telemetry bar with status dot and local clock"
+git add components/ui/section-heading.tsx components/sections/projects-showcase.tsx components/sections/bento-grid.tsx components/sections/contact.tsx components/ui/preloader.tsx components/sections/hero.tsx
+git commit -m "feat(identity): add baybayin accents to headings, preloader, and hero"
 ```
 
 ---
 
-### Task 7.4: Rebuild the hero with layered typography
+### Task 11.5: Drive the headgear reveal from a shared ink trail
 
 **Files:**
+- Create: `hooks/use-ink-trail.ts`
+- Create: `components/sections/ink-reveal.tsx`
+- Modify: `components/sections/headgear-reveal.tsx` (full replacement)
+- Modify: `components/sections/hero.tsx`
+
+**Interfaces consumed:** `useMediaQuery` from `@/hooks/use-media-query`; `useInView`, `useReducedMotion` from `motion/react`.
+**Interfaces produced:**
+- From `@/hooks/use-ink-trail`: `type RevealMode = "pointer" | "wander" | "static"`, `interface InkPoint { x; y; radius }`, `type InkLayer`, `type InkHome`, `interface InkTrail { mode; addLayer(layer): () => void; setHome(home | null): void }`, `MAX_DROPS`, `INK_POOL`, `useInkTrail(containerRef)`.
+- From `@/components/sections/ink-reveal`: `InkRevealSection` (accepts every `<section>` prop), `useInkReveal()`, `useSvgId(prefix)`, `InkMask` with props `{ id; x; y; width; height }`, `paintInkMask(svg, points)`, `useInkMaskLayer(svgRef)` (returns the `InkTrail`).
+
+After this task the headgear reveal looks as before when the cursor is over the face, but it now responds anywhere in the hero and leaves a trail that shrinks away. The watermark and background layers come in Task 11.6.
+
+- [ ] **Step 1: Create `hooks/use-ink-trail.ts`**
+
+```ts
+"use client";
+
+import { useEffect, useMemo, useRef, type RefObject } from "react";
+import { useInView, useReducedMotion } from "motion/react";
+
+import { useMediaQuery } from "@/hooks/use-media-query";
+
+/**
+ * - `pointer`: a mouse or trackpad drives the reveal.
+ * - `wander`: touch screens; the reveal drifts over the face on its own.
+ * - `static`: touch plus reduced motion; one fixed reveal, no animation.
+ */
+export type RevealMode = "pointer" | "wander" | "static";
+
+/** A live drop of the trail, in viewport (client) pixels. */
+export interface InkPoint {
+  x: number;
+  y: number;
+  radius: number;
+}
+
+/** Called once per animation frame with every live drop. */
+export type InkLayer = (points: readonly InkPoint[]) => void;
+
+/**
+ * Where the reveal rests in `wander` mode, in viewport pixels, plus how far
+ * it drifts from there (`span`, also in viewport pixels).
+ */
+export type InkHome = () => { x: number; y: number; span: number } | null;
+
+export interface InkTrail {
+  mode: RevealMode;
+  /** Registers a layer to paint every frame. Returns the unregister function. */
+  addLayer: (layer: InkLayer) => () => void;
+  /** Sets (or clears, with `null`) the resting point used in `wander` mode. */
+  setHome: (home: InkHome | null) => void;
+}
+
+/** Most drops alive at once, not counting the head that sits under the cursor. */
+export const MAX_DROPS = 36;
+
+/** Circles every masked layer must render: the drops plus the head. */
+export const INK_POOL = MAX_DROPS + 1;
+
+/** Milliseconds a drop takes to shrink from full size to nothing. */
+const DROP_LIFE = 900;
+
+/** Distance in px the head travels between two dropped drops. */
+const DROP_SPACING = 16;
+
+/**
+ * Drop radius in px. The gooey filter's threshold eats roughly the outer 40%
+ * of each circle, so this is larger than the visible blob.
+ */
+function baseRadius() {
+  return Math.min(150, window.innerWidth * 0.22);
+}
+
+function damp(current: number, target: number, lambda: number, dt: number) {
+  return current + (target - current) * (1 - Math.exp(-lambda * dt));
+}
+
+/**
+ * The shared cursor trail behind the hero reveal. One `requestAnimationFrame`
+ * loop, running only while `containerRef` is on screen, emits "ink drops" along
+ * the pointer's path. Each drop shrinks away over `DROP_LIFE`, so fast movement
+ * leaves a lingering trail. Registered layers receive every live drop each
+ * frame and paint their own masks; nothing here triggers a React render.
+ */
+export function useInkTrail(containerRef: RefObject<HTMLElement | null>): InkTrail {
+  const inView = useInView(containerRef);
+  const reduceMotion = useReducedMotion() ?? false;
+  const finePointer = useMediaQuery("(pointer: fine)");
+  const mode: RevealMode = finePointer ? "pointer" : reduceMotion ? "static" : "wander";
+
+  const layersRef = useRef(new Set<InkLayer>());
+  const homeRef = useRef<InkHome | null>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !inView || mode === "static") return;
+
+    const layers = layersRef.current;
+    const drops: { x: number; y: number; born: number }[] = [];
+    const pointer = { x: 0, y: 0, seen: false };
+    const head = { x: 0, y: 0, placed: false, strength: 0 };
+    let lastDrop: { x: number; y: number } | null = null;
+    let painted = false;
+
+    function onMove(event: PointerEvent) {
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+      pointer.seen = true;
+    }
+    function onLeave() {
+      pointer.seen = false;
+    }
+
+    let last = performance.now();
+    const start = last;
+    let frame = requestAnimationFrame(function tick(now) {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+
+      // Where the head is heading, and whether it should be showing at all.
+      let target: { x: number; y: number } | null = null;
+      if (mode === "pointer") {
+        // Re-checked every frame: scrolling moves the hero under a still cursor.
+        const rect = container!.getBoundingClientRect();
+        const inside =
+          pointer.seen &&
+          pointer.x >= rect.left &&
+          pointer.x <= rect.right &&
+          pointer.y >= rect.top &&
+          pointer.y <= rect.bottom;
+        if (inside) target = pointer;
+      } else {
+        const home = homeRef.current?.();
+        if (home) {
+          const t = (now - start) / 1000;
+          target = {
+            x: home.x + Math.sin(t * 0.6) * home.span,
+            y: home.y + Math.sin(t * 0.9) * home.span * 0.85,
+          };
+        }
+      }
+
+      if (target && !head.placed) {
+        head.x = target.x;
+        head.y = target.y;
+        head.placed = true;
+      }
+      head.strength = damp(head.strength, target ? 1 : 0, 6, dt);
+      if (target) {
+        head.x = damp(head.x, target.x, 18, dt);
+        head.y = damp(head.y, target.y, 18, dt);
+      }
+
+      // Drop ink at even spacing along the head's path since the last drop.
+      if (target) {
+        if (!lastDrop) lastDrop = { x: head.x, y: head.y };
+        const dx = head.x - lastDrop.x;
+        const dy = head.y - lastDrop.y;
+        const distance = Math.hypot(dx, dy);
+        const steps = Math.floor(distance / DROP_SPACING);
+        for (let i = 1; i <= steps; i++) {
+          const f = (i * DROP_SPACING) / distance;
+          drops.push({ x: lastDrop.x + dx * f, y: lastDrop.y + dy * f, born: now });
+        }
+        if (steps > 0) {
+          const f = (steps * DROP_SPACING) / distance;
+          lastDrop = { x: lastDrop.x + dx * f, y: lastDrop.y + dy * f };
+        }
+        if (drops.length > MAX_DROPS) drops.splice(0, drops.length - MAX_DROPS);
+      } else {
+        lastDrop = null;
+      }
+      while (drops.length > 0 && now - drops[0].born > DROP_LIFE) drops.shift();
+
+      const radius = baseRadius();
+      const points: InkPoint[] = drops.map((drop) => {
+        const age = (now - drop.born) / DROP_LIFE;
+        return { x: drop.x, y: drop.y, radius: radius * (1 - age * age) };
+      });
+      if (head.strength > 0.002) {
+        points.push({ x: head.x, y: head.y, radius: radius * head.strength });
+      }
+
+      // Skip painting while idle: nothing was showing and nothing is now.
+      if (points.length > 0 || painted) {
+        layers.forEach((layer) => layer(points));
+        painted = points.length > 0;
+      }
+
+      frame = requestAnimationFrame(tick);
+    });
+
+    if (mode === "pointer") {
+      window.addEventListener("pointermove", onMove, { passive: true });
+      document.documentElement.addEventListener("pointerleave", onLeave);
+    }
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("pointermove", onMove);
+      document.documentElement.removeEventListener("pointerleave", onLeave);
+      // Clear every mask so a paused reveal does not freeze mid-trail.
+      layers.forEach((layer) => layer([]));
+    };
+  }, [containerRef, inView, mode]);
+
+  return useMemo<InkTrail>(
+    () => ({
+      mode,
+      addLayer: (layer) => {
+        layersRef.current.add(layer);
+        return () => {
+          layersRef.current.delete(layer);
+        };
+      },
+      setHome: (home) => {
+        homeRef.current = home;
+      },
+    }),
+    [mode],
+  );
+}
+```
+
+- [ ] **Step 2: Create `components/sections/ink-reveal.tsx`**
+
+```tsx
+"use client";
+
+import {
+  createContext,
+  use,
+  useEffect,
+  useId,
+  useRef,
+  type ComponentProps,
+  type RefObject,
+} from "react";
+
+import { INK_POOL, useInkTrail, type InkPoint, type InkTrail } from "@/hooks/use-ink-trail";
+
+/** Blur radius of the gooey filter, in screen px. */
+const INK_BLUR = 12;
+
+const InkTrailContext = createContext<InkTrail | null>(null);
+
+/**
+ * A `<section>` that owns the shared ink trail. Every `useInkMaskLayer` inside
+ * it reveals against the same cursor trail.
+ */
+export function InkRevealSection({ children, ...props }: ComponentProps<"section">) {
+  const ref = useRef<HTMLElement>(null);
+  const trail = useInkTrail(ref);
+
+  return (
+    <section ref={ref} {...props}>
+      <InkTrailContext value={trail}>{children}</InkTrailContext>
+    </section>
+  );
+}
+
+/** The trail from the nearest `InkRevealSection`. */
+export function useInkReveal(): InkTrail {
+  const trail = use(InkTrailContext);
+  if (!trail) throw new Error("useInkReveal must be used inside <InkRevealSection>");
+  return trail;
+}
+
+/** A `useId`-based id that is safe inside `url(#…)` references. */
+export function useSvgId(prefix: string) {
+  return `${prefix}-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+}
+
+export interface InkMaskProps {
+  /** Base id from `useSvgId`. The mask is referenced as `url(#<id>-mask)`. */
+  id: string;
+  /** Mask region, in the SVG's user units. Must cover everything it masks. */
+  x: number | string;
+  y: number | string;
+  width: number | string;
+  height: number | string;
+}
+
+/**
+ * Filter and mask definitions for one masked layer. Place inside `<defs>`,
+ * then set `mask="url(#<id>-mask)"` on whatever the trail should reveal.
+ *
+ * The gooey filter blurs the drops together, then sharpens the alpha back to a
+ * crisp edge, so they merge into one liquid shape. Its region starts empty and
+ * `paintInkMask` resizes it every frame to fit only the live drops.
+ */
+export function InkMask({ id, x, y, width, height }: InkMaskProps) {
+  return (
+    <>
+      <filter
+        id={`${id}-goo`}
+        data-ink-filter=""
+        filterUnits="userSpaceOnUse"
+        x="0"
+        y="0"
+        width="0"
+        height="0"
+        colorInterpolationFilters="sRGB"
+      >
+        <feGaussianBlur data-ink-blur="" stdDeviation={INK_BLUR} />
+        <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" />
+      </filter>
+      <mask id={`${id}-mask`} maskUnits="userSpaceOnUse" x={x} y={y} width={width} height={height}>
+        <g filter={`url(#${id}-goo)`}>
+          {Array.from({ length: INK_POOL }, (_, i) => (
+            <circle key={i} data-ink-drop="" r="0" fill="#fff" />
+          ))}
+        </g>
+      </mask>
+    </>
+  );
+}
+
+/**
+ * Converts the trail from viewport pixels into this SVG's user units and writes
+ * it into the `InkMask` circles. `getScreenCTM` already includes every CSS
+ * transform on the SVG's ancestors (parallax, entrance scale), so the reveal
+ * stays aligned while those animate.
+ */
+export function paintInkMask(svg: SVGSVGElement, points: readonly InkPoint[]) {
+  const circles = svg.querySelectorAll<SVGCircleElement>("[data-ink-drop]");
+  const filter = svg.querySelector<SVGFilterElement>("[data-ink-filter]");
+  const blur = svg.querySelector<SVGFEGaussianBlurElement>("[data-ink-blur]");
+  const matrix = svg.getScreenCTM();
+  if (!filter || !blur || !matrix) return;
+
+  const toLocal = matrix.inverse();
+  const scale = Math.hypot(matrix.a, matrix.b) || 1;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  circles.forEach((circle, i) => {
+    const point = points[i];
+    if (!point) {
+      circle.setAttribute("r", "0");
+      return;
+    }
+    const local = new DOMPoint(point.x, point.y).matrixTransform(toLocal);
+    const radius = point.radius / scale;
+    circle.setAttribute("cx", local.x.toFixed(1));
+    circle.setAttribute("cy", local.y.toFixed(1));
+    circle.setAttribute("r", radius.toFixed(1));
+    minX = Math.min(minX, local.x - radius);
+    minY = Math.min(minY, local.y - radius);
+    maxX = Math.max(maxX, local.x + radius);
+    maxY = Math.max(maxY, local.y + radius);
+  });
+
+  const std = INK_BLUR / scale;
+  blur.setAttribute("stdDeviation", std.toFixed(2));
+
+  if (points.length === 0) {
+    // A zero-size filter region renders nothing, so the mask reveals nothing.
+    filter.setAttribute("width", "0");
+    filter.setAttribute("height", "0");
+    return;
+  }
+  const margin = std * 3;
+  filter.setAttribute("x", (minX - margin).toFixed(1));
+  filter.setAttribute("y", (minY - margin).toFixed(1));
+  filter.setAttribute("width", (maxX - minX + margin * 2).toFixed(1));
+  filter.setAttribute("height", (maxY - minY + margin * 2).toFixed(1));
+}
+
+/**
+ * Paints the shared trail into the `InkMask` inside `svgRef` every frame.
+ * Does nothing in `static` mode; a layer that needs a fixed reveal there draws
+ * it itself.
+ */
+export function useInkMaskLayer(svgRef: RefObject<SVGSVGElement | null>) {
+  const trail = useInkReveal();
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg || trail.mode === "static") return;
+    return trail.addLayer((points) => paintInkMask(svg, points));
+  }, [svgRef, trail]);
+
+  return trail;
+}
+```
+
+- [ ] **Step 3: Replace `components/sections/headgear-reveal.tsx`**
+
+```tsx
+"use client";
+
+import { useEffect, useRef } from "react";
+
+import {
+  InkMask,
+  paintInkMask,
+  useInkMaskLayer,
+  useSvgId,
+} from "@/components/sections/ink-reveal";
+
+/*
+ * Every coordinate in this file is in hero-portrait.png pixels. The SVG uses
+ * the portrait's own dimensions as its viewBox and sits exactly on top of the
+ * portrait's 3:2 box, so these numbers stay aligned at every screen size.
+ */
+const PORTRAIT = { width: 2048, height: 1365 } as const;
+
+/**
+ * Where the headgear photo is drawn. Calibrated so the cage covers the face
+ * and the shell sits just above the hood. Re-tune only if either image changes.
+ */
+const HEADGEAR = { x: 419, y: 90, width: 1166, height: 1260 } as const;
+
+/** Middle of the face: where the reveal rests on touch devices. */
+const FACE = { x: 1029, y: 520 } as const;
+
+/** Radius of the fixed reveal in `static` mode, in portrait pixels. */
+const STATIC_RADIUS = 300;
+
+/** How far the `wander` reveal drifts from the face, in portrait pixels. */
+const WANDER_SPAN = 140;
+
+/**
+ * Reveals a photo of an Arnis headgear over the face in the hero portrait,
+ * inside the shared ink trail: the face is fully covered wherever the trail
+ * is. A faint line-art ghost of the headgear is always visible as a hint. Must
+ * be placed inside the same 3:2 box as the portrait, inside an
+ * `InkRevealSection`.
+ */
+export function HeadgearReveal() {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const id = useSvgId("headgear");
+  const trail = useInkMaskLayer(svgRef);
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    // Touch + reduced motion: one fixed reveal over the face, no animation.
+    // Painted in viewport pixels so it goes through the same code path.
+    if (trail.mode === "static") {
+      const matrix = svg.getScreenCTM();
+      if (!matrix) return;
+      const face = new DOMPoint(FACE.x, FACE.y).matrixTransform(matrix);
+      paintInkMask(svg, [{ x: face.x, y: face.y, radius: STATIC_RADIUS * matrix.a }]);
+      return;
+    }
+
+    // Tell the trail where the face is, for the `wander` drift on touch.
+    trail.setHome(() => {
+      const matrix = svg.getScreenCTM();
+      if (!matrix) return null;
+      const face = new DOMPoint(FACE.x, FACE.y).matrixTransform(matrix);
+      return { x: face.x, y: face.y, span: WANDER_SPAN * matrix.a };
+    });
+    return () => trail.setHome(null);
+  }, [trail]);
+
+  return (
+    <svg
+      ref={svgRef}
+      viewBox={`0 0 ${PORTRAIT.width} ${PORTRAIT.height}`}
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden
+      className="pointer-events-none absolute inset-0 size-full"
+    >
+      <defs>
+        <InkMask id={id} x={HEADGEAR.x} y={HEADGEAR.y} width={HEADGEAR.width} height={HEADGEAR.height} />
+      </defs>
+
+      {/* Always-visible hint, like the wireframe dome on landonorris.com. */}
+      <image href="/images/hero/headgear-ghost.webp" {...HEADGEAR} opacity="0.22" />
+      <image href="/images/hero/headgear.webp" {...HEADGEAR} mask={`url(#${id}-mask)`} />
+    </svg>
+  );
+}
+```
+
+- [ ] **Step 4: Make the hero section own the trail**
+
+In `components/sections/hero.tsx`, add this import directly after the `HeroVisual` import:
+
+```tsx
+import { InkRevealSection } from "@/components/sections/ink-reveal";
+```
+
+Replace the opening tag `<section` with `<InkRevealSection` (keep its `id` and `className` props exactly), and the closing tag `</section>` with `</InkRevealSection>`.
+
+- [ ] **Step 5: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run dev
+```
+
+With the preloader skipped, at 1440px:
+
+- [ ] Moving the mouse over the face reveals the headgear inside a liquid blob, as before.
+- [ ] Moving the mouse quickly across the face leaves a trail of blob that shrinks away within about a second of the mouse stopping or leaving.
+- [ ] With the mouse still over the face, the blob stays.
+- [ ] Moving the mouse far from the face shows nothing yet (the other layers come in Task 11.6). Moving it out of the hero, or out of the window, makes the blob shrink away.
+- [ ] Scrolling the hero half out of view while the mouse is still does not leave a frozen blob.
+- [ ] In DevTools device mode (a phone with touch), the blob drifts slowly over the face on its own.
+- [ ] Console is clean.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add hooks/use-ink-trail.ts components/sections/ink-reveal.tsx components/sections/headgear-reveal.tsx components/sections/hero.tsx
+git commit -m "refactor(hero): drive the headgear reveal from a shared ink trail"
+```
+
+---
+
+### Task 11.6: Reveal the weave, strike slashes, and neon watermark across the hero
+
+**Files:**
+- Create: `components/sections/hero-watermark.tsx`
+- Create: `components/sections/hero-backdrop-reveal.tsx`
 - Modify: `components/sections/hero-visual.tsx` (full replacement)
 - Modify: `components/sections/hero.tsx` (full replacement)
 
-**Interfaces consumed:** `TelemetryBar`, `siteConfig.watermark`, `Button`, the `font-display`, `text-outline`, `glow`, `bg-linear-to-t` utilities.
-**Interfaces produced:** `HeroVisual` now takes props `{ watermark: string }`. `Hero` still takes no props, so `app/page.tsx` needs no change.
+**Interfaces consumed:** `InkMask`, `useInkMaskLayer`, `useSvgId`, `InkRevealSection` (Task 11.5); `getStrike` (Task 11.1); `baybayin` (Task 11.1); `HeadgearReveal`.
+**Interfaces produced:** `HeroWatermark` with props `{ text: string }`; `HeroBackdropReveal` (no props, must be inside `InkRevealSection`).
 
-Composition, back to front:
+The HTML watermark (`<motion.p>` with `text-outline`) is replaced by an SVG that draws the outline and the neon fill from identical `<text>` elements. Its box, font size, and centre point match the old paragraph exactly, so the word does not move.
 
-1. **Glow** — neon bloom behind the portrait.
-2. **Watermark** — giant hollow Anton "DEVELOPER", bleeding off both edges.
-3. **Portrait** — `hero-portrait.png` is a true transparent cutout (verified: ~69% of pixels have alpha 0; the subject fills the middle ~55% of the width and touches the bottom edge). Because it comes after the watermark in the DOM, the head and hood paint over the letters.
-4. **Fade** — a bottom gradient hides the waist cut.
-5. **Copy** — the solid Anton headline and the buttons. On `lg` they sit across the bottom of the stage overlapping the faded portrait; below `lg` they flow underneath it.
+- [ ] **Step 1: Create `components/sections/hero-watermark.tsx`**
 
-On scroll the portrait sinks and the watermark rises, so the layers separate in depth. With reduced motion both stay still and the entrance animations are skipped.
+```tsx
+"use client";
 
-- [x] **Step 1: Replace `components/sections/hero-visual.tsx`**
+import { useRef } from "react";
 
-Two details that must not change:
+import { InkMask, useInkMaskLayer, useSvgId } from "@/components/sections/ink-reveal";
 
-- **The watermark is nested inside the portrait layer.** That keeps it positioned relative to the portrait at every viewport size, so the head always overlaps the letters.
-- **`preload`, not `priority`.** `priority` is deprecated in Next.js 16. The portrait is the single LCP image, which is the case `preload` is for.
+const TEXT_CLASS = "font-display text-[clamp(4.5rem,21vw,22rem)]";
+
+/**
+ * The giant hero word, drawn twice from identical SVG text: a hollow outline
+ * that is always visible, and a solid neon copy that shows only inside the ink
+ * trail. Same text, same attributes, same SVG, so the two can never drift apart.
+ */
+export function HeroWatermark({ text }: { text: string }) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const id = useSvgId("hero-watermark");
+  useInkMaskLayer(svgRef);
+
+  const word = text.toUpperCase();
+
+  return (
+    <svg
+      ref={svgRef}
+      aria-hidden
+      // One line of the word at 0.8 line height. The word overflows both sides
+      // on purpose; the hero section clips it.
+      className="h-[clamp(3.6rem,16.8vw,17.6rem)] w-full overflow-visible select-none"
+    >
+      <defs>
+        <InkMask id={id} x="-100%" y="-100%" width="300%" height="300%" />
+      </defs>
+      <text
+        x="50%"
+        y="50%"
+        textAnchor="middle"
+        dominantBaseline="central"
+        fill="none"
+        strokeWidth="1"
+        className={`${TEXT_CLASS} stroke-line-strong`}
+      >
+        {word}
+      </text>
+      <text
+        x="50%"
+        y="50%"
+        textAnchor="middle"
+        dominantBaseline="central"
+        mask={`url(#${id}-mask)`}
+        className={`${TEXT_CLASS} fill-accent`}
+      >
+        {word}
+      </text>
+    </svg>
+  );
+}
+```
+
+- [ ] **Step 2: Create `components/sections/hero-backdrop-reveal.tsx`**
+
+```tsx
+"use client";
+
+import { useRef } from "react";
+
+import { InkMask, useInkMaskLayer, useSvgId } from "@/components/sections/ink-reveal";
+import { getStrike } from "@/data/strike-angles";
+
+/**
+ * Bold strike slashes crossing the whole hero. Each is anchored at a point
+ * given in percent of the hero and runs far past both edges, so only
+ * fragments ever show through the ink trail.
+ */
+const SLASHES = [
+  { strike: 1, x: "22%", y: "38%", width: 18 },
+  { strike: 2, x: "80%", y: "30%", width: 12 },
+  { strike: 12, x: "63%", y: "50%", width: 8 },
+  { strike: 3, x: "50%", y: "82%", width: 14 },
+] as const;
+
+/** Half the length of each slash, in px: longer than any screen diagonal. */
+const SLASH_REACH = 3000;
+
+/**
+ * The hidden layer behind the hero portrait: a woven diamond texture and neon
+ * strike slashes, visible only inside the cursor's ink trail.
+ */
+export function HeroBackdropReveal() {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const id = useSvgId("hero-backdrop");
+  useInkMaskLayer(svgRef);
+
+  return (
+    <svg ref={svgRef} aria-hidden className="pointer-events-none absolute inset-0 size-full">
+      <defs>
+        {/* Same diamond lattice as the `bg-weave` utility. */}
+        <pattern id={`${id}-weave`} width="32" height="32" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="#fff" strokeWidth="1">
+            <path d="M16 0 32 16 16 32 0 16Z" />
+            <path d="M16 9 23 16 16 23 9 16Z" />
+          </g>
+          <path fill="#fff" d="M16 14.5 17.5 16 16 17.5 14.5 16Z" />
+        </pattern>
+        <InkMask id={id} x="0" y="0" width="100%" height="100%" />
+      </defs>
+
+      <g mask={`url(#${id}-mask)`}>
+        <rect width="100%" height="100%" fill={`url(#${id}-weave)`} opacity="0.08" />
+        {SLASHES.map((slash) => (
+          // A nested <svg> moves the origin to a percentage position, which a
+          // `transform` cannot do; the line then rotates around that origin.
+          <svg key={slash.strike} x={slash.x} y={slash.y} overflow="visible">
+            <line
+              x1={-SLASH_REACH}
+              y1="0"
+              x2={SLASH_REACH}
+              y2="0"
+              transform={`rotate(${getStrike(slash.strike).degrees ?? 0})`}
+              strokeWidth={slash.width}
+              className="stroke-accent"
+            />
+          </svg>
+        ))}
+      </g>
+    </svg>
+  );
+}
+```
+
+- [ ] **Step 3: Replace `components/sections/hero-visual.tsx`**
 
 ```tsx
 "use client";
@@ -2374,6 +1553,9 @@ Two details that must not change:
 import { useRef } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+
+import { HeadgearReveal } from "@/components/sections/headgear-reveal";
+import { HeroWatermark } from "@/components/sections/hero-watermark";
 
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 
@@ -2417,23 +1599,21 @@ export function HeroVisual({ watermark }: { watermark: string }) {
         className="relative w-[min(140%,64rem,calc((100svh_-_12rem)*1.5))] shrink-0"
       >
         {/*
-         * Layer 1: outline watermark. It comes first in the DOM, so the
-         * portrait after it paints on top. `justify-center` on an overflowing
-         * flex item bleeds equally off both sides, which is intended.
+         * Layer 1: the watermark, outline plus its ink-revealed neon fill. It
+         * comes first in the DOM, so the portrait after it paints on top.
          */}
         <motion.div
           aria-hidden
           style={{ y: reduceMotion ? 0 : watermarkY }}
-          className="pointer-events-none absolute inset-x-0 top-[16%] flex select-none justify-center"
+          className="pointer-events-none absolute inset-x-0 top-[16%]"
         >
-          <motion.p
+          <motion.div
             initial={reduceMotion ? false : { opacity: 0, y: 48 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.1, ease: EASE_OUT_EXPO }}
-            className="whitespace-nowrap font-display text-[clamp(4.5rem,21vw,22rem)] uppercase leading-[0.8] text-outline"
           >
-            {watermark}
-          </motion.p>
+            <HeroWatermark text={watermark} />
+          </motion.div>
         </motion.div>
 
         {/* Layer 2: the transparent cutout portrait, in front of the watermark. */}
@@ -2449,8 +1629,10 @@ export function HeroVisual({ watermark }: { watermark: string }) {
             fill
             preload
             sizes="(min-width: 1024px) 1024px, 100vw"
-            className="object-contain object-bottom"
+            className="object-contain object-bottom -translate-y-8"
           />
+          {/* Layer 3: headgear photo over the face, revealed by the ink trail. */}
+          <HeadgearReveal />
         </motion.div>
       </motion.div>
 
@@ -2464,24 +1646,30 @@ export function HeroVisual({ watermark }: { watermark: string }) {
 }
 ```
 
-- [x] **Step 2: Replace `components/sections/hero.tsx`**
+- [ ] **Step 4: Replace `components/sections/hero.tsx`**
 
-`lg:min-h-svh` is deliberate: the hero is a full-viewport stage only on large screens. On phones a forced full height left a large empty band above the portrait.
+The only change from the result of Task 11.5 is `<HeroBackdropReveal />` as the first child of the section, plus its import.
 
 ```tsx
 import { CodeXml, Download } from "lucide-react";
 
+import { HeroBackdropReveal } from "@/components/sections/hero-backdrop-reveal";
 import { HeroVisual } from "@/components/sections/hero-visual";
+import { InkRevealSection } from "@/components/sections/ink-reveal";
 import { TelemetryBar } from "@/components/sections/telemetry-bar";
 import { Button } from "@/components/ui/button";
+import { baybayin } from "@/data/baybayin";
 import { siteConfig } from "@/data/site";
 
 export function Hero() {
   return (
-    <section
+    <InkRevealSection
       id="hero"
       className="relative flex flex-col overflow-hidden px-6 pt-24 pb-10 lg:min-h-svh"
     >
+      {/* Hidden layer behind everything: weave and strike slashes. */}
+      <HeroBackdropReveal />
+
       <div className="relative z-20 mx-auto w-full max-w-7xl">
         <TelemetryBar />
       </div>
@@ -2502,6 +1690,14 @@ export function Hero() {
               Full Stack
               <span className="block text-accent">Developer</span>
             </h1>
+            <p className="flex flex-col items-center gap-1 whitespace-nowrap sm:flex-row sm:items-baseline sm:gap-3 lg:justify-start">
+              <span aria-hidden className="font-baybayin text-lg text-muted">
+                {baybayin.motto.text}
+              </span>
+              <span className="font-mono text-[0.65rem] uppercase tracking-[0.3em] text-muted">
+                Diligence &amp; discipline
+              </span>
+            </p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -2520,12 +1716,12 @@ export function Hero() {
           </div>
         </div>
       </div>
-    </section>
+    </InkRevealSection>
   );
 }
 ```
 
-- [x] **Step 3: Verify**
+- [ ] **Step 5: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -2534,117 +1730,818 @@ npm run build
 npm run dev
 ```
 
-Expected at 1440×900:
+With the preloader skipped, at 1440px:
 
-- The telemetry bar sits under the floating header: pulsing neon dot and "AVAILABLE FOR WORK" on the left, "FULL STACK DEVELOPER" centered, "LOCAL HH:MM:SS GMT+8" on the right, ticking every second.
-- A giant hollow "DEVELOPER" spans nearly the full width, and **the hood and face sit in front of the middle letters**.
-- The solid "FULL STACK / DEVELOPER" headline sits bottom-left overlapping the portrait's faded lower edge; the neon GitHub button and outline Resume button sit bottom-right.
-- Scrolling down, the watermark drifts up faster than the portrait.
+- [ ] Before touching the mouse, the hero looks the same as before this task: outline `DEVELOPER` in the same place, portrait, faint headgear ghost.
+- [ ] Sweeping the mouse over the `DEVELOPER` letters fills them solid lime inside the trail, with the fill exactly on top of the outline — no double edges.
+- [ ] Sweeping the mouse over empty areas left and right of the portrait shows a faint diamond texture inside the trail, and in places a fragment of a thick lime diagonal, vertical, or horizontal bar.
+- [ ] The portrait, headline, and buttons always paint over the revealed layer, and the buttons stay clickable while the trail passes over them.
+- [ ] Scroll down slowly with the mouse still over the watermark: the word and portrait separate in depth (parallax), and the lime fill stays locked to the outline.
+- [ ] At 375px: no horizontal scrollbar, the watermark is in the same place as before this task.
+- [ ] Console is clean.
 
-Expected at 375px (DevTools device toolbar): the portrait is large and centered with the watermark behind the hood, the headline and stacked buttons sit below it, the clock shows without the "Local" label, and **there is no horizontal scrollbar**. In DevTools run `document.documentElement.scrollWidth === window.innerWidth` — it must return `true`.
-
-With "Emulate CSS prefers-reduced-motion: reduce": no entrance animation, no parallax, and the status dot is solid with no ring.
-
-- [x] **Step 4: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add components/sections/hero-visual.tsx components/sections/hero.tsx
-git commit -m "feat(hero): layered watermark typography with parallax portrait"
+git add components/sections/hero-watermark.tsx components/sections/hero-backdrop-reveal.tsx components/sections/hero-visual.tsx components/sections/hero.tsx
+git commit -m "feat(hero): reveal weave, strike slashes, and neon watermark across the hero"
 ```
 
 ---
 
-### Task 7.5: Add mouse-tracked tilt and spotlight to project cards
+### Task 11.7: Phase 11 verification pass
 
-> **Partially superseded by Task 8.1**, which fixes a hydration mismatch in `hooks/use-pointer-tilt.ts`. `project-card.tsx` is unchanged.
+**Files:** none created; fix whatever this task surfaces.
+
+- [ ] **Step 1: Clean production build**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+Expected: all pass with no warnings about missing `alt`, `sizes`, or fonts.
+
+- [ ] **Step 2: Walk the production build at http://localhost:3000**
+
+- [ ] **First visit** (storage key cleared): the preloader shows the baybayin name, counts to 100, and wipes away. Then the hero reveal works as in Task 11.6.
+- [ ] **Performance:** DevTools → Performance, CPU throttling **4× slowdown**, record 5 seconds of continuous fast mouse circles over the whole hero. The frames track shows no long frames (red bars) caused by the reveal, and each frame's Scripting + Rendering + Painting stays under about 8 ms. If frames drop, report it in the handoff rather than changing constants.
+- [ ] **Idle cost:** with the mouse outside the hero for 3 seconds, the recording shows no repeated "Paint" events coming from the hero.
+- [ ] **Off screen:** scroll the hero fully out of view and record 3 seconds; there are no repeating "Animation frame fired" events.
+- [ ] **Touch** (DevTools device mode, e.g. Pixel 7, reload): the blob drifts over the face on its own; the rest of the hero reveal (weave, slashes, lime watermark) appears only where the drifting trail passes.
+- [ ] **Touch + reduced motion** (device mode plus Rendering → prefers-reduced-motion: reduce, reload): one still headgear reveal over the face, nothing moves, nothing else is revealed.
+- [ ] **Mouse + reduced motion:** the cursor still drives the reveal; the preloader fades instead of wiping; strike line dividers are already drawn.
+- [ ] **Widths:** at 375px, 768px, and 1440px, `document.documentElement.scrollWidth === document.documentElement.clientWidth` is `true`, and every baybayin string renders as letters, not boxes.
+- [ ] **Buttons:** every primary and outline button on the page shows the strike wipe on hover and a visible focus ring on keyboard focus.
+- [ ] **Console:** clean on first visit and on reload.
+
+- [ ] **Step 3: Commit any fixes**
+
+```bash
+git add -A -- app components data hooks lib types
+git commit -m "fix: address phase 11 verification findings"
+```
+
+If nothing needed fixing, skip the commit.
+
+---
+
+# Phase 12 — Project case studies
+
+Every project with a written case study gets its own statically generated page at `/projects/<slug>`, reachable from its card. The page has a woven title band with a telemetry spec row, numbered sections separated by strike lines, and a "Next lap" link to the next case study. Unknown slugs and projects without a case study return a styled 404.
+
+Every block below was type-checked, linted, and built with Turbopack in the same scratch copy, on top of Phase 11, then tested against the production build: `/projects/ledger` and `/projects/driftline` are generated; Ledger shows all six sections (a temporary gallery image was used to check the gallery and then removed) and Driftline only Problem and Approach; `/projects/fleetdesk`, `/projects/nope`, and `/nope/x` return HTTP 404 with the DNF page; header links on a case study navigate to `/#stack` and land on the section; card links navigate to the case study at the top of the page; going back does not replay the preloader. Copy the blocks exactly.
+
+### Task 12.1: Add the case study data model
 
 **Files:**
-- Create: `hooks/use-pointer-tilt.ts`
-- Modify: `components/sections/project-card.tsx` (full replacement)
+- Modify: `types/index.ts`
+- Modify: `data/projects.ts` (full replacement)
+- Modify: `lib/queries.ts` (full replacement)
 
-**Interfaces produced:** `usePointerTilt({ disabled?: boolean }): { handlers: { onPointerMove, onPointerLeave }; tiltStyle: { rotateX, rotateY, transformPerspective } | undefined; spotlight: MotionValue<string> }`. `ProjectCard` props are unchanged, so `projects-stack.tsx` needs no change.
+**Interfaces produced:**
+- Types `CaseStudy`, `CaseStudyStep`, `CaseStudyResult`, `CaseStudyImage` from `@/types`, and the new required field `Project.caseStudy: CaseStudy | null`.
+- From `@/lib/queries`: `getProjectBySlug(slug: string): Promise<Project | null>`, `getCaseStudyProjects(): Promise<Project[]>` (only projects with a case study, in `order`), `getNextCaseStudy(slug: string): Promise<Project | null>` (wraps to the first; `null` when there are fewer than two case studies or the slug has none).
 
-The card now has three nested layers, and the split is load-bearing:
+The two example write-ups in `data/projects.ts` are placeholders for the owner, like the rest of that file. Ledger fills every section; Driftline fills only some, to prove that empty sections are hidden. FleetDesk has none.
 
-| Layer | Element | Responsibility |
-| --- | --- | --- |
-| Sticky | `div.sticky` | Pins the card while the stack scrolls (unchanged) |
-| Scroll | `motion.div` | Stack `scale` and `top` offset, **and** receives pointer events |
-| Tilt | `motion.article` | `rotateX` / `rotateY`, spotlight overlay, neon border glow |
+- [ ] **Step 1: Add the case study types to `types/index.ts`**
 
-Pointer events must be measured on the scroll layer, never on the rotating article. `getBoundingClientRect()` on a rotating element changes as it rotates, which feeds back into the pointer math and makes the card jitter. The scroll layer only scales uniformly around its center, so normalized 0–1 pointer coordinates stay correct.
-
-- [x] **Step 1: Create `hooks/use-pointer-tilt.ts`**
+Replace the end of the `Project` interface and the comment that follows it:
 
 ```ts
-import type { PointerEvent as ReactPointerEvent } from "react";
-import {
-  useMotionTemplate,
-  useMotionValue,
-  useSpring,
-  useTransform,
-} from "motion/react";
+  /** Ascending sort key for the scroll stack. Lower renders first. */
+  order: number;
+}
 
-const MAX_TILT_DEG = 6;
-const TILT_SPRING = { stiffness: 200, damping: 20, mass: 0.5 };
+/** Groups the bento tech-stack cards. */
+```
+
+with:
+
+```ts
+  /** Ascending sort key for the scroll stack. Lower renders first. */
+  order: number;
+  /**
+   * Long-form write-up rendered at `/projects/[slug]`. `null` keeps the
+   * project card-only. Becomes a single `case_study` jsonb column in Supabase.
+   */
+  caseStudy: CaseStudy | null;
+}
+
+/** A titled paragraph: one approach step or one technical highlight. */
+export interface CaseStudyStep {
+  title: string;
+  body: string;
+}
+
+/** A headline number on the case study, e.g. { value: "3×", label: "Faster reports" }. */
+export interface CaseStudyResult {
+  value: string;
+  label: string;
+}
+
+/** A screenshot in the case study gallery. `src` is a path under /public. */
+export interface CaseStudyImage {
+  src: string;
+  alt: string;
+  caption: string;
+  width: number;
+  height: number;
+}
 
 /**
- * Mouse-tracked 3D tilt plus a radial spotlight that follows the cursor.
- *
- * - Spread `handlers` onto an element that does NOT rotate. Measuring the
- *   rotating element itself feeds the tilt back into the pointer math and
- *   makes the card jitter.
- * - Apply `tiltStyle` to the child that should rotate.
- * - Use `spotlight` as the `background` of an overlay inside that child.
- *
- * Only mouse input is tracked, so touch scrolling never tilts anything.
+ * The case study body. Empty strings and empty arrays hide their section, so a
+ * write-up can ship before every part is ready.
  */
-export function usePointerTilt({ disabled = false }: { disabled?: boolean } = {}) {
-  // Pointer position within the element, 0–1 per axis; 0.5 is dead center.
-  const pointerX = useMotionValue(0.5);
-  const pointerY = useMotionValue(0.5);
+export interface CaseStudy {
+  /** e.g. "Full-stack developer". */
+  role: string;
+  /** e.g. "Jan–Apr 2026". */
+  timeframe: string;
+  /** e.g. "Solo" or "Team of 4". */
+  team: string;
+  problem: string;
+  approach: CaseStudyStep[];
+  highlights: CaseStudyStep[];
+  results: CaseStudyResult[];
+  gallery: CaseStudyImage[];
+  lessons: string;
+}
 
-  const rotateX = useSpring(
-    useTransform(pointerY, [0, 1], [MAX_TILT_DEG, -MAX_TILT_DEG]),
-    TILT_SPRING,
-  );
-  const rotateY = useSpring(
-    useTransform(pointerX, [0, 1], [-MAX_TILT_DEG, MAX_TILT_DEG]),
-    TILT_SPRING,
-  );
+/** Groups the bento tech-stack cards. */
+```
 
-  const spotX = useTransform(pointerX, (value) => `${value * 100}%`);
-  const spotY = useTransform(pointerY, (value) => `${value * 100}%`);
-  const spotlight = useMotionTemplate`radial-gradient(520px circle at ${spotX} ${spotY}, color-mix(in oklab, var(--color-accent) 14%, transparent), transparent 70%)`;
+- [ ] **Step 2: Replace `data/projects.ts`**
 
-  function onPointerMove(event: ReactPointerEvent<HTMLElement>) {
-    if (event.pointerType !== "mouse") return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    pointerX.set((event.clientX - rect.left) / rect.width);
-    pointerY.set((event.clientY - rect.top) / rect.height);
-  }
+```ts
+import type { Project } from "@/types";
 
-  function onPointerLeave() {
-    pointerX.set(0.5);
-    pointerY.set(0.5);
-  }
+export const projects: Project[] = [
+  {
+    id: "project-ledger",
+    slug: "ledger",
+    title: "Ledger",
+    category: "full-stack",
+    summary: "Real-time expense tracking with shared household budgets.",
+    description:
+      "A full-stack budgeting application with authenticated multi-user households, live balance updates, and monthly reporting. Built around server components with optimistic client updates on the transaction list.",
+    techStack: ["Next.js", "TypeScript", "PostgreSQL", "Tailwind CSS"],
+    liveUrl: "https://example.com",
+    repoUrl: "https://github.com/your-handle/ledger",
+    imageUrl: null,
+    imageAlt: null,
+    year: 2025,
+    order: 1,
+    // Example write-up showing every section. Replace with the real story.
+    caseStudy: {
+      role: "Full-stack developer",
+      timeframe: "Jan–Apr 2025",
+      team: "Solo",
+      problem:
+        "Shared households tracked money in group chats and spreadsheets. Nobody knew the real balance until the end of the month, and settling up started arguments.",
+      approach: [
+        {
+          title: "Model the money first",
+          body: "Designed the schema around households, members, and transactions before writing any UI, so every balance is derived rather than stored.",
+        },
+        {
+          title: "Server components by default",
+          body: "Lists and reports render on the server. Only the transaction form and live balance are client components.",
+        },
+        {
+          title: "Optimistic updates",
+          body: "New transactions appear instantly and reconcile with the server response, so the app feels local even on slow connections.",
+        },
+      ],
+      highlights: [
+        {
+          title: "Race-free balances",
+          body: "Two members adding expenses at the same moment used to double-count. Moving the balance calculation into a single SQL view removed the race entirely.",
+        },
+        {
+          title: "Monthly reports in one query",
+          body: "Replaced a loop of per-category queries with one grouped query, cutting report load time from seconds to milliseconds.",
+        },
+      ],
+      results: [
+        { value: "12", label: "Households using it" },
+        { value: "<200ms", label: "Report load time" },
+        { value: "0", label: "Spreadsheets left" },
+      ],
+      gallery: [],
+      lessons:
+        "Derive, don't store. Every bug that reached users came from a value that was saved when it could have been calculated.",
+    },
+  },
+  {
+    id: "project-driftline",
+    slug: "driftline",
+    title: "Driftline",
+    category: "game-dev",
+    summary: "A top-down arcade racer with procedurally generated circuits.",
+    description:
+      "A 2D racing game featuring a custom drift physics model, lap ghosting, and a seeded track generator. Includes a replay system that records and plays back input frames rather than transforms.",
+    techStack: ["Unity", "C#", "Shader Graph"],
+    liveUrl: null,
+    repoUrl: "https://github.com/your-handle/driftline",
+    imageUrl: null,
+    imageAlt: null,
+    year: 2024,
+    order: 2,
+    // Example of a partial write-up: sections with no content are hidden.
+    caseStudy: {
+      role: "Solo developer",
+      timeframe: "Jun–Aug 2024",
+      team: "Solo",
+      problem:
+        "Arcade racers either feel floaty or punish every mistake. The goal was drifting that is easy to start and hard to master.",
+      approach: [
+        {
+          title: "Physics before graphics",
+          body: "Built the drift model with grey boxes and tuned it for two weeks before drawing a single sprite.",
+        },
+      ],
+      highlights: [],
+      results: [],
+      gallery: [],
+      lessons: "",
+    },
+  },
+  {
+    id: "project-fleetdesk",
+    slug: "fleetdesk",
+    title: "FleetDesk",
+    category: "internship",
+    summary: "Internal dispatch dashboard built during on-the-job training.",
+    description:
+      "An operations dashboard for coordinating vehicle dispatch and driver assignments, delivered during an OJT placement. Replaced a spreadsheet workflow used daily by the dispatch team.",
+    techStack: ["React", "Node.js", "Express", "MySQL"],
+    liveUrl: null,
+    repoUrl: null,
+    imageUrl: null,
+    imageAlt: null,
+    year: 2024,
+    order: 3,
+    caseStudy: null,
+  },
+];
+```
 
-  return {
-    handlers: { onPointerMove, onPointerLeave },
-    tiltStyle: disabled ? undefined : { rotateX, rotateY, transformPerspective: 1000 },
-    spotlight,
-  };
+- [ ] **Step 3: Replace `lib/queries.ts`**
+
+```ts
+import { projects } from "@/data/projects";
+import { skillCategories } from "@/data/skills";
+import type { Project, SkillCategory } from "@/types";
+
+/**
+ * Data access seam.
+ *
+ * These are async today even though the local arrays are synchronous. That is
+ * deliberate: when these are replaced with Supabase queries, the signatures do
+ * not change and no consuming component needs editing.
+ */
+
+export async function getProjects(): Promise<Project[]> {
+  return [...projects].sort((a, b) => a.order - b.order);
+}
+
+export async function getSkillCategories(): Promise<SkillCategory[]> {
+  return [...skillCategories].sort((a, b) => a.order - b.order);
+}
+
+/** The project with this slug, or `null` when none matches. */
+export async function getProjectBySlug(slug: string): Promise<Project | null> {
+  return projects.find((project) => project.slug === slug) ?? null;
+}
+
+/** Projects that have a case study, in display order. */
+export async function getCaseStudyProjects(): Promise<Project[]> {
+  const all = await getProjects();
+  return all.filter((project) => project.caseStudy !== null);
+}
+
+/**
+ * The case study after `slug` in display order, wrapping to the first. `null`
+ * when `slug` is the only case study.
+ */
+export async function getNextCaseStudy(slug: string): Promise<Project | null> {
+  const studies = await getCaseStudyProjects();
+  const index = studies.findIndex((project) => project.slug === slug);
+  if (index === -1 || studies.length < 2) return null;
+  return studies[(index + 1) % studies.length];
 }
 ```
 
-- [x] **Step 2: Replace `components/sections/project-card.tsx`**
+- [ ] **Step 4: Verify**
 
-The category badge switches from a hand-written `className` to `variant="accent"` from Task 7.2. With reduced motion, tilt is disabled but the spotlight and border glow remain — they are color changes, not motion.
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+Expected: all pass. Nothing visible changes yet.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add types/index.ts data/projects.ts lib/queries.ts
+git commit -m "feat(projects): add case study data model"
+```
+
+---
+
+### Task 12.2: Build the case study page and the 404 page
+
+**Files:**
+- Modify: `app/globals.css` (one insertion)
+- Create: `components/case-study/case-study-header.tsx`
+- Create: `components/case-study/case-study-body.tsx`
+- Create: `components/case-study/next-lap.tsx`
+- Create: `app/projects/[slug]/page.tsx`
+- Create: `app/not-found.tsx`
+
+**Interfaces consumed:** `getProjectBySlug`, `getCaseStudyProjects`, `getNextCaseStudy`, `CaseStudy`, `Project` (Task 12.1); `StrikeLine` (Task 11.2); `baybayin` (Task 11.1); `bg-weave`; `Button`; `SiteHeader`; `SiteFooter`; `PROJECT_CATEGORY_LABELS`.
+**Interfaces produced:** `animate-strike-wipe` class; `CaseStudyHeader` `{ project; caseStudy }`; `CaseStudyBody` `{ caseStudy }`; `NextLap` `{ next: Project | null }`; route `/projects/[slug]`.
+
+Read `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/dynamic-routes.md`, `.../02-route-segment-config/dynamicParams.md`, and `.../03-file-conventions/not-found.md` before starting.
+
+- [ ] **Step 1: Add the arrival wipe animation to `app/globals.css`**
+
+In the `@theme` block, insert this directly above `  @keyframes status-in {`:
+
+```css
+  /*
+   * Case study arrival: a skewed panel with a neon leading edge slides off to
+   * the right, uncovering the page. CSS-only, so it also runs without JS.
+   */
+  --animate-strike-wipe: strike-wipe 0.9s cubic-bezier(0.76, 0, 0.24, 1) 0.05s both;
+
+  @keyframes strike-wipe {
+    from {
+      transform: skewX(-12deg) translateX(0);
+    }
+    to {
+      transform: skewX(-12deg) translateX(110%);
+    }
+  }
+
+```
+
+- [ ] **Step 2: Create `components/case-study/case-study-header.tsx`**
+
+```tsx
+import Link from "next/link";
+import { ArrowLeft, ArrowUpRight, CodeXml } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { baybayin } from "@/data/baybayin";
+import { PROJECT_CATEGORY_LABELS, type CaseStudy, type Project } from "@/types";
+
+function projectStatus(project: Project) {
+  if (project.liveUrl) return "Live";
+  if (project.repoUrl) return "Source only";
+  return "Private";
+}
+
+export interface CaseStudyHeaderProps {
+  project: Project;
+  caseStudy: CaseStudy;
+}
+
+/** Title band of a case study: woven texture, Anton title, telemetry spec row. */
+export function CaseStudyHeader({ project, caseStudy }: CaseStudyHeaderProps) {
+  const specs = [
+    { label: "Role", value: caseStudy.role },
+    { label: "Year", value: `${project.year} · ${caseStudy.timeframe}` },
+    { label: "Team", value: caseStudy.team },
+    { label: "Stack", value: project.techStack.join(" / ") },
+    { label: "Status", value: projectStatus(project) },
+  ];
+
+  return (
+    <header className="relative overflow-hidden px-6 pt-32 pb-16 sm:pt-40">
+      <div aria-hidden className="bg-weave pointer-events-none absolute inset-0 opacity-[0.05]" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-bg to-transparent"
+      />
+
+      <div className="relative mx-auto flex max-w-6xl flex-col gap-10">
+        <Link
+          href="/#projects"
+          className="flex w-fit items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-muted transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+        >
+          <ArrowLeft aria-hidden className="size-4" />
+          Back to projects
+        </Link>
+
+        <div className="flex flex-col gap-5">
+          <span className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.25em] text-accent">
+            <span aria-hidden className="h-px w-8 bg-accent" />
+            {PROJECT_CATEGORY_LABELS[project.category]}
+            <span aria-hidden className="font-baybayin text-sm tracking-normal text-muted">
+              {baybayin.projects.text}
+            </span>
+          </span>
+          <h1 className="font-display text-6xl uppercase leading-[0.85] text-fg sm:text-8xl lg:text-9xl">
+            {project.title}
+          </h1>
+          <p className="max-w-2xl text-lg text-fg/80 sm:text-xl">{project.summary}</p>
+        </div>
+
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line sm:grid-cols-3 lg:grid-cols-5">
+          {specs.map((spec) => (
+            <div key={spec.label} className="flex flex-col gap-2 bg-surface p-4 last:col-span-2 sm:last:col-span-1">
+              <dt className="font-mono text-[0.65rem] uppercase tracking-[0.25em] text-muted">
+                {spec.label}
+              </dt>
+              <dd className="text-sm text-fg">{spec.value}</dd>
+            </div>
+          ))}
+        </dl>
+
+        {project.liveUrl || project.repoUrl ? (
+          <div className="flex flex-wrap gap-3">
+            {project.liveUrl ? (
+              <Button asChild>
+                <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
+                  Live Demo
+                  <ArrowUpRight aria-hidden />
+                </a>
+              </Button>
+            ) : null}
+            {project.repoUrl ? (
+              <Button asChild variant="outline">
+                <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
+                  <CodeXml aria-hidden />
+                  Repository
+                </a>
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </header>
+  );
+}
+```
+
+- [ ] **Step 3: Create `components/case-study/case-study-body.tsx`**
+
+```tsx
+import type { ReactNode } from "react";
+import Image from "next/image";
+
+import { StrikeLine } from "@/components/ui/strike-line";
+import type { CaseStudy } from "@/types";
+
+/** Strike angles used for the dividers, in order. All have on-screen lines. */
+const DIVIDER_STRIKES = [1, 2, 12, 3, 4, 8];
+
+interface Block {
+  id: string;
+  title: string;
+  content: ReactNode;
+}
+
+function buildBlocks(caseStudy: CaseStudy): Block[] {
+  const blocks: (Block | null)[] = [
+    caseStudy.problem
+      ? {
+          id: "problem",
+          title: "Problem",
+          content: (
+            <p className="max-w-3xl text-xl leading-relaxed text-fg/90 sm:text-2xl">
+              {caseStudy.problem}
+            </p>
+          ),
+        }
+      : null,
+    caseStudy.approach.length > 0
+      ? {
+          id: "approach",
+          title: "Approach",
+          content: (
+            <ol className="grid gap-4 md:grid-cols-2">
+              {caseStudy.approach.map((step, index) => (
+                <li
+                  key={step.title}
+                  className="flex flex-col gap-3 rounded-card border border-line bg-surface p-6"
+                >
+                  <span className="font-mono text-xs tracking-[0.25em] text-accent">
+                    SECTOR {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <h3 className="text-xl font-semibold tracking-tight text-fg">{step.title}</h3>
+                  <p className="text-sm leading-relaxed text-muted">{step.body}</p>
+                </li>
+              ))}
+            </ol>
+          ),
+        }
+      : null,
+    caseStudy.highlights.length > 0
+      ? {
+          id: "highlights",
+          title: "Highlights",
+          content: (
+            <ul className="flex flex-col gap-8">
+              {caseStudy.highlights.map((highlight) => (
+                <li key={highlight.title} className="flex max-w-3xl flex-col gap-2 border-l-2 border-accent pl-6">
+                  <h3 className="text-xl font-semibold tracking-tight text-fg">{highlight.title}</h3>
+                  <p className="leading-relaxed text-muted">{highlight.body}</p>
+                </li>
+              ))}
+            </ul>
+          ),
+        }
+      : null,
+    caseStudy.results.length > 0
+      ? {
+          id: "results",
+          title: "Results",
+          content: (
+            <dl className="grid gap-8 sm:grid-cols-3">
+              {caseStudy.results.map((result) => (
+                <div key={result.label} className="flex flex-col gap-2">
+                  <dt className="font-mono text-xs uppercase tracking-[0.25em] text-muted">
+                    {result.label}
+                  </dt>
+                  <dd className="font-display text-6xl leading-none text-accent sm:text-7xl">
+                    {result.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ),
+        }
+      : null,
+    caseStudy.gallery.length > 0
+      ? {
+          id: "gallery",
+          title: "Gallery",
+          content: (
+            <div className="grid gap-6 md:grid-cols-2">
+              {caseStudy.gallery.map((image) => (
+                <figure key={image.src} className="flex flex-col gap-3">
+                  <Image
+                    src={image.src}
+                    alt={image.alt}
+                    width={image.width}
+                    height={image.height}
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                    className="w-full rounded-card border border-line"
+                  />
+                  <figcaption className="font-mono text-xs text-muted">{image.caption}</figcaption>
+                </figure>
+              ))}
+            </div>
+          ),
+        }
+      : null,
+    caseStudy.lessons
+      ? {
+          id: "lessons",
+          title: "Lessons",
+          content: (
+            <p className="max-w-3xl text-xl leading-relaxed text-fg/90 sm:text-2xl">
+              {caseStudy.lessons}
+            </p>
+          ),
+        }
+      : null,
+  ];
+  return blocks.filter((block): block is Block => block !== null);
+}
+
+/**
+ * The numbered case study sections. Sections with no content are left out and
+ * the remaining ones are numbered consecutively.
+ */
+export function CaseStudyBody({ caseStudy }: { caseStudy: CaseStudy }) {
+  const blocks = buildBlocks(caseStudy);
+
+  return (
+    <div className="flex flex-col gap-16 pb-24">
+      {blocks.map((block, index) => (
+        <section key={block.id} aria-labelledby={`case-${block.id}`} className="flex flex-col gap-16">
+          <StrikeLine angle={DIVIDER_STRIKES[index % DIVIDER_STRIKES.length]} />
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6">
+            <h2
+              id={`case-${block.id}`}
+              className="flex items-baseline gap-4 font-display text-4xl uppercase text-fg sm:text-5xl"
+            >
+              <span className="font-mono text-sm tracking-[0.25em] text-accent">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              {block.title}
+            </h2>
+            {block.content}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 4: Create `components/case-study/next-lap.tsx`**
+
+```tsx
+import Link from "next/link";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+
+import { PROJECT_CATEGORY_LABELS, type Project } from "@/types";
+
+/** End of a case study: the next case study, and a way back to the list. */
+export function NextLap({ next }: { next: Project | null }) {
+  return (
+    <nav aria-label="Case studies" className="px-6 pb-24">
+      <div className="mx-auto flex max-w-6xl flex-col gap-6">
+        {next ? (
+          <Link
+            href={`/projects/${next.slug}`}
+            className="group relative flex flex-col gap-4 overflow-hidden rounded-card border border-line bg-surface p-8 transition-[border-color,box-shadow] duration-300 hover:border-accent/50 hover:shadow-[0_0_60px_-24px_var(--color-accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:p-12"
+          >
+            <span className="font-mono text-xs tracking-[0.25em] text-accent">NEXT LAP</span>
+            <span className="flex items-center justify-between gap-6">
+              <span className="font-display text-5xl uppercase leading-none text-fg sm:text-7xl">
+                {next.title}
+              </span>
+              <ArrowRight
+                aria-hidden
+                className="size-10 shrink-0 text-accent transition-transform duration-300 group-hover:translate-x-2"
+              />
+            </span>
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
+              {PROJECT_CATEGORY_LABELS[next.category]} · {next.year}
+            </span>
+          </Link>
+        ) : null}
+
+        <Link
+          href="/#projects"
+          className="flex w-fit items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-muted transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+        >
+          <ArrowLeft aria-hidden className="size-4" />
+          Back to projects
+        </Link>
+      </div>
+    </nav>
+  );
+}
+```
+
+- [ ] **Step 5: Create `app/projects/[slug]/page.tsx`**
+
+```tsx
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+
+import { CaseStudyBody } from "@/components/case-study/case-study-body";
+import { CaseStudyHeader } from "@/components/case-study/case-study-header";
+import { NextLap } from "@/components/case-study/next-lap";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
+import { siteConfig } from "@/data/site";
+import { getCaseStudyProjects, getNextCaseStudy, getProjectBySlug } from "@/lib/queries";
+
+// Only projects with a case study get a page; any other slug is a 404.
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
+  const projects = await getCaseStudyProjects();
+  return projects.map((project) => ({ slug: project.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/projects/[slug]">): Promise<Metadata> {
+  const { slug } = await params;
+  const project = await getProjectBySlug(slug);
+  if (!project) return {};
+
+  const title = `${project.title} — ${siteConfig.name}`;
+  return {
+    title,
+    description: project.summary,
+    openGraph: { title, description: project.summary, type: "article" },
+  };
+}
+
+export default async function CaseStudyPage({ params }: PageProps<"/projects/[slug]">) {
+  const { slug } = await params;
+  const project = await getProjectBySlug(slug);
+  if (!project?.caseStudy) notFound();
+
+  const next = await getNextCaseStudy(project.slug);
+
+  return (
+    <>
+      {/* Diagonal neon wipe that uncovers the page on arrival. CSS only. */}
+      <div
+        aria-hidden
+        className="animate-strike-wipe pointer-events-none fixed inset-y-0 -left-1/4 z-90 w-[150%] border-l-2 border-accent bg-bg"
+      />
+      <SiteHeader />
+      <main>
+        <CaseStudyHeader project={project} caseStudy={project.caseStudy} />
+        <CaseStudyBody caseStudy={project.caseStudy} />
+        <NextLap next={next} />
+      </main>
+      <SiteFooter />
+    </>
+  );
+}
+```
+
+- [ ] **Step 6: Create `app/not-found.tsx`**
+
+```tsx
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+
+export default function NotFound() {
+  return (
+    <main className="relative flex min-h-svh flex-col items-center justify-center gap-8 overflow-hidden px-6 text-center">
+      <div aria-hidden className="bg-weave pointer-events-none absolute inset-0 opacity-[0.04]" />
+
+      <span className="relative font-mono text-xs uppercase tracking-[0.3em] text-accent">
+        404 <span className="text-line-strong">{"//"}</span> Did not finish
+      </span>
+      <h1 className="relative font-display text-[clamp(6rem,30vw,18rem)] uppercase leading-[0.8] text-outline-accent">
+        DNF
+      </h1>
+      <p className="relative max-w-md text-muted">
+        This page left the track. The link may be old, or the project may no longer be listed.
+      </p>
+      <Button asChild className="relative">
+        <Link href="/">
+          <ArrowLeft aria-hidden />
+          Back to the start
+        </Link>
+      </Button>
+    </main>
+  );
+}
+```
+
+- [ ] **Step 7: Verify**
+
+```bash
+npx next typegen
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+Expected: the build's route list shows `/projects/[slug]` with `● /projects/ledger` and `● /projects/driftline`, and nothing for `fleetdesk`.
+
+```bash
+npm run start
+```
+
+- [ ] http://localhost:3000/projects/ledger: a diagonal dark panel with a lime edge slides off to the right on arrival. The page shows "Back to projects", the `FULL-STACK` eyebrow with baybayin, a huge `LEDGER` title, the summary, a five-cell spec row (Role, Year, Team, Stack, Status `Live`), and Live Demo / Repository buttons.
+- [ ] Below it: `01 Problem`, `02 Approach` (three `SECTOR` cards), `03 Highlights`, `04 Results` (three big lime numbers), `05 Lessons`, each preceded by a strike line divider. There is no Gallery section. At the bottom, a `NEXT LAP` card for Driftline and a "Back to projects" link.
+- [ ] The browser tab title is `Ledger — Your Name`.
+- [ ] http://localhost:3000/projects/driftline shows only `01 Problem` and `02 Approach`, Status `Source only`, and a `NEXT LAP` card for Ledger.
+- [ ] http://localhost:3000/projects/fleetdesk and http://localhost:3000/projects/anything show the `DNF` page with "Back to the start". In DevTools → Network, the document status is 404.
+- [ ] At 375px on the Ledger page: no horizontal scrollbar; the spec row is two columns with Status spanning the full last row.
+- [ ] With reduced motion emulated and a reload, there is no visible wipe.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add app/globals.css components/case-study app/projects app/not-found.tsx
+git commit -m "feat(case-study): add case study pages and 404"
+```
+
+---
+
+### Task 12.3: Link project cards and the header to case studies
+
+**Files:**
+- Modify: `components/sections/project-card.tsx` (full replacement)
+- Modify: `components/layout/site-header.tsx` (full replacement)
+
+**Interfaces consumed:** `Project.caseStudy` (Task 12.1); route `/projects/[slug]` (Task 12.2); `Link` from `next/link`; `usePathname` from `next/navigation`.
+**Interfaces produced:** none new.
+
+On a project card with a case study, the title becomes a link and "Read case study" becomes the primary button; Live Demo drops to an outline button so only one primary button shows. Cards without a case study are unchanged. On any page other than `/`, the header's section links go to `/#<section>` and the initials go to `/`; on the home page they keep smooth-scrolling.
+
+- [ ] **Step 1: Replace `components/sections/project-card.tsx`**
 
 ```tsx
 "use client";
 
-import { ArrowUpRight, CodeXml } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, ArrowUpRight, CodeXml } from "lucide-react";
 import {
   motion,
   useReducedMotion,
@@ -2708,7 +2605,16 @@ export function ProjectCard({ project, index, total, progress }: ProjectCardProp
 
             <div className="flex flex-col gap-3">
               <h3 className="text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
-                {project.title}
+                {project.caseStudy ? (
+                  <Link
+                    href={`/projects/${project.slug}`}
+                    className="transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+                  >
+                    {project.title}
+                  </Link>
+                ) : (
+                  project.title
+                )}
               </h3>
               <p className="text-lg text-fg/80">{project.summary}</p>
               <p className="max-w-2xl text-sm leading-relaxed text-muted">
@@ -2725,8 +2631,16 @@ export function ProjectCard({ project, index, total, progress }: ProjectCardProp
             </ul>
 
             <div className="flex flex-wrap gap-3">
-              {project.liveUrl ? (
+              {project.caseStudy ? (
                 <Button asChild size="sm">
+                  <Link href={`/projects/${project.slug}`}>
+                    Read case study
+                    <ArrowRight aria-hidden />
+                  </Link>
+                </Button>
+              ) : null}
+              {project.liveUrl ? (
+                <Button asChild size="sm" variant={project.caseStudy ? "outline" : "primary"}>
                   <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
                     Live Demo
                     <ArrowUpRight aria-hidden />
@@ -2750,2004 +2664,227 @@ export function ProjectCard({ project, index, total, progress }: ProjectCardProp
 }
 ```
 
-- [x] **Step 3: Verify**
+- [ ] **Step 2: Replace `components/layout/site-header.tsx`**
 
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run dev
-```
+```tsx
+"use client";
 
-Expected: move the mouse over a pinned project card. The card tilts up to 6° toward the cursor with a springy follow, a soft neon spotlight tracks the cursor inside the card, the border turns neon, and a neon glow appears around the card. Moving the mouse off the card eases it back flat and fades the spotlight out. The scroll-stack scaling from Phase 4 still works while hovering. In DevTools device mode with touch emulation, dragging over a card must **not** tilt it. With reduced motion emulated, the card does not tilt but the spotlight and glow still appear.
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useLenis } from "lenis/react";
+import { CodeXml, Mail, Menu, X } from "lucide-react";
 
-- [x] **Step 4: Commit**
+import { Button } from "@/components/ui/button";
+import { navLinks } from "@/data/navigation";
+import { siteConfig, socialLinks } from "@/data/site";
+import { cn } from "@/lib/utils";
 
-```bash
-git add hooks/use-pointer-tilt.ts components/sections/project-card.tsx
-git commit -m "feat(projects): mouse-tracked card tilt with neon spotlight"
-```
+// lucide-react v1 removed brand icons (no `Github` export), so the "Github"
+// key from `data/site.ts` maps to a generic code icon.
+const socialIcons = { Github: CodeXml, Mail } as const;
 
----
-
-### Task 7.6: Phase 7 verification pass
-
-**Files:** none created; fix whatever this task surfaces.
-
-- [x] **Step 1: Clean build, lint, type check**
-
-```bash
-rm -rf .next
-npm run build
-npm run lint
-npx tsc --noEmit
-```
-
-Expected: all clean, and no `priority` deprecation warning in the build output.
-
-- [x] **Step 2: Walk the five signature elements on the production build**
-
-```bash
-npm run start
-```
-
-- [x] **Layered typography:** at 1440px, 768px, and 375px, the hood and face overlap the hollow "DEVELOPER" watermark.
-- [x] **Neon accent:** badges, primary buttons, focus rings, the live dot, and hover glows are `#ccff00`; the page background is `#09090b`.
-- [x] **Telemetry:** the clock ticks every second in GMT+8 and matches the actual time in Manila; the status dot pulses.
-- [x] **Tilt + spotlight:** project cards tilt and spotlight under the mouse, and do not tilt on touch.
-- [x] **Noise + grid:** grain is faintly visible over the whole page including the header, and the grid stays fixed while scrolling. Neither blocks clicks: every nav link, button, and card link still works.
-
-- [x] **Step 3: Regression checks from Task 6.2**
-
-- [x] `document.documentElement.scrollWidth === window.innerWidth` is `true` at 375px, 768px, and 1440px.
-- [x] All four nav links still scroll to their sections.
-- [x] Reduced motion: no Lenis, no parallax, no entrance animations, no tilt, no pulse ring.
-- [x] Keyboard: every link and button still shows the (now neon) focus ring; the Arnis card still swaps photos on focus.
-
-- [x] **Step 4: Commit any fixes**
-
-```bash
-git add -A
-git commit -m "fix: address phase 7 verification findings"
-```
-
----
-
-# Phase 8 — 3D headgear reveal in the hero
-
-This recreates the signature landonorris.com hero effect with an Arnis twist. On the hero portrait, a faint wireframe dome floats over the head. Moving the mouse over the portrait reveals a 3D black competition headgear locked onto the face, inside a gooey blob that follows the cursor and stretches into a tail when the mouse moves fast. The face stays visible through the cage bars. On touch devices the blob drifts over the face on its own.
-
-Every code block below was type-checked, linted, built with Turbopack, and screenshot-verified in a production build: on desktop with the mouse away from and over the face, on a 390px touch-emulated phone, and with reduced motion. The 3D code ships as a separate ~258 KB (gzipped) chunk that is not referenced in the initial HTML, so it never blocks the portrait. Copy the blocks exactly.
-
-**How it works:**
-
-| Piece | Mechanism |
-| --- | --- |
-| Headgear | Built procedurally in code; there is no model file. Real proportions come from the manufacturer's dimension sheet (12" tall, 9.5" wide, 10" deep). Colours match the owner's competition gear: black shell and cage, red face padding. |
-| Fit | The transparent canvas sits exactly over the 3:2 portrait box. `HEAD_FIT` places the shell in fractions of that box, so the fit holds at every screen size. |
-| Reveal | A shader patch discards every headgear pixel outside a metaball field built from a 10-blob trail that follows the cursor. Hidden pixels are simply not drawn, so the portrait shows through with no transparency sorting. |
-| Face through cage | There is deliberately no inner lining, so the canvas is transparent between the bars and the real face shows. |
-| Ghost | A faint, unmasked wireframe dome is always visible — the hint that something is there. |
-
-**Rules for this phase:**
-
-- `three`, `@react-three/fiber`, and `@react-three/drei` may be imported **only** inside `components/three/`. The only way into that folder from the rest of the app is the `next/dynamic` import in `components/sections/headgear-reveal.tsx`. A static import anywhere else pulls ~1 MB of raw JavaScript into the initial page load.
-- The browser console will show `THREE.Clock: This module has been deprecated`. React Three Fiber 9.7 triggers it internally with three 0.186. It is expected — do not try to fix it.
-- The canvas never receives pointer events. Pointer tracking is a `window` listener, so the hero headline and buttons layered over the portrait stay clickable.
-
----
-
-### Task 8.1: Fix the project-card tilt hydration mismatch
-
-**Files:**
-- Modify: `hooks/use-pointer-tilt.ts` (two edits)
-
-This is a bug in the Phase 7 code. `useReducedMotion()` returns `null` on the server and `true` in a reduced-motion browser. The hook returned `tiltStyle: undefined` when disabled, so the server rendered `transform: perspective(1000px)` and the client rendered no style. React logs a hydration mismatch for every project card. The fix returns the same style object in both cases and has the handler ignore the pointer when disabled.
-
-- [x] **Step 1: Make the pointer handler respect `disabled`**
-
-In `onPointerMove`, replace:
-
-```ts
-    if (event.pointerType !== "mouse") return;
-```
-
-with:
-
-```ts
-    if (disabled || event.pointerType !== "mouse") return;
-```
-
-- [x] **Step 2: Return a stable `tiltStyle`**
-
-In the returned object, replace:
-
-```ts
-    tiltStyle: disabled ? undefined : { rotateX, rotateY, transformPerspective: 1000 },
-```
-
-with:
-
-```ts
-    // Always the same shape, even when disabled. `useReducedMotion()` is null
-    // on the server and true on a reduced-motion client, so returning
-    // `undefined` when disabled made server and client markup disagree and
-    // caused a hydration mismatch. When disabled the pointer values never
-    // move, so the rotation simply stays at 0.
-    tiltStyle: { rotateX, rotateY, transformPerspective: 1000 },
-```
-
-- [x] **Step 3: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run dev
-```
-
-In Chrome DevTools → Rendering, set "Emulate CSS prefers-reduced-motion: reduce" and hard-reload. The console must show **no** "hydration" error mentioning `perspective(1000px)`. With reduced motion, cards must not tilt. Turn emulation off: cards tilt and spotlight under the mouse as before.
-
-- [x] **Step 4: Commit**
-
-```bash
-git add hooks/use-pointer-tilt.ts
-git commit -m "fix(projects): stable tilt style to prevent hydration mismatch"
-```
-
----
-
-### Task 8.2: Install the 3D stack and build the headgear model
-
-> **Superseded by Phase 9.** The procedural 3D headgear read as clip art and is removed in Task 9.2, including the three.js dependencies. Do not re-apply this task.
-
-**Files:**
-- Modify: `package.json`, `package-lock.json`
-- Create: `components/three/headgear-geometry.ts`
-- Create: `components/three/headgear-model.tsx`
-
-**Interfaces produced:**
-- `headgear-geometry.ts`: `SHELL` (`{ x: 4.9, y: 6.2, z: 5.4 }`), `CHIN` (`Vector3`), and the factories `createCrownGeometry()`, `createShellGeometry()`, `createCageGeometries()` (returns `{ bars: TubeGeometry[]; frame: TubeGeometry; padding: TubeGeometry }`), `createSeamGeometries()` (returns `TubeGeometry[]`), `createThroatFlapGeometry()`, and `createSideFlapGeometry()`.
-- `headgear-model.tsx`: `HeadgearMaterials` (`{ shell; seam; lining; cage }`, each a three `Material`) and `HeadgearModel` (props `{ materials: HeadgearMaterials }`).
-
-- [x] **Step 1: Install dependencies**
-
-```bash
-npm install three@^0.186.0 @react-three/fiber@^9.7.0 @react-three/drei@^10.7.8
-npm install -D @types/three@^0.186.0
-```
-
-`@react-three/fiber` 9.7 declares a peer range of `react >=19 <19.3`, which the project's React 19.2.8 satisfies. If npm prints `allow-scripts` warnings, the pending script is `unrs-resolver` (an existing ESLint dependency), not these packages; leave it as is.
-
-- [x] **Step 2: Create `components/three/headgear-geometry.ts`**
-
-```ts
-import {
-  CatmullRomCurve3,
-  ExtrudeGeometry,
-  Shape,
-  SphereGeometry,
-  TubeGeometry,
-  Vector3,
-} from "three";
-
-/*
- * Procedural geometry for a competition Arnis headgear.
- *
- * Units are inches, taken from the manufacturer's dimension sheet: 12" tall,
- * 9.5" wide across the crown, 10" deep. The flaps are shortened from the
- * sheet's 7" so they read as tucked against the neck when worn. The scene
- * scales the whole group to fit the portrait.
- *
- * Coordinate frame: +Y up, +Z out of the face, +X to the wearer's left.
- */
-
-/** Half-extents of the padded shell ellipsoid. */
-export const SHELL = { x: 4.9, y: 6.2, z: 5.4 } as const;
-
-/** Angular extent of the face opening that the cage fills. */
-const OPENING = {
-  /** Half-width around the face, in radians either side of +Z. */
-  halfPhi: 1.08,
-  /** Top edge (brow), as a polar angle from the crown. */
-  thetaTop: 0.34 * Math.PI,
-  /** Bottom edge (chin). */
-  thetaBottom: 0.8 * Math.PI,
-} as const;
-
-/** How far the cage bulges forward of the shell at the center of the face. */
-const CAGE_BULGE = 1.35;
-
-const FRONT = Math.PI / 2;
-
-/**
- * A point on the cage surface. `u` runs across the face (-1 right edge, 1 left
- * edge) and `w` runs down it (-1 forehead, 1 chin). At |u| = 1 or |w| = 1 the
- * point lies exactly on the shell's opening edge, so bars meet the shell.
- */
-function cagePoint(u: number, w: number) {
-  const phi = FRONT + u * OPENING.halfPhi;
-  const theta =
-    OPENING.thetaTop + ((w + 1) / 2) * (OPENING.thetaBottom - OPENING.thetaTop);
-  const bulge = CAGE_BULGE * (1 - u * u) * (1 - w * w);
-  const rz = SHELL.z + bulge;
-  const rx = SHELL.x + bulge * 0.35;
-
-  return new Vector3(
-    -rx * Math.cos(phi) * Math.sin(theta),
-    SHELL.y * Math.cos(theta),
-    rz * Math.sin(phi) * Math.sin(theta),
-  );
+interface NavButtonProps {
+  href: string;
+  onHome: boolean;
+  onNavigate: (href: string) => void;
+  className?: string;
+  children: React.ReactNode;
 }
 
-function tubeThrough(points: Vector3[], radius: number, closed = false) {
-  const curve = new CatmullRomCurve3(points, closed, "centripetal");
-  return new TubeGeometry(curve, points.length * 6, radius, 10, closed);
-}
-
-function sample(count: number, fn: (t: number) => Vector3) {
-  return Array.from({ length: count }, (_, i) => fn(-1 + (2 * i) / (count - 1)));
-}
-
-/** Full crown cap: covers the top of the head including above the face. */
-export function createCrownGeometry() {
-  return new SphereGeometry(1, 64, 24, 0, Math.PI * 2, 0, OPENING.thetaTop + 0.06);
-}
-
-/** Side and back shell, leaving the face open. */
-export function createShellGeometry() {
-  const phiStart = FRONT + OPENING.halfPhi;
-  const phiLength = Math.PI * 2 - OPENING.halfPhi * 2;
-  return new SphereGeometry(
-    1,
-    64,
-    48,
-    phiStart,
-    phiLength,
-    OPENING.thetaTop,
-    OPENING.thetaBottom - OPENING.thetaTop,
-  );
-}
-
-/** Vertical and horizontal cage bars, plus a heavier outer frame. */
-export function createCageGeometries() {
-  const bars: TubeGeometry[] = [];
-  const columns = 7;
-  const rows = 7;
-
-  for (let i = 1; i < columns - 1; i++) {
-    const u = -1 + (2 * i) / (columns - 1);
-    bars.push(tubeThrough(sample(24, (w) => cagePoint(u, w)), 0.11));
-  }
-
-  for (let j = 1; j < rows - 1; j++) {
-    const w = -1 + (2 * j) / (rows - 1);
-    bars.push(tubeThrough(sample(24, (u) => cagePoint(u, w)), 0.11));
-  }
-
-  const frame = [
-    ...sample(16, (w) => cagePoint(-1, w)),
-    ...sample(16, (u) => cagePoint(u, 1)).slice(1),
-    ...sample(16, (w) => cagePoint(1, -w)).slice(1),
-    ...sample(16, (u) => cagePoint(-u, -1)).slice(1, -1),
-  ];
-
-  // The frame runs along the opening edge where the bulge is zero, so it lies
-  // on the shell. Red face padding follows the same loop, pulled slightly in.
-  const padding = frame.map((point) => point.clone().multiplyScalar(0.97));
-
-  return {
-    bars,
-    frame: tubeThrough(frame, 0.2, true),
-    padding: tubeThrough(padding, 0.45, true),
-  };
-}
-
-/** Raised seams that give the shell its padded, stitched look. */
-export function createSeamGeometries() {
-  // Horizontal band around the sides and back, level with the brow.
-  const band = sample(40, (t) => {
-    const phi = FRONT + OPENING.halfPhi + ((t + 1) / 2) * (Math.PI * 2 - OPENING.halfPhi * 2);
-    const theta = 0.42 * Math.PI;
-    return new Vector3(
-      -SHELL.x * 1.01 * Math.cos(phi) * Math.sin(theta),
-      SHELL.y * Math.cos(theta),
-      SHELL.z * 1.01 * Math.sin(phi) * Math.sin(theta),
+/** Smooth-scrolls to the section on the home page; links to it everywhere else. */
+function NavButton({ href, onHome, onNavigate, className, children }: NavButtonProps) {
+  if (onHome) {
+    return (
+      <Button variant="ghost" size="sm" className={className} onClick={() => onNavigate(href)}>
+        {children}
+      </Button>
     );
+  }
+  return (
+    <Button asChild variant="ghost" size="sm" className={className}>
+      <Link href={`/${href}`}>{children}</Link>
+    </Button>
+  );
+}
+
+export function SiteHeader() {
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  // Section anchors only exist on the home page. Elsewhere, links navigate to
+  // `/#anchor` instead of smooth-scrolling.
+  const onHome = usePathname() === "/";
+
+  const lenis = useLenis(({ scroll }) => {
+    setScrolled(scroll > 32);
   });
 
-  // Center seam from the forehead, over the crown, down the back. `angle` is
-  // measured from the crown in the YZ plane: positive toward the face,
-  // negative toward the back of the head.
-  const crown = sample(32, (t) => {
-    const angle = OPENING.thetaTop - ((t + 1) / 2) * (OPENING.thetaTop + 0.76 * Math.PI);
-    return new Vector3(
-      0,
-      SHELL.y * 1.01 * Math.cos(angle),
-      SHELL.z * 1.01 * Math.sin(angle),
-    );
-  });
-
-  return [tubeThrough(band, 0.16), tubeThrough(crown, 0.16)];
-}
-
-function roundedFlapShape(topWidth: number, bottomWidth: number, height: number) {
-  const shape = new Shape();
-  const t = topWidth / 2;
-  const b = bottomWidth / 2;
-  shape.moveTo(-t, 0);
-  shape.lineTo(t, 0);
-  shape.lineTo(b, -height + b * 0.6);
-  shape.quadraticCurveTo(b * 0.9, -height, 0, -height);
-  shape.quadraticCurveTo(-b * 0.9, -height, -b, -height + b * 0.6);
-  shape.closePath();
-  return shape;
-}
-
-const FLAP_EXTRUDE = {
-  depth: 0.5,
-  bevelEnabled: true,
-  bevelThickness: 0.2,
-  bevelSize: 0.2,
-  bevelSegments: 3,
-  curveSegments: 16,
-} as const;
-
-/** Throat flap hanging below the chin, trimmed so it tucks against the neck. */
-export function createThroatFlapGeometry() {
-  return new ExtrudeGeometry(roundedFlapShape(6, 4.6, 5), FLAP_EXTRUDE);
-}
-
-/** Pointed side flaps either side of the throat flap. */
-export function createSideFlapGeometry() {
-  const shape = new Shape();
-  shape.moveTo(-1.3, 0);
-  shape.lineTo(1.3, 0);
-  shape.lineTo(0.25, -4);
-  shape.quadraticCurveTo(0, -4.3, -0.25, -4);
-  shape.closePath();
-  return new ExtrudeGeometry(shape, FLAP_EXTRUDE);
-}
-
-/** The chin edge of the cage, where the flaps attach. */
-export const CHIN = cagePoint(0, 1);
-```
-
-- [x] **Step 3: Create `components/three/headgear-model.tsx`**
-
-The model takes its materials as a prop, so Task 8.3 can pass shader-patched materials without the model knowing about the reveal.
-
-```tsx
-"use client";
-
-import { useEffect, useMemo } from "react";
-import type { Material } from "three";
-
-import {
-  CHIN,
-  SHELL,
-  createCageGeometries,
-  createCrownGeometry,
-  createSeamGeometries,
-  createShellGeometry,
-  createSideFlapGeometry,
-  createThroatFlapGeometry,
-} from "@/components/three/headgear-geometry";
-
-export interface HeadgearMaterials {
-  shell: Material;
-  seam: Material;
-  lining: Material;
-  cage: Material;
-}
-
-const SHELL_SCALE = [SHELL.x, SHELL.y, SHELL.z] as const;
-
-/**
- * The headgear meshes, in inches, centered on the middle of the shell and
- * facing +Z. Materials are supplied by the caller so the same model can be
- * rendered solid, revealed through a mask, or as a wireframe ghost.
- */
-export function HeadgearModel({ materials }: { materials: HeadgearMaterials }) {
-  const geometry = useMemo(
-    () => ({
-      crown: createCrownGeometry(),
-      shell: createShellGeometry(),
-      cage: createCageGeometries(),
-      seams: createSeamGeometries(),
-      throatFlap: createThroatFlapGeometry(),
-      sideFlap: createSideFlapGeometry(),
-    }),
-    [],
-  );
-
-  // Geometries are created imperatively, so free them on unmount.
-  useEffect(() => {
-    return () => {
-      const { cage, seams, ...single } = geometry;
-      [...Object.values(single), ...cage.bars, cage.frame, cage.padding, ...seams].forEach((g) =>
-        g.dispose(),
-      );
-    };
-  }, [geometry]);
-
-  return (
-    <group>
-      <mesh geometry={geometry.crown} scale={SHELL_SCALE} material={materials.shell} />
-      <mesh geometry={geometry.shell} scale={SHELL_SCALE} material={materials.shell} />
-
-      {geometry.seams.map((seam) => (
-        <mesh key={seam.uuid} geometry={seam} material={materials.seam} />
-      ))}
-
-      {geometry.cage.bars.map((bar) => (
-        <mesh key={bar.uuid} geometry={bar} material={materials.cage} />
-      ))}
-      <mesh geometry={geometry.cage.frame} material={materials.cage} />
-      {/*
-       * No inner lining behind the cage on purpose: the canvas is transparent
-       * there, so the real face in the portrait shows through the bars.
-       */}
-      <mesh geometry={geometry.cage.padding} material={materials.lining} />
-
-      <mesh
-        geometry={geometry.throatFlap}
-        material={materials.shell}
-        position={[0, CHIN.y + 0.6, CHIN.z - 1.1]}
-        rotation={[-0.12, 0, 0]}
-      />
-      {([-1, 1] as const).map((side) => (
-        <mesh
-          key={side}
-          geometry={geometry.sideFlap}
-          material={materials.shell}
-          position={[side * 3.7, CHIN.y + 1.2, CHIN.z - 2.4]}
-          rotation={[-0.1, side * 0.9, side * 0.15]}
-        />
-      ))}
-    </group>
-  );
-}
-```
-
-- [x] **Step 4: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-```
-
-Nothing renders these files yet; the checks confirm they compile. (Standalone `tsc` fails on `<group>`/`<mesh>` until Task 8.3 adds a `@react-three/fiber` import that loads R3F v9's JSX augmentation — verified jointly in 8.3 per owner approval.)
-
-- [x] **Step 5: Commit**
-
-```bash
-git add package.json package-lock.json components/three/headgear-geometry.ts components/three/headgear-model.tsx
-git commit -m "feat(hero): procedural arnis headgear model"
-```
-
----
-
-### Task 8.3: Build the cursor reveal layer
-
-> **Superseded by Phase 9.** `components/sections/headgear-reveal.tsx` is fully replaced in Task 9.1 and `components/three/` is deleted in Task 9.2. `hooks/use-media-query.ts` from this task stays and is reused.
-
-**Files:**
-- Create: `components/three/reveal-material.ts`
-- Create: `components/three/headgear-reveal-scene.tsx`
-- Create: `hooks/use-media-query.ts`
-- Create: `components/sections/headgear-reveal.tsx`
-
-**Interfaces consumed:** `HeadgearModel`, `HeadgearMaterials`, `SHELL`.
-**Interfaces produced:**
-- `reveal-material.ts`: `REVEAL_BLOBS` (`10`), `createRevealUniform()`, `RevealUniform`, and `applyReveal(material, uniform)`, which returns the same material.
-- `headgear-reveal-scene.tsx`: `HEAD_FIT`, `RevealMode` (`"pointer" | "wander" | "static"`), and `HeadgearRevealScene` (props `{ active: boolean; mode: RevealMode }`).
-- `use-media-query.ts`: `useMediaQuery(query: string): boolean`.
-- `headgear-reveal.tsx`: `HeadgearReveal` (no props). Task 8.4 renders it.
-
-- [x] **Step 1: Create `components/three/reveal-material.ts`**
-
-The reveal is a small patch to three's built-in `MeshStandardMaterial` shader. For every pixel it sums `r² / d²` over the trail blobs and discards the pixel when the sum is below 1. Summing makes nearby blobs merge into one gooey shape instead of overlapping circles.
-
-```ts
-import { Vector3, type Material } from "three";
-
-/** Number of blobs in the cursor trail. Must match the GLSL array size. */
-export const REVEAL_BLOBS = 10;
-
-/**
- * Shared uniform for every revealed material. Each entry is
- * `(x, y, radius)` in drawing-buffer pixels, with y measured from the bottom
- * like `gl_FragCoord`. Mutating the vectors in place updates every material.
- */
-export function createRevealUniform() {
-  return {
-    value: Array.from({ length: REVEAL_BLOBS }, () => new Vector3(0, 0, 0)),
-  };
-}
-
-export type RevealUniform = ReturnType<typeof createRevealUniform>;
-
-/**
- * Patches a built-in three.js material so it only draws inside a metaball
- * field around the cursor trail. Summing r²/d² per blob and discarding below 1
- * merges nearby blobs into one gooey shape with a crisp edge, and needs no
- * transparency sorting because hidden fragments are discarded outright.
- */
-export function applyReveal<T extends Material>(material: T, uniform: RevealUniform): T {
-  material.onBeforeCompile = (shader) => {
-    shader.uniforms.uReveal = uniform;
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        "#include <common>",
-        `#include <common>
-uniform vec3 uReveal[${REVEAL_BLOBS}];`,
-      )
-      .replace(
-        "#include <clipping_planes_fragment>",
-        `#include <clipping_planes_fragment>
-float revealField = 0.0;
-for (int i = 0; i < ${REVEAL_BLOBS}; i++) {
-  vec2 toBlob = gl_FragCoord.xy - uReveal[i].xy;
-  revealField += (uReveal[i].z * uReveal[i].z) / (dot(toBlob, toBlob) + 1.0);
-}
-if (revealField < 1.0) discard;`,
-      );
-  };
-  // Distinguishes the patched program from the stock one in three's cache.
-  material.customProgramCacheKey = () => `reveal-${REVEAL_BLOBS}`;
-  return material;
-}
-```
-
-- [x] **Step 2: Create `components/three/headgear-reveal-scene.tsx`**
-
-Four details in this file were each found by testing, and each must stay exactly as written:
-
-1. **`resize={{ offsetSize: true }}`.** The portrait fades in from `scale(0.96)`. Without this, the canvas is measured mid-animation, locks ~4% small, and the headgear sits visibly off the face for good.
-2. **Animation state lives in `useRef`, not `useMemo`.** The React Compiler ESLint rules in this project reject mutating a memoized value inside `useFrame` (`react-hooks/immutability`).
-3. **No rotation of the model.** An earlier version turned the headgear toward the cursor; it slid the cage off the photographed face. Alignment beats motion here.
-4. **`HEAD_FIT` values `{ x: 0.5, y: 0.36, width: 0.32 }`** were calibrated against screenshots of `hero-portrait.png`. They only need changing if the portrait image is replaced.
-
-```tsx
-"use client";
-
-import { useEffect, useMemo, useRef } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, Lightformer } from "@react-three/drei";
-import {
-  MathUtils,
-  MeshBasicMaterial,
-  MeshStandardMaterial,
-  SphereGeometry,
-  Vector2,
-} from "three";
-
-import { SHELL } from "@/components/three/headgear-geometry";
-import { HeadgearModel } from "@/components/three/headgear-model";
-import {
-  REVEAL_BLOBS,
-  applyReveal,
-  createRevealUniform,
-} from "@/components/three/reveal-material";
-
-/**
- * Where the head sits inside `hero-portrait.png`, as fractions of the 3:2
- * image box: `x`/`y` locate the middle of the headgear shell, `width` is the
- * shell's width. Calibrated against the actual portrait — if the portrait is
- * replaced, these three numbers are the only thing to re-tune.
- */
-export const HEAD_FIT = { x: 0.5, y: 0.36, width: 0.32 } as const;
-
-/** Shell width in inches, including the cage bulge at the sides. */
-const MODEL_WIDTH_IN = SHELL.x * 2 + 0.7;
-
-/**
- * Radius of each trail blob as a fraction of the canvas's shorter side. Blobs
- * that overlap add up, so at rest the reveal is about 2.3× this size.
- */
-const BLOB_RADIUS = 0.09;
-
-export type RevealMode = "pointer" | "wander" | "static";
-
-export interface HeadgearRevealSceneProps {
-  /** Render loop runs only while true — pass false when the hero is off-screen. */
-  active: boolean;
-  /**
-   * `pointer`: the reveal follows the mouse and hides when it leaves.
-   * `wander`: the reveal drifts slowly over the face (touch devices).
-   * `static`: a fixed reveal over the face (touch + reduced motion).
-   */
-  mode: RevealMode;
-}
-
-export function HeadgearRevealScene({ active, mode }: HeadgearRevealSceneProps) {
-  return (
-    <Canvas
-      camera={{ position: [0, 0, 10], fov: 30 }}
-      dpr={[1, 2]}
-      frameloop={active ? "always" : "never"}
-      gl={{ antialias: true, alpha: true }}
-      // Measure with offsetWidth/offsetHeight, which ignore CSS transforms. The
-      // portrait animates in from scale(0.96); a transform-aware measurement
-      // taken mid-animation would lock the canvas ~4% small and misalign the
-      // headgear with the face for good.
-      resize={{ offsetSize: true }}
-      style={{ pointerEvents: "none" }}
-    >
-      <ambientLight intensity={0.45} />
-      <directionalLight position={[4, 6, 8]} intensity={3.2} />
-      {/* Neon rim light from behind-left, the signature accent. */}
-      <directionalLight position={[-6, 3, -4]} intensity={5} color="#ccff00" />
-      <directionalLight position={[3, -4, 4]} intensity={0.5} color="#ff3b3b" />
-
-      {/* Studio reflections for the metal cage, built locally — no CDN fetch. */}
-      <Environment resolution={256}>
-        <Lightformer intensity={2} position={[0, 4, 6]} scale={[10, 2, 1]} />
-        <Lightformer
-          intensity={1.5}
-          position={[6, 0, 2]}
-          rotation-y={-Math.PI / 2}
-          scale={[6, 6, 1]}
-        />
-        <Lightformer
-          intensity={0.8}
-          color="#ccff00"
-          position={[-6, 0, -2]}
-          rotation-y={Math.PI / 2}
-          scale={[10, 1, 1]}
-        />
-      </Environment>
-
-      <FittedHeadgear mode={mode} />
-    </Canvas>
-  );
-}
-
-function FittedHeadgear({ mode }: { mode: RevealMode }) {
-  const { viewport, camera, gl } = useThree();
-
-  // Map the image-box fractions onto world units at the model's depth.
-  const view = viewport.getCurrentViewport(camera, [0, 0, 0]);
-  const scale = (HEAD_FIT.width * view.width) / MODEL_WIDTH_IN;
-  const position: [number, number, number] = [
-    (HEAD_FIT.x - 0.5) * view.width,
-    (0.5 - HEAD_FIT.y) * view.height,
-    0,
-  ];
-
-  const reveal = useMemo(() => createRevealUniform(), []);
-
-  const materials = useMemo(
-    () => ({
-      shell: applyReveal(
-        // Lifted off pure black so the shell still reads against the page.
-        new MeshStandardMaterial({ color: "#2a2a2f", roughness: 0.45, metalness: 0.15 }),
-        reveal,
-      ),
-      seam: applyReveal(new MeshStandardMaterial({ color: "#3a3a40", roughness: 0.6 }), reveal),
-      lining: applyReveal(
-        new MeshStandardMaterial({ color: "#a3161c", roughness: 0.95 }),
-        reveal,
-      ),
-      cage: applyReveal(
-        new MeshStandardMaterial({
-          color: "#1c1c20",
-          roughness: 0.35,
-          metalness: 0.8,
-        }),
-        reveal,
-      ),
-    }),
-    [reveal],
-  );
-
-  // Always-visible wireframe dome over the crown, hinting at the hidden helmet.
-  const ghost = useMemo(
-    () => ({
-      geometry: new SphereGeometry(1, 36, 12, 0, Math.PI * 2, 0, Math.PI * 0.42),
-      material: new MeshBasicMaterial({
-        color: "#fafafa",
-        wireframe: true,
-        transparent: true,
-        opacity: 0.14,
-        depthWrite: false,
-      }),
-    }),
-    [],
-  );
-
-  useEffect(() => {
-    return () => {
-      Object.values(materials).forEach((material) => material.dispose());
-      ghost.geometry.dispose();
-      ghost.material.dispose();
-    };
-  }, [materials, ghost]);
-
-  // Per-frame animation state lives in refs: the React Compiler lint rules
-  // forbid mutating memoized values from inside useFrame, but refs are meant
-  // to be mutated. Trail positions are canvas CSS pixels, y down; blob 0 leads.
-  const trailRef = useRef<Vector2[] | null>(null);
-  const pointer = useRef({ x: 0, y: 0, inside: false });
-  const strength = useRef(0);
-
-  useEffect(() => {
-    if (mode !== "pointer") return;
-
-    // Listen on window, not the canvas: the canvas ignores pointer events so
-    // the hero headline and buttons layered above it stay clickable.
-    function onMove(event: PointerEvent) {
-      const rect = gl.domElement.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      pointer.current = {
-        x,
-        y,
-        inside: x >= 0 && y >= 0 && x <= rect.width && y <= rect.height,
-      };
-    }
-    function onLeave() {
-      pointer.current.inside = false;
-    }
-
-    window.addEventListener("pointermove", onMove, { passive: true });
-    document.documentElement.addEventListener("pointerleave", onLeave);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      document.documentElement.removeEventListener("pointerleave", onLeave);
-    };
-  }, [gl, mode]);
-
-  useFrame((state, delta) => {
-    const { width, height } = state.size;
-    const dpr = state.gl.getPixelRatio();
-    const faceX = HEAD_FIT.x * width;
-    const faceY = (HEAD_FIT.y + 0.04) * height;
-
-    let targetX = faceX;
-    let targetY = faceY;
-    let targetStrength = 1;
-
-    if (mode === "pointer") {
-      targetX = pointer.current.x;
-      targetY = pointer.current.y;
-      targetStrength = pointer.current.inside ? 1 : 0;
-    } else if (mode === "wander") {
-      const t = state.clock.elapsedTime;
-      targetX = faceX + Math.sin(t * 0.6) * width * 0.07;
-      targetY = faceY + Math.sin(t * 0.9) * height * 0.09;
-    }
-
-    if (!trailRef.current) {
-      trailRef.current = Array.from(
-        { length: REVEAL_BLOBS },
-        () => new Vector2(targetX, targetY),
-      );
-    }
-    const trail = trailRef.current;
-
-    strength.current = MathUtils.damp(strength.current, targetStrength, 6, delta);
-
-    // The lead blob chases the target; each follower chases the one ahead,
-    // slightly slower, so fast movement stretches the reveal into a tail.
-    trail[0].x = MathUtils.damp(trail[0].x, targetX, 16, delta);
-    trail[0].y = MathUtils.damp(trail[0].y, targetY, 16, delta);
-    for (let i = 1; i < REVEAL_BLOBS; i++) {
-      const lambda = 14 - i;
-      trail[i].x = MathUtils.damp(trail[i].x, trail[i - 1].x, lambda, delta);
-      trail[i].y = MathUtils.damp(trail[i].y, trail[i - 1].y, lambda, delta);
-    }
-
-    const baseRadius = Math.min(width, height) * BLOB_RADIUS * strength.current;
-    reveal.value.forEach((uniform, i) => {
-      uniform.set(
-        trail[i].x * dpr,
-        (height - trail[i].y) * dpr,
-        baseRadius * (1 - (i / REVEAL_BLOBS) * 0.7) * dpr,
-      );
-    });
-  });
-
-  return (
-    // No rotation: the headgear must stay locked to the photographed face.
-    <group position={position} scale={scale}>
-      <HeadgearModel materials={materials} />
-      <mesh
-        geometry={ghost.geometry}
-        material={ghost.material}
-        scale={[SHELL.x * 1.06, SHELL.y * 1.04, SHELL.z * 1.06]}
-      />
-    </group>
-  );
-}
-```
-
-- [x] **Step 3: Create `hooks/use-media-query.ts`**
-
-Same `useSyncExternalStore` pattern as `use-local-time.ts`: `false` on the server and during hydration, so markup always matches.
-
-```ts
-import { useCallback, useSyncExternalStore } from "react";
-
-/**
- * Whether `query` currently matches. Returns false on the server and during
- * hydration, then the real value once mounted; re-renders when it changes.
- */
-export function useMediaQuery(query: string): boolean {
-  const subscribe = useCallback(
-    (onStoreChange: () => void) => {
-      const list = window.matchMedia(query);
-      list.addEventListener("change", onStoreChange);
-      return () => list.removeEventListener("change", onStoreChange);
-    },
-    [query],
-  );
-
-  return useSyncExternalStore(
-    subscribe,
-    () => window.matchMedia(query).matches,
-    () => false,
-  );
-}
-```
-
-- [x] **Step 4: Create `components/sections/headgear-reveal.tsx`**
-
-This is the only file outside `components/three/` that references the 3D code, and it does so only through `next/dynamic`. `ssr: false` is required: WebGL does not exist on the server, and Next.js 16 allows `ssr: false` only inside a Client Component, which this file is.
-
-Mode selection:
-
-| Device | Reduced motion off | Reduced motion on |
-| --- | --- | --- |
-| Mouse (`pointer: fine`) | `pointer` | `pointer` (the visitor drives the motion) |
-| Touch | `wander` | `static` |
-
-```tsx
-"use client";
-
-import { useRef } from "react";
-import dynamic from "next/dynamic";
-import { useInView, useReducedMotion } from "motion/react";
-
-import type { RevealMode } from "@/components/three/headgear-reveal-scene";
-import { useMediaQuery } from "@/hooks/use-media-query";
-
-/*
- * three.js, React Three Fiber, and drei live only in this lazily imported
- * chunk, so they never block the portrait (the page's LCP image). `ssr: false`
- * is required: WebGL does not exist on the server.
- */
-const HeadgearRevealScene = dynamic(
-  () =>
-    import("@/components/three/headgear-reveal-scene").then(
-      (mod) => mod.HeadgearRevealScene,
-    ),
-  { ssr: false },
-);
-
-/**
- * Canvas layer that sits exactly on top of the hero portrait and reveals the
- * Arnis headgear over the face through a cursor-following blob. Must be placed
- * inside the same 3:2 box as the portrait image.
- */
-export function HeadgearReveal() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const isVisible = useInView(containerRef);
-  const reduceMotion = useReducedMotion() ?? false;
-  const finePointer = useMediaQuery("(pointer: fine)");
-
-  const mode: RevealMode = finePointer ? "pointer" : reduceMotion ? "static" : "wander";
-
-  return (
-    <div ref={containerRef} aria-hidden className="pointer-events-none absolute inset-0">
-      <HeadgearRevealScene active={isVisible} mode={mode} />
-    </div>
-  );
-}
-```
-
-`import type` from the scene file is safe: type-only imports are erased at build time and do not pull three.js into the main bundle.
-
-- [x] **Step 5: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-```
-
-Nothing renders the layer until Task 8.4.
-
-- [x] **Step 6: Commit**
-
-```bash
-git add components/three/reveal-material.ts components/three/headgear-reveal-scene.tsx hooks/use-media-query.ts components/sections/headgear-reveal.tsx
-git commit -m "feat(hero): cursor-driven metaball reveal layer for headgear"
-```
-
----
-
-### Task 8.4: Mount the reveal over the hero portrait
-
-> **Still valid.** `hero-visual.tsx` keeps rendering `<HeadgearReveal />` in the same place; Phase 9 changes only what that component draws.
-
-**Files:**
-- Modify: `components/sections/hero-visual.tsx` (two insertions)
-
-The layer must go **inside** the portrait's inner `motion.div` (the one with `aspect-[3/2]`), right after `<Image>`. That is what keeps the canvas the exact size and position of the portrait image, and it rides the same entrance animation and parallax.
-
-- [x] **Step 1: Add the import**
-
-Directly below the existing `import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";` line, add a blank line and then:
-
-```tsx
-import { HeadgearReveal } from "@/components/sections/headgear-reveal";
-```
-
-- [x] **Step 2: Render the layer after the portrait image**
-
-Find the portrait `<Image … className="object-contain object-bottom" />` and insert these two lines immediately after its closing `/>`, still inside the same `motion.div`:
-
-```tsx
-          {/* Layer 3: 3D headgear over the face, revealed around the cursor. */}
-          <HeadgearReveal />
-```
-
-The result must read:
-
-```tsx
-          <Image
-            src="/images/hero/hero-portrait.png"
-            alt=""
-            fill
-            preload
-            sizes="(min-width: 1024px) 1024px, 100vw"
-            className="object-contain object-bottom"
-          />
-          {/* Layer 3: 3D headgear over the face, revealed around the cursor. */}
-          <HeadgearReveal />
-        </motion.div>
-```
-
-- [x] **Step 3: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run start
-```
-
-Expected at http://localhost:3000 at 1440×900, on the **production** build:
-
-- **Mouse away from the portrait:** only a faint white wireframe dome shows over the hood. No headgear is visible.
-- **Mouse over the face:** a round, gooey-edged area reveals the black headgear: red padding around the face, black bars across it, and the actual face visible *through* the bars. The bars line up with the face — eyes between the upper bars, smile between the lower ones.
-- **Moving the mouse quickly:** the revealed area stretches into a tail behind the cursor, then catches up.
-- **Mouse leaves the portrait:** the revealed area shrinks away smoothly.
-- **Hero headline and buttons:** still clickable while the mouse is over them.
-- **In DevTools → Network, filtered to JS:** a ~250 KB chunk loads after the page's initial scripts. View the page source: that chunk's filename must **not** appear in the initial HTML.
-
-In DevTools device mode at 390px with touch emulation on, reload. The revealed area drifts slowly over the face on its own, the page still scrolls normally when swiping over the portrait, and `document.documentElement.scrollWidth === window.innerWidth` is `true`.
-
-If the headgear is visibly offset from the face in the desktop check, confirm `resize={{ offsetSize: true }}` is present on the `<Canvas>` before touching `HEAD_FIT`.
-
-- [x] **Step 4: Commit**
-
-```bash
-git add components/sections/hero-visual.tsx
-git commit -m "feat(hero): mount 3d headgear reveal over portrait"
-```
-
----
-
-### Task 8.5: Phase 8 verification pass
-
-**Files:** none created; fix whatever this task surfaces.
-
-- [x] **Step 1: Clean build, lint, type check**
-
-```bash
-rm -rf .next
-npm run build
-npm run lint
-npx tsc --noEmit
-```
-
-- [x] **Step 2: Bundle boundary check**
-
-```bash
-grep -rln "@react-three\|from \"three\"" --include=*.ts --include=*.tsx app components hooks lib data
-```
-
-Expected: only files under `components/three/`. Any other path means 3D code leaked into the main bundle.
-
-- [x] **Step 3: Console check on the production build**
-
-With `npm run start` running, open the page with DevTools open, once normally and once with reduced motion emulated. The only acceptable console message is the `THREE.Clock … deprecated` warning. There must be no hydration errors and no WebGL errors.
-
-- [x] **Step 4: Regression walk**
-
-- [x] Telemetry clock ticks; the status dot pulses (solid with reduced motion).
-- [x] The hollow "DEVELOPER" watermark sits behind the portrait, and the parallax still separates them on scroll.
-- [x] Project cards stack, tilt, and spotlight; with reduced motion they do not tilt and there is no hydration error.
-- [x] Scroll past the hero and back: the reveal still works. The render loop pauses off-screen via `useInView`.
-- [x] No horizontal scrollbar at 375px, 768px, or 1440px.
-
-- [x] **Step 5: Commit any fixes**
-
-```bash
-git add -A
-git commit -m "fix: address phase 8 verification findings"
-```
-
----
-
-# Phase 9 — Photo-based headgear reveal
-
-The Phase 8 headgear was built from code-generated shapes and read as clip art, and it let the face show through the cage. Phase 9 replaces it with a real photo of a STIX Arnis headgear. The reveal now works the way the landonorris.com helmet does: **wherever the blob is, the face is fully covered by the headgear.** When the cursor is away, only a faint line-art outline of the headgear's dome shows above the head.
-
-The swap also removes three.js, React Three Fiber, and drei entirely, cutting a ~258 KB gzipped chunk from the page. The new reveal is a single SVG, about 190 lines of client code, with no new dependencies.
-
-Every block below was type-checked, linted, built with Turbopack, and screenshot-verified in a production build in four states: desktop with the mouse away, desktop with the mouse over the face, a 390px touch-emulated phone, and reduced motion. All four had a clean console and no horizontal overflow. Copy the blocks exactly.
-
-**How it works:**
-
-| Piece | Mechanism |
-| --- | --- |
-| Coordinates | The SVG's `viewBox` is the portrait's own pixel size (`0 0 2048 1365`) and it covers the portrait's 3:2 box, so every position is written in portrait pixels and stays aligned at every screen size. |
-| Headgear | `headgear.webp` is drawn at a calibrated position (`HEADGEAR`) and masked. |
-| Gooey blob | Eight circles form the mask, run through an SVG filter that blurs them together and then sharpens the alpha back to a crisp edge. That merges them into one liquid shape. The filter is limited to the headgear's box, so the blur never processes the whole hero. |
-| Cursor | A `window` listener maps the pointer into portrait pixels with `getScreenCTM()`, which already accounts for the parallax and entrance transforms. A `requestAnimationFrame` loop moves the circles by setting SVG attributes directly, so there are no React re-renders per frame. |
-| Ghost | `headgear-ghost.webp` is edge-detected line art of the same photo, faded out below the brow, drawn at 22% opacity and never masked. |
-
-### Assets (already in the repository — do not regenerate)
-
-The architect has already added two files to `public/images/hero/`. They are untracked; Task 9.1 commits them.
-
-| File | Size | What it is |
-| --- | --- | --- |
-| `headgear.webp` | 648×700, ~97 KB | STIX red Arnis headgear, front view, white studio background removed (transparent WebP) |
-| `headgear-ghost.webp` | 648×700, ~15 KB | White edge-detected line art of the same image, alpha-faded to only the shell and the top of the cage |
-
-Source: STIX's product photo, as listed by Eljan Sports. See the handoff checklist regarding image rights.
-
----
-
-### Task 9.1: Commit the headgear assets and replace the reveal component
-
-**Files:**
-- Commit (already added by the architect — do not edit): `public/images/hero/headgear.webp`, `public/images/hero/headgear-ghost.webp`
-- Modify: `components/sections/headgear-reveal.tsx` (full replacement)
-
-**Interfaces consumed:** `useMediaQuery` (from Task 8.3), `useInView` and `useReducedMotion` from `motion/react`.
-**Interfaces produced:** `HeadgearReveal` (no props), unchanged from Phase 8, so `hero-visual.tsx` needs no edit.
-
-- [x] **Step 1: Confirm the assets are present**
-
-```bash
-ls -la public/images/hero/headgear.webp public/images/hero/headgear-ghost.webp
-```
-
-Expected: both files exist, about 97 KB and 15 KB. If either is missing, stop and report — do not substitute another image.
-
-- [x] **Step 2: Replace `components/sections/headgear-reveal.tsx`**
-
-Details that must not change:
-
-- **`useId().replace(...)`**: React's generated ids can contain characters that break `url(#…)` references, which would silently disable the mask.
-- **Circles are updated with `setAttribute` inside the animation loop**, not through React state. State updates would re-render 60 times a second.
-- **Locally typed `trail` and `pointer` (`Point`)**: the `FACE` constant is `as const`, and without the annotation TypeScript infers the literal types `1029` / `520` and rejects any assignment.
-- **`HEADGEAR`, `FACE`, and `BLOB_RADIUS`** were calibrated from full-reveal screenshots against the actual portrait.
-
-```tsx
-"use client";
-
-import { useEffect, useId, useRef } from "react";
-import { useInView, useReducedMotion } from "motion/react";
-
-import { useMediaQuery } from "@/hooks/use-media-query";
-
-/*
- * Every coordinate in this file is in hero-portrait.png pixels. The SVG uses
- * the portrait's own dimensions as its viewBox and sits exactly on top of the
- * portrait's 3:2 box, so these numbers stay aligned at every screen size.
- */
-const PORTRAIT = { width: 2048, height: 1365 } as const;
-
-/**
- * Where the headgear photo is drawn. Calibrated so the cage covers the face
- * and the shell sits just above the hood. Re-tune only if either image changes.
- */
-const HEADGEAR = { x: 419, y: 90, width: 1166, height: 1260 } as const;
-
-/** Middle of the face: where the reveal rests on touch devices. */
-const FACE = { x: 1029, y: 520 } as const;
-
-/** Circles in the cursor trail. Blob 0 leads; the rest follow, each smaller. */
-const BLOBS = 8;
-
-/**
- * Radius of the lead blob in portrait pixels. The gooey filter's threshold
- * eats roughly the outer 40% of each circle, so this is larger than it looks.
- */
-const BLOB_RADIUS = 300;
-
-type RevealMode = "pointer" | "wander" | "static";
-
-function damp(current: number, target: number, lambda: number, dt: number) {
-  return current + (target - current) * (1 - Math.exp(-lambda * dt));
-}
-
-/**
- * Reveals a photo of an Arnis headgear over the face in the hero portrait,
- * inside a gooey blob that follows the cursor — the face is fully covered
- * wherever the blob is. A faint line-art ghost of the headgear is always
- * visible as a hint. Must be placed inside the same 3:2 box as the portrait.
- */
-export function HeadgearReveal() {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const isVisible = useInView(svgRef);
-  const reduceMotion = useReducedMotion() ?? false;
-  const finePointer = useMediaQuery("(pointer: fine)");
-  const mode: RevealMode = finePointer ? "pointer" : reduceMotion ? "static" : "wander";
-
-  // useId output can contain characters that break `url(#…)` references.
-  const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
-  const gooId = `headgear-goo-${id}`;
-  const maskId = `headgear-mask-${id}`;
-
-  useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg || !isVisible) return;
-
-    const circles = Array.from(svg.querySelectorAll<SVGCircleElement>("[data-blob]"));
-    type Point = { x: number; y: number };
-    const trail: Point[] = circles.map(() => ({ x: FACE.x, y: FACE.y }));
-    const pointer: Point & { inside: boolean } = { x: FACE.x, y: FACE.y, inside: false };
-
-    function draw(strength: number) {
-      circles.forEach((circle, i) => {
-        circle.setAttribute("cx", trail[i].x.toFixed(1));
-        circle.setAttribute("cy", trail[i].y.toFixed(1));
-        const radius = BLOB_RADIUS * (1 - (i / BLOBS) * 0.6) * strength;
-        circle.setAttribute("r", radius.toFixed(1));
-      });
-    }
-
-    // Touch + reduced motion: one fixed reveal over the face, no animation.
-    if (mode === "static") {
-      draw(1);
+  function scrollTo(href: string) {
+    setMenuOpen(false);
+    if (lenis) {
+      lenis.scrollTo(href, { offset: -96 });
       return;
     }
-
-    // Map viewport coordinates into portrait pixels. getScreenCTM accounts for
-    // the parallax and entrance transforms on the portrait's ancestors.
-    function onMove(event: PointerEvent) {
-      const matrix = svg?.getScreenCTM();
-      if (!matrix) return;
-      const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(
-        matrix.inverse(),
-      );
-      pointer.x = point.x;
-      pointer.y = point.y;
-      pointer.inside =
-        point.x >= 0 && point.y >= 0 && point.x <= PORTRAIT.width && point.y <= PORTRAIT.height;
-    }
-    function onLeave() {
-      pointer.inside = false;
-    }
-
-    let strength = mode === "pointer" ? 0 : 1;
-    let last = performance.now();
-    const start = last;
-    let frame = requestAnimationFrame(function tick(now) {
-      const dt = Math.min(0.05, (now - last) / 1000);
-      last = now;
-
-      let targetX: number = FACE.x;
-      let targetY: number = FACE.y;
-      let targetStrength = 1;
-      if (mode === "pointer") {
-        targetX = pointer.x;
-        targetY = pointer.y;
-        targetStrength = pointer.inside ? 1 : 0;
-      } else {
-        const t = (now - start) / 1000;
-        targetX = FACE.x + Math.sin(t * 0.6) * 140;
-        targetY = FACE.y + Math.sin(t * 0.9) * 120;
-      }
-
-      strength = damp(strength, targetStrength, 6, dt);
-
-      // The lead blob chases the target; each follower chases the one ahead,
-      // slightly slower, so fast movement stretches the reveal into a tail.
-      trail[0].x = damp(trail[0].x, targetX, 16, dt);
-      trail[0].y = damp(trail[0].y, targetY, 16, dt);
-      for (let i = 1; i < trail.length; i++) {
-        trail[i].x = damp(trail[i].x, trail[i - 1].x, 14 - i, dt);
-        trail[i].y = damp(trail[i].y, trail[i - 1].y, 14 - i, dt);
-      }
-
-      draw(strength < 0.002 ? 0 : strength);
-      frame = requestAnimationFrame(tick);
-    });
-
-    if (mode === "pointer") {
-      window.addEventListener("pointermove", onMove, { passive: true });
-      document.documentElement.addEventListener("pointerleave", onLeave);
-    }
-
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("pointermove", onMove);
-      document.documentElement.removeEventListener("pointerleave", onLeave);
-    };
-  }, [isVisible, mode]);
+    document.querySelector(href)?.scrollIntoView();
+  }
 
   return (
-    <svg
-      ref={svgRef}
-      viewBox={`0 0 ${PORTRAIT.width} ${PORTRAIT.height}`}
-      preserveAspectRatio="xMidYMid meet"
-      aria-hidden
-      className="pointer-events-none absolute inset-0 size-full"
-    >
-      <defs>
-        {/*
-         * Gooey metaball filter: blur the circles together, then crank alpha
-         * contrast so the soft union snaps back to a crisp edge. Limited to the
-         * headgear's box so the blur only ever processes that area.
-         */}
-        <filter
-          id={gooId}
-          filterUnits="userSpaceOnUse"
-          x={HEADGEAR.x}
-          y={HEADGEAR.y}
-          width={HEADGEAR.width}
-          height={HEADGEAR.height}
-          colorInterpolationFilters="sRGB"
-        >
-          <feGaussianBlur stdDeviation="24" />
-          <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" />
-        </filter>
-        <mask
-          id={maskId}
-          maskUnits="userSpaceOnUse"
-          x="0"
-          y="0"
-          width={PORTRAIT.width}
-          height={PORTRAIT.height}
-        >
-          <g filter={`url(#${gooId})`}>
-            {Array.from({ length: BLOBS }, (_, i) => (
-              <circle key={i} data-blob="" cx={FACE.x} cy={FACE.y} r="0" fill="#fff" />
-            ))}
-          </g>
-        </mask>
-      </defs>
-
-      {/* Always-visible hint, like the wireframe dome on landonorris.com. */}
-      <image href="/images/hero/headgear-ghost.webp" {...HEADGEAR} opacity="0.22" />
-      <image href="/images/hero/headgear.webp" {...HEADGEAR} mask={`url(#${maskId})`} />
-    </svg>
-  );
-}
-```
-
-- [x] **Step 3: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run start
-```
-
-At http://localhost:3000 at 1440×900, on the production build:
-
-- **Mouse away from the portrait:** the face is fully visible, and a faint line-art outline of the headgear's dome sits above the hood. There are **no** lines across the face.
-- **Mouse over the face:** a round, gooey-edged area shows the real headgear photo — red padding band, black horizontal cage bars — and **the face is completely hidden inside that area**.
-- **Moving the mouse quickly:** the area stretches into a tail, then catches up. Moving off the portrait shrinks it away smoothly.
-- **Hero headline and buttons:** still clickable.
-
-At 390px in DevTools device mode with touch emulation, the revealed area drifts slowly over the face on its own. With touch emulation plus "prefers-reduced-motion: reduce", it sits still over the face.
-
-`components/three/` still exists after this task but nothing imports it any more. Task 9.2 deletes it.
-
-- [x] **Step 4: Commit**
-
-```bash
-git add public/images/hero/headgear.webp public/images/hero/headgear-ghost.webp components/sections/headgear-reveal.tsx
-git commit -m "feat(hero): photo-based headgear reveal with svg gooey mask"
-```
-
----
-
-### Task 9.2: Remove the 3D stack
-
-**Files:**
-- Delete: `components/three/` (the whole directory: `headgear-geometry.ts`, `headgear-model.tsx`, `reveal-material.ts`, `headgear-reveal-scene.tsx`)
-- Modify: `package.json`, `package-lock.json`
-
-`hooks/use-media-query.ts` stays; the new reveal uses it.
-
-- [x] **Step 1: Confirm nothing still imports the 3D code**
-
-```bash
-grep -rn "components/three\|@react-three\|from \"three\"" --include=*.ts --include=*.tsx app components hooks lib data
-```
-
-Expected: matches only inside `components/three/` itself. Any match elsewhere means Task 9.1 is incomplete — stop and fix that first.
-
-- [x] **Step 2: Delete the directory and uninstall the packages**
-
-```bash
-rm -rf components/three
-npm uninstall three @react-three/fiber @react-three/drei @types/three
-```
-
-- [x] **Step 3: Verify**
-
-```bash
-grep -rn "@react-three\|\"three\"" package.json
-grep -rn "components/three\|@react-three\|from \"three\"" --include=*.ts --include=*.tsx app components hooks lib data
-npx tsc --noEmit
-npm run lint
-rm -rf .next
-npm run build
-```
-
-Expected: both `grep` commands print nothing, and type check, lint, and build all pass. If the build fails with `next/font: error` / `Error while requesting resource`, that is Google Fonts being unreachable, not a code problem — re-run `npm run build`.
-
-- [x] **Step 4: Commit**
-
-```bash
-git add -A components/three package.json package-lock.json
-git commit -m "chore: remove three.js stack replaced by photo headgear reveal"
-```
-
----
-
-### Task 9.3: Phase 9 verification pass
-
-**Files:** none created; fix whatever this task surfaces.
-
-- [x] **Step 1: Production build walk**
-
-```bash
-npm run start
-```
-
-With DevTools open:
-
-- [x] **Console:** completely clean, both normally and with reduced motion emulated. The old `THREE.Clock` warning must be gone.
-- [x] **Network, filtered to JS:** there is no ~250 KB 3D chunk and no `<canvas>` element on the page (`document.querySelectorAll("canvas").length === 0`).
-- [x] **Hero:** the ghost dome is visible while idle; hovering the face reveals the headgear and hides the face; the telemetry clock ticks; the watermark and portrait parallax still separate on scroll.
-- [x] **Project cards:** they stack, tilt, and spotlight, and there is no hydration error with reduced motion.
-- [x] `document.documentElement.scrollWidth === window.innerWidth` is `true` at 375px, 768px, and 1440px.
-
-- [x] **Step 2: Commit any fixes**
-
-```bash
-git add -A
-git commit -m "fix: address phase 9 verification findings"
-```
-
----
-
-# Phase 10 — Gothic monogram telemetry preloader
-
-A full-screen intro for the first visit in each browser session. It shows the blackletter monogram **𝕲** with a lime glow, a monospace counter running from `00%` to `100%` with a thin progress bar, and three status lines (`GARAZA // DEV PORTFOLIO`, `SYS.INIT // OK`, `LATENCY // 12MS`). It holds at 100% for a moment, then wipes upward with a neon leading edge to uncover the hero. Reloading in the same tab does not replay it.
-
-Every block below was type-checked, linted, and built with Turbopack in a scratch copy of this repository at commit `9023a5b`, then tested with headless Chrome on both the production build and the dev server. Results:
-
-- **First visit:** the overlay is on the first paint, and scrolling stays locked, both by wheel and through Lenis, until the wipe finishes.
-- **Reload in the same tab:** the overlay never paints; `display` stays `none` from the first frame.
-- **Checked at 1440px and 390px:** with reduced motion the overlay fades instead of wiping. With JavaScript disabled it stays hidden and the page works normally.
-- **Console:** clean in production and in development, with no hydration or `<script>` warnings.
-
-Copy the blocks exactly.
-
-**How it works:**
-
-| Piece | Mechanism |
-| --- | --- |
-| No flash | The overlay is in the server HTML on every load, but CSS keeps it `display: none` unless `<html>` has `data-preloader-active`. A tiny inline script, the first thing on the page, sets that attribute during HTML parsing, before first paint, only when `sessionStorage` has no `portfolio_preloaded` key. This is the pattern from `node_modules/next/dist/docs/01-app/02-guides/preventing-flash-before-hydration.md`. A `useEffect`-only check would paint the hero first and then cover it. |
-| React state | React never reads `sessionStorage` during SSR or hydration. `useSyncExternalStore` uses `true` as the server snapshot, then switches to the real storage value right after hydration. |
-| Counter | `animate()` from `motion/react` tweens a motion value from 0 to 100 over 1.6 s. The number and the bar are bound to that value, so the component does not re-render per frame. |
-| Exit | `AnimatePresence` plays `y: "-100%"` over 0.8 s with `[0.76, 0, 0.24, 1]`, after a 0.2 s hold at 100%. With reduced motion it fades out instead. When the exit finishes, the storage key is written and the lock is released. |
-| Scroll lock | CSS `overflow: hidden` on `<html>` while the attribute is set, so scrolling is locked before React loads. Lenis scrolls programmatically, so `lenis.stop()` is also called; `document.body.style.overflow` alone would not stop the wheel. `scrollbar-gutter: stable` prevents a sideways jump when the scrollbar comes back. |
-| Monogram | `𝕲` (U+1D572) is a math symbol that no bundled font covers, so each OS would draw its own substitute or a missing-glyph box. The component renders a plain `G` in **UnifrakturCook** (a Google font, loaded via `next/font`), which is the same blackletter capital on every device. |
-| Stacking | The overlay is `z-90`: above the header (`z-50`) and below the page-wide film grain (`z-100`), so the grain shows on the overlay without a duplicate layer. |
-
----
-
-### Task 10.1: Add the blackletter font, animation tokens, and preloader gate styles
-
-**Files:**
-- Modify: `app/layout.tsx` (full replacement)
-- Modify: `app/globals.css` (three insertions)
-
-**Interfaces produced:** the Tailwind classes `font-gothic`, `animate-monogram-in`, `animate-monogram-breathe`, `animate-status-in`; the CSS gate for `[data-preloader]` / `data-preloader-active`.
-
-- [x] **Step 1: Replace `app/layout.tsx`**
-
-The two changes from the current file: the `UnifrakturCook` font (with its variable added to `<html>`), and `suppressHydrationWarning` on `<html>`, because the preloader's gate script adds an attribute there before React hydrates. `suppressHydrationWarning` only applies to `<html>`'s own attributes, not its children.
-
-```tsx
-import type { Metadata } from "next";
-import { Anton, Geist, Geist_Mono, UnifrakturCook } from "next/font/google";
-
-import { Backdrop } from "@/components/layout/backdrop";
-import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
-import { siteConfig } from "@/data/site";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// Condensed display face for the hero watermark and headline. Anton ships a
-// single static weight, so `weight` is required.
-const anton = Anton({
-  variable: "--font-anton",
-  subsets: ["latin"],
-  weight: "400",
-});
-
-// Blackletter face for the preloader monogram. `display: "block"` hides the
-// letter until the font arrives instead of flashing a fallback serif "G"; the
-// file is preloaded, so the wait is short.
-const unifraktur = UnifrakturCook({
-  variable: "--font-unifraktur",
-  subsets: ["latin"],
-  weight: "700",
-  display: "block",
-});
-
-export const metadata: Metadata = {
-  title: `${siteConfig.name} — ${siteConfig.role}`,
-  description: siteConfig.description,
-  openGraph: {
-    title: `${siteConfig.name} — ${siteConfig.role}`,
-    description: siteConfig.description,
-    type: "website",
-  },
-};
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
-  return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${unifraktur.variable} h-full antialiased`}
-      // The preloader's inline gate script adds an attribute to <html> before
-      // React hydrates.
-      suppressHydrationWarning
-    >
-      <body className="min-h-full bg-bg font-sans text-fg">
-        <Backdrop />
-        <SmoothScrollProvider>{children}</SmoothScrollProvider>
-      </body>
-    </html>
-  );
-}
-```
-
-- [x] **Step 2: Add the animation tokens to the first `@theme` block in `app/globals.css`**
-
-Find this, the end of the `pulse-dot` keyframes and the closing brace of the first `@theme` block:
-
-```css
-      transform: scale(2.6);
-      opacity: 0;
-    }
-  }
-}
-```
-
-Replace it with:
-
-```css
-      transform: scale(2.6);
-      opacity: 0;
-    }
-  }
-
-  /* Preloader: monogram entrance, then a slow glow breath; status line fade. */
-  --animate-monogram-in: monogram-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
-  --animate-monogram-breathe: monogram-breathe 2.4s ease-in-out 0.9s infinite;
-  --animate-status-in: status-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-
-  @keyframes monogram-in {
-    from {
-      transform: scale(0.8);
-      opacity: 0;
-      filter: blur(12px);
-    }
-    to {
-      transform: scale(1);
-      opacity: 1;
-      filter: blur(0);
-    }
-  }
-
-  @keyframes monogram-breathe {
-    0%,
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    50% {
-      transform: scale(1.03);
-      opacity: 0.85;
-    }
-  }
-
-  @keyframes status-in {
-    from {
-      transform: translateY(6px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-}
-```
-
-These entrances are CSS animations rather than motion props on purpose: they start as soon as the server HTML paints, before React loads. The existing global `prefers-reduced-motion` rule already cuts them to near-instant.
-
-- [x] **Step 3: Register the font in the `@theme inline` block**
-
-Find:
-
-```css
-  --font-display: var(--font-anton);
-}
-```
-
-Replace with:
-
-```css
-  --font-display: var(--font-anton);
-  --font-gothic: var(--font-unifraktur);
-}
-```
-
-- [x] **Step 4: Add the gate rules after the Lenis base styles**
-
-Find:
-
-```css
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
-}
-```
-
-Replace with:
-
-```css
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
-}
-
-/*
- * Preloader gate. The overlay is in the server HTML on every load but stays
- * hidden unless the inline gate script flagged a first visit on <html>, so
- * returning visitors and no-JS visitors never see it. Unlayered on purpose:
- * this must beat any Tailwind display utility.
- *
- * While flagged, native scrolling is locked. `scrollbar-gutter: stable` keeps
- * the scrollbar's space reserved so the page does not shift sideways when the
- * lock is released.
- */
-[data-preloader] {
-  display: none;
-}
-
-:root[data-preloader-active] [data-preloader] {
-  display: flex;
-}
-
-:root[data-preloader-active] {
-  overflow: hidden;
-  scrollbar-gutter: stable;
-}
-```
-
-Do not wrap these rules in `@layer`. Tailwind utilities live in a cascade layer, and unlayered CSS always beats layered CSS. That is what lets this gate override any `flex`/`hidden` class.
-
-- [x] **Step 5: Verify**
-
-```bash
-npm run build
-npx tsc --noEmit
-npm run lint
-```
-
-Expected: all three pass. Run `build` first: it regenerates the `LayoutProps` global that `tsc` needs. If the build fails with `next/font: error` / `Error while requesting resource`, Google Fonts was unreachable; re-run `npm run build`. The page looks unchanged at this point: nothing uses the new classes yet.
-
-- [x] **Step 6: Commit**
-
-```bash
-git add app/layout.tsx app/globals.css
-git commit -m "feat(preloader): add blackletter font, animation tokens, and gate styles"
-```
-
----
-
-### Task 10.2: Build the preloader component
-
-**Files:**
-- Create: `components/ui/preloader.tsx`
-
-**Interfaces consumed:** `font-gothic`, `animate-monogram-in`, `animate-monogram-breathe`, `animate-status-in`, and the `[data-preloader]` gate (Task 10.1); the `bg-grid` utility and `.glow` class (Phase 7); `useLenis` from `lenis/react`; `AnimatePresence`, `animate`, `motion`, `useMotionValue`, `useReducedMotion`, `useTransform` from `motion/react`.
-**Interfaces produced:** `Preloader` (no props).
-
-- [x] **Step 1: Create `components/ui/preloader.tsx`**
-
-Details that must not change:
-
-- **No `flex` class on the overlay.** `display` belongs to the CSS gate. The `flex-col items-center justify-center` classes still apply once the gate sets `display: flex`.
-- **`InlineScript`'s `type` switch** (`text/javascript` on the server, `text/plain` on the client) is the documented Next 16 way to render an inline script without React's dev warning.
-- **`useLayoutEffect` re-reads storage.** In development, Strict Mode's remount strips the attribute from `<html>`, and this puts it back before paint. The storage re-read stops a returning visitor, whose `shouldPlay` is still the server value during the hydration commit, from seeing a one-frame flash.
-- **The storage key is written in `handleExitComplete`, not when the counter finishes.** Writing it earlier flips `shouldPlay` to `false` mid-wipe, which removes the `<html>` attribute, and the CSS gate would hide the overlay before the wipe animates.
-- **`{"//"}`** in JSX: a bare `//` text node fails the `react/jsx-no-comment-textnodes` lint rule.
-
-```tsx
-"use client";
-
-import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
-import { useLenis } from "lenis/react";
-import {
-  AnimatePresence,
-  animate,
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useTransform,
-} from "motion/react";
-
-/** Present in sessionStorage once the preloader has played in this tab. */
-const STORAGE_KEY = "portfolio_preloaded";
-
-/**
- * Set on `<html>` while the preloader owns the screen. `app/globals.css` reads
- * it to show the overlay and to lock native scrolling.
- */
-const ACTIVE_ATTRIBUTE = "data-preloader-active";
-
-/** Seconds the counter takes to run from 00 to 100. */
-const COUNT_DURATION = 1.6;
-
-/** Seconds the overlay holds at 100% before it wipes away. */
-const EXIT_HOLD = 0.2;
-
-const EASE_OUT_QUINT = [0.22, 1, 0.36, 1] as const;
-const EASE_IN_OUT_QUART = [0.76, 0, 0.24, 1] as const;
-
-const STATUS_LINES = [
-  { label: "GARAZA", value: "DEV PORTFOLIO", accent: false },
-  { label: "SYS.INIT", value: "OK", accent: true },
-  { label: "LATENCY", value: "12MS", accent: false },
-] as const;
-
-/*
- * Runs synchronously while the browser parses the HTML: before first paint,
- * and before React has loaded. On a first visit it flags `<html>`, which makes
- * the server-rendered overlay visible and locks scrolling. On later visits it
- * does nothing, so the overlay stays `display: none` and never flashes. If
- * sessionStorage is blocked, the preloader is skipped rather than replayed on
- * every load.
- */
-const GATE_SCRIPT = `try{if(!sessionStorage.getItem("${STORAGE_KEY}"))document.documentElement.setAttribute("${ACTIVE_ATTRIBUTE}","")}catch(e){}`;
-
-function readShouldPlay() {
-  try {
-    return sessionStorage.getItem(STORAGE_KEY) === null;
-  } catch {
-    return false;
-  }
-}
-
-// sessionStorage has no change event within the same tab, so there is nothing
-// to subscribe to. The store is only read once, after hydration.
-const subscribe = () => () => {};
-
-/**
- * An inline script that executes during HTML parsing only. On the client it
- * renders as `text/plain`, which stops React warning about `<script>` tags;
- * `suppressHydrationWarning` absorbs the `type` difference.
- */
-function InlineScript({ html }: { html: string }) {
-  return (
-    <script
-      type={typeof window === "undefined" ? "text/javascript" : "text/plain"}
-      suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
-}
-
-/**
- * First-visit intro: the Gothic monogram, a telemetry counter from 00 to 100,
- * then an upward wipe that uncovers the hero. Plays once per browser session.
- */
-export function Preloader() {
-  // The server always renders the overlay (CSS keeps it hidden unless the gate
-  // script flagged a first visit). After hydration this switches to the real
-  // sessionStorage value, so React never reads storage during SSR or hydration.
-  const shouldPlay = useSyncExternalStore(subscribe, readShouldPlay, () => true);
-  const [counted, setCounted] = useState(false);
-  const [exited, setExited] = useState(false);
-
-  const reduceMotion = useReducedMotion();
-  const lenis = useLenis();
-
-  const visible = shouldPlay && !counted;
-  // The lock outlasts `visible`: it is released only after the wipe finishes.
-  const locked = shouldPlay && !exited;
-
-  const progress = useMotionValue(0);
-  const percent = useTransform(progress, (value) =>
-    Math.round(value).toString().padStart(2, "0"),
-  );
-  const barScale = useTransform(progress, [0, 100], [0, 1]);
-
-  // Keep the `<html>` flag in step with React. In production the gate script
-  // has already set it and this is a no-op. In development, Strict Mode's
-  // remount strips attributes React does not manage from `<html>`, so this puts
-  // it back before paint. Storage is re-read so that a returning visitor, whose
-  // `shouldPlay` is still the server value during the hydration commit, never
-  // sees the overlay flash.
-  useLayoutEffect(() => {
-    if (!locked || !readShouldPlay()) return;
-    const root = document.documentElement;
-    root.setAttribute(ACTIVE_ATTRIBUTE, "");
-    return () => root.removeAttribute(ACTIVE_ATTRIBUTE);
-  }, [locked]);
-
-  // Lenis drives scrolling programmatically, so `overflow: hidden` alone does
-  // not stop wheel scrolling. With reduced motion there is no Lenis instance
-  // and the CSS lock is enough.
-  useEffect(() => {
-    if (!lenis || !locked) return;
-    lenis.stop();
-    return () => lenis.start();
-  }, [lenis, locked]);
-
-  useEffect(() => {
-    if (!visible) return;
-    const controls = animate(progress, 100, {
-      duration: COUNT_DURATION,
-      ease: EASE_OUT_QUINT,
-      onComplete: () => setCounted(true),
-    });
-    return () => controls.stop();
-  }, [visible, progress]);
-
-  const handleExitComplete = () => {
-    try {
-      sessionStorage.setItem(STORAGE_KEY, "1");
-    } catch {
-      // Storage blocked: the gate script skips the preloader in that case too.
-    }
-    setExited(true);
-  };
-
-  return (
-    <>
-      <InlineScript html={GATE_SCRIPT} />
-      <AnimatePresence onExitComplete={handleExitComplete}>
-        {visible && (
-          <motion.div
-            key="preloader"
-            // `display` is owned by the `[data-preloader]` rules in globals.css,
-            // so there is deliberately no `flex` class here.
-            data-preloader
-            role="status"
-            exit={
-              reduceMotion
-                ? { opacity: 0, transition: { duration: 0.4, delay: EXIT_HOLD } }
-                : {
-                    y: "-100%",
-                    transition: { duration: 0.8, delay: EXIT_HOLD, ease: EASE_IN_OUT_QUART },
-                  }
-            }
-            className="fixed inset-0 z-90 flex-col items-center justify-center overflow-hidden bg-bg select-none"
-          >
-            <span className="sr-only">Loading portfolio</span>
-
-            {/*
-             * Atmosphere. The grid is repeated here because the page-wide grid
-             * sits behind this opaque overlay. The film grain is not: the
-             * page-wide noise layer is at z-100, already above this overlay.
-             */}
-            <div aria-hidden className="bg-grid pointer-events-none absolute inset-0" />
-            <div
-              aria-hidden
-              className="glow pointer-events-none absolute top-1/2 left-1/2 size-[26rem] -translate-x-1/2 -translate-y-1/2"
-            />
-
-            <div aria-hidden className="relative flex flex-col items-center">
-              {/*
-               * `𝕲` (U+1D572) is a math symbol that no bundled font covers, so
-               * each OS would substitute its own glyph. A plain "G" in
-               * UnifrakturCook renders the same blackletter capital everywhere.
-               */}
-              <span className="animate-monogram-in block">
-                <span className="animate-monogram-breathe block font-gothic text-8xl leading-none text-fg drop-shadow-[0_0_25px_rgba(204,255,0,0.35)] md:text-[10rem]">
-                  G
-                </span>
-              </span>
-
-              <div className="mt-10 flex items-baseline font-mono tabular-nums">
-                <motion.span className="text-5xl font-medium tracking-tight text-fg md:text-6xl">
-                  {percent}
-                </motion.span>
-                <span className="ml-1 text-xl text-accent md:text-2xl">%</span>
-              </div>
-
-              <div className="mt-4 h-px w-56 overflow-hidden bg-line">
-                <motion.div style={{ scaleX: barScale }} className="h-full origin-left bg-accent" />
-              </div>
-
-              <ul className="mt-8 flex flex-col items-center gap-2 font-mono text-[0.65rem] uppercase tracking-[0.3em] text-muted md:text-xs">
-                {STATUS_LINES.map((line, index) => (
-                  <li
-                    key={line.label}
-                    className="animate-status-in"
-                    style={{ animationDelay: `${0.3 + index * 0.18}s` }}
-                  >
-                    {line.label} <span className="text-line-strong">{"//"}</span>{" "}
-                    <span className={line.accent ? "text-accent" : "text-fg"}>{line.value}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Neon leading edge, visible as the overlay wipes upward. */}
-            <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-accent" />
-          </motion.div>
+    <header className="fixed inset-x-0 top-4 z-50 flex justify-center px-4">
+      <nav
+        aria-label="Primary"
+        className={cn(
+          "flex w-full max-w-3xl items-center justify-between gap-4 rounded-full border px-4 py-2 transition-colors duration-300",
+          scrolled
+            ? "border-line bg-surface/70 backdrop-blur-xl"
+            : "border-transparent bg-transparent",
         )}
-      </AnimatePresence>
-    </>
+      >
+        {onHome ? (
+          <button
+            type="button"
+            onClick={() => lenis?.scrollTo(0)}
+            className="rounded-full px-2 font-mono text-sm font-semibold tracking-[0.2em] text-fg"
+          >
+            {siteConfig.initials}
+          </button>
+        ) : (
+          <Link
+            href="/"
+            className="rounded-full px-2 font-mono text-sm font-semibold tracking-[0.2em] text-fg"
+          >
+            {siteConfig.initials}
+          </Link>
+        )}
+
+        <ul className="hidden items-center gap-1 md:flex">
+          {navLinks.map((link) => (
+            <li key={link.href}>
+              <NavButton href={link.href} onHome={onHome} onNavigate={scrollTo}>
+                {link.label}
+              </NavButton>
+            </li>
+          ))}
+        </ul>
+
+        <div className="flex items-center gap-1">
+          {socialLinks.map((link) => {
+            const Icon = socialIcons[link.icon as keyof typeof socialIcons];
+            return (
+              <Button key={link.href} asChild variant="ghost" size="sm" className="px-2">
+                <a
+                  href={link.href}
+                  aria-label={link.label}
+                  target={link.href.startsWith("http") ? "_blank" : undefined}
+                  rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                >
+                  <Icon aria-hidden />
+                </a>
+              </Button>
+            );
+          })}
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="px-2 md:hidden"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? <X aria-hidden /> : <Menu aria-hidden />}
+          </Button>
+        </div>
+      </nav>
+
+      {menuOpen ? (
+        <ul className="absolute top-16 w-[calc(100%-2rem)] max-w-3xl space-y-1 rounded-3xl border border-line bg-surface/95 p-3 backdrop-blur-xl md:hidden">
+          {navLinks.map((link) => (
+            <li key={link.href}>
+              <NavButton
+                href={link.href}
+                onHome={onHome}
+                onNavigate={scrollTo}
+                className="w-full justify-start"
+              >
+                {link.label}
+              </NavButton>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </header>
   );
 }
 ```
 
-- [x] **Step 2: Verify**
+- [ ] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
 npm run lint
-npm run build
-```
-
-Expected: all pass. Nothing renders the component yet.
-
-- [x] **Step 3: Commit**
-
-```bash
-git add components/ui/preloader.tsx
-git commit -m "feat(preloader): add gothic monogram telemetry preloader"
-```
-
----
-
-### Task 10.3: Mount the preloader on the home page
-
-**Files:**
-- Modify: `app/page.tsx` (full replacement)
-
-**Interfaces consumed:** `Preloader` (Task 10.2).
-
-- [x] **Step 1: Replace `app/page.tsx`**
-
-`<Preloader />` must be the **first** element: its gate script has to run before the browser parses, and can paint, any page content. It is mounted here rather than in `app/layout.tsx` on purpose. If it were in the layout, the 404 page would also lock scrolling and show the intro.
-
-```tsx
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
-import { BentoGrid } from "@/components/sections/bento-grid";
-import { Contact } from "@/components/sections/contact";
-import { Hero } from "@/components/sections/hero";
-import { ProjectsShowcase } from "@/components/sections/projects-showcase";
-import { Preloader } from "@/components/ui/preloader";
-
-export default function Home() {
-  return (
-    <>
-      {/* First, so its gate script runs before any page content is parsed. */}
-      <Preloader />
-      <SiteHeader />
-      <main>
-        <Hero />
-        <ProjectsShowcase />
-        <BentoGrid />
-        <Contact />
-      </main>
-      <SiteFooter />
-    </>
-  );
-}
-```
-
-- [x] **Step 2: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run dev
-```
-
-At `http://localhost:3000`, in a fresh tab:
-
-- The `G` blurs in with a lime glow, the counter runs to `100%` while the bar fills, and the three status lines fade in one after another.
-- After a short hold, the overlay wipes upward with a thin lime edge and uncovers the hero.
-- Reloading the tab goes straight to the page, with no black frame.
-- To replay it, run `sessionStorage.removeItem("portfolio_preloaded")` in the DevTools console and reload. A new tab also replays it, because sessionStorage is per tab.
-
-- [x] **Step 3: Commit**
-
-```bash
-git add app/page.tsx
-git commit -m "feat(preloader): mount preloader on the home page"
-```
-
----
-
-### Task 10.4: Phase 10 verification pass
-
-**Files:** none created; fix whatever this task surfaces.
-
-- [x] **Step 1: Production build walk**
-
-```bash
 npm run build
 npm run start
 ```
 
-With DevTools open, and after clearing the storage key before each first-visit check:
+- [ ] On the home page, the Ledger card shows `Read case study` (lime), `Live Demo` (outline), `Repository` (outline). Driftline shows `Read case study` and `Repository`. FleetDesk shows no buttons and a plain title.
+- [ ] Hovering the Ledger and Driftline titles turns them lime; clicking a title or `Read case study` opens the case study scrolled to the top.
+- [ ] Header nav on the home page still smooth-scrolls to each section.
+- [ ] On `/projects/ledger`, clicking `Stack` in the header opens the home page at the Stack section, and clicking the `YN` initials opens the home page at the top. The mobile menu (375px) behaves the same way.
+- [ ] Browser Back from a case study returns to the home page without replaying the preloader.
+- [ ] Console is clean on both pages.
 
-- [x] **Console:** clean on the first visit and on reload; no hydration warning and no `Encountered a script tag` warning.
-- [x] **Scroll lock:** during the counter, the mouse wheel and the keyboard (Space, Page Down) do not move the page. Scrolling works immediately after the wipe finishes. The header links do nothing while the overlay is up, because the overlay covers them.
-- [x] **No flash on reload:** in the Performance panel, or by throttling the network to "Slow 4G" and reloading, the overlay never appears on a reload in the same tab.
-- [x] **Slow network, first visit:** with "Slow 4G" and the key cleared, the first paint is the overlay (at `00%`), never the hero.
-- [x] **Reduced motion** (Rendering panel → emulate `prefers-reduced-motion: reduce`): the counter still runs, the overlay fades out instead of wiping, and scrolling is locked until then.
-- [x] **JavaScript disabled** (Command Menu → "Disable JavaScript"): the page renders normally with no overlay.
-- [x] **Hero after the wipe:** the telemetry clock ticks, the headgear reveal follows the cursor, and the parallax still separates on scroll.
-- [x] `document.documentElement.scrollWidth === window.innerWidth` is `true` at 375px, 768px, and 1440px, both during and after the preloader.
-- [x] After the wipe, `document.documentElement.hasAttribute("data-preloader-active")` is `false` and `document.querySelector("[data-preloader]")` is `null`.
-
-- [x] **Step 2: Commit any fixes**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add -A
-git commit -m "fix: address phase 10 verification findings"
+git add components/sections/project-card.tsx components/layout/site-header.tsx
+git commit -m "feat(projects): link cards and header to case studies"
+```
+
+---
+
+### Task 12.4: Phase 12 verification pass
+
+**Files:** none created; fix whatever this task surfaces.
+
+- [ ] **Step 1: Clean production build**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+- [ ] **Step 2: Walk the production build**
+
+- [ ] Full home page from preloader to footer: Phase 11 checks still pass (reveal, dividers, baybayin, button wipes).
+- [ ] Both case studies at 375px, 768px, and 1440px: no horizontal overflow, every divider draws in once, the `NEXT LAP` arrow nudges right on hover.
+- [ ] Keyboard only: Tab from the top of a case study reaches "Back to projects", the Live/Repo buttons, the `NEXT LAP` card, and the final back link, each with a visible accent focus ring. Enter follows each link.
+- [ ] JavaScript disabled (DevTools Command Menu → "Disable JavaScript"), open `/projects/ledger`: the arrival wipe still plays and the page is fully readable.
+- [ ] `view-source:http://localhost:3000/projects/ledger` contains `<title>Ledger — Your Name</title>` and an `og:type` of `article`.
+- [ ] Console is clean on `/`, `/projects/ledger`, `/projects/driftline`, and the 404 page.
+
+- [ ] **Step 3: Commit any fixes**
+
+```bash
+git add -A -- app components data hooks lib types
+git commit -m "fix: address phase 12 verification findings"
 ```
 
 If nothing needed fixing, skip the commit.
 
 ---
 
-## Handoff checklist
+## Handoff checklist (owner-supplied content)
 
-Report these to the repository owner when Phase 10 is done:
+Only the repository owner can resolve these. Do not invent values.
 
-1. `data/site.ts` — name, initials, email, GitHub URL, and site URL are placeholders. Also confirm `availability.isAvailable`, `timeZone` / `timeZoneLabel` (set to `Asia/Manila` / `GMT+8`), and the `watermark` word (sized for ~9 characters).
-2. `data/projects.ts` — three structurally complete example projects need replacing with real ones. Adding or removing entries automatically changes the scroll-stack height; no component edits needed.
-3. `public/resume.pdf` — a minimal placeholder PDF; replace with the real résumé.
-4. `public/images/hero/headgear.webp` and `headgear-ghost.webp` — cut out from STIX's product photo (red variant, front view) as sold by Eljan Sports. That photo belongs to STIX/the retailer; replacing it with your own photo of your headgear removes the copyright risk. If either the portrait or the headgear image changes, re-tune the `HEADGEAR` and `FACE` constants in `components/sections/headgear-reveal.tsx`, and nothing else.
-5. `components/ui/preloader.tsx` — the status lines are hard-coded in `STATUS_LINES` (`GARAZA // DEV PORTFOLIO`, `SYS.INIT // OK`, `LATENCY // 12MS`); `12MS` is decorative, not a measurement. Timing lives in `COUNT_DURATION` and `EXIT_HOLD`. To see the intro again while testing, run `sessionStorage.removeItem("portfolio_preloaded")` and reload.
-6. Optional next steps, not in scope for v1: a `/projects/[slug]` detail route, and the Supabase swap (replace the two function bodies in `lib/queries.ts`; the `Project` and `SkillCategory` fields map 1:1 to columns, snake_case in Postgres).
+1. `data/site.ts` — name, initials, email, GitHub URL, and site URL are placeholders. Also confirm `availability.isAvailable`, `timeZone` / `timeZoneLabel` (`Asia/Manila` / `GMT+8`), and the `watermark` word (sized for ~9 characters).
+2. `data/projects.ts` — three example projects (Ledger, Driftline, FleetDesk) need replacing with real ones, including the two example case study write-ups. Gallery images go in `public/images/projects/<slug>/` with their real pixel `width` and `height`.
+3. `public/resume.pdf` — minimal placeholder; replace with the real résumé.
+4. `public/images/hero/headgear.webp` and `headgear-ghost.webp` — cut out from STIX's product photo as sold by Eljan Sports, with the logo painted over. The photo still belongs to STIX/the retailer. Replacing it with a photo of a borrowed headgear (front view, plain background, even light) removes the risk; re-tune `HEADGEAR` and `FACE` in `components/sections/headgear-reveal.tsx` afterwards.
+5. `data/baybayin.ts` — **launch blocker.** Every entry is `reviewed: false`. Someone who reads baybayin must check each `text` (the surname Garaza, "Sipag at Disiplina", "Proyekto", "Kasanayan", "Ugnayan") before the site goes public.
+6. `data/strike-angles.ts` — **launch blocker.** Every entry is `confirmed: false`. Check each number, target, and on-screen direction against the owner's sport Arnis anyo.
+7. `components/ui/preloader.tsx` — `STATUS_LINES` are hard-coded (`GARAZA // DEV PORTFOLIO`, `SYS.INIT // OK`, `LATENCY // 12MS`); `12MS` is decorative.
+
+**Next phases (planned in the spec, not yet written as tasks):** Phase 13, new home sections (About, Experience, Arnis, Now — the owner picks which); Phase 14, polish and reach (tech marquee, heading reveals, OG images, sitemap, robots, JSON-LD, Vercel Web Analytics, Lighthouse ≥ 90).
