@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowUpRight, CodeXml } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, ArrowUpRight, CodeXml } from "lucide-react";
 import {
   motion,
   useReducedMotion,
@@ -64,7 +65,16 @@ export function ProjectCard({ project, index, total, progress }: ProjectCardProp
 
             <div className="flex flex-col gap-3">
               <h3 className="text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
-                {project.title}
+                {project.caseStudy ? (
+                  <Link
+                    href={`/projects/${project.slug}`}
+                    className="transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+                  >
+                    {project.title}
+                  </Link>
+                ) : (
+                  project.title
+                )}
               </h3>
               <p className="text-lg text-fg/80">{project.summary}</p>
               <p className="max-w-2xl text-sm leading-relaxed text-muted">
@@ -81,8 +91,16 @@ export function ProjectCard({ project, index, total, progress }: ProjectCardProp
             </ul>
 
             <div className="flex flex-wrap gap-3">
-              {project.liveUrl ? (
+              {project.caseStudy ? (
                 <Button asChild size="sm">
+                  <Link href={`/projects/${project.slug}`}>
+                    Read case study
+                    <ArrowRight aria-hidden />
+                  </Link>
+                </Button>
+              ) : null}
+              {project.liveUrl ? (
+                <Button asChild size="sm" variant={project.caseStudy ? "outline" : "primary"}>
                   <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
                     Live Demo
                     <ArrowUpRight aria-hidden />

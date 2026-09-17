@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useLenis } from "lenis/react";
 import { CodeXml, Mail, Menu, X } from "lucide-react";
 
@@ -13,9 +15,36 @@ import { cn } from "@/lib/utils";
 // key from `data/site.ts` maps to a generic code icon.
 const socialIcons = { Github: CodeXml, Mail } as const;
 
+interface NavButtonProps {
+  href: string;
+  onHome: boolean;
+  onNavigate: (href: string) => void;
+  className?: string;
+  children: React.ReactNode;
+}
+
+/** Smooth-scrolls to the section on the home page; links to it everywhere else. */
+function NavButton({ href, onHome, onNavigate, className, children }: NavButtonProps) {
+  if (onHome) {
+    return (
+      <Button variant="ghost" size="sm" className={className} onClick={() => onNavigate(href)}>
+        {children}
+      </Button>
+    );
+  }
+  return (
+    <Button asChild variant="ghost" size="sm" className={className}>
+      <Link href={`/${href}`}>{children}</Link>
+    </Button>
+  );
+}
+
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Section anchors only exist on the home page. Elsewhere, links navigate to
+  // `/#anchor` instead of smooth-scrolling.
+  const onHome = usePathname() === "/";
 
   const lenis = useLenis(({ scroll }) => {
     setScrolled(scroll > 32);
@@ -41,20 +70,29 @@ export function SiteHeader() {
             : "border-transparent bg-transparent",
         )}
       >
-        <button
-          type="button"
-          onClick={() => lenis?.scrollTo(0)}
-          className="rounded-full px-2 font-mono text-sm font-semibold tracking-[0.2em] text-fg"
-        >
-          {siteConfig.initials}
-        </button>
+        {onHome ? (
+          <button
+            type="button"
+            onClick={() => lenis?.scrollTo(0)}
+            className="rounded-full px-2 font-mono text-sm font-semibold tracking-[0.2em] text-fg"
+          >
+            {siteConfig.initials}
+          </button>
+        ) : (
+          <Link
+            href="/"
+            className="rounded-full px-2 font-mono text-sm font-semibold tracking-[0.2em] text-fg"
+          >
+            {siteConfig.initials}
+          </Link>
+        )}
 
         <ul className="hidden items-center gap-1 md:flex">
           {navLinks.map((link) => (
             <li key={link.href}>
-              <Button variant="ghost" size="sm" onClick={() => scrollTo(link.href)}>
+              <NavButton href={link.href} onHome={onHome} onNavigate={scrollTo}>
                 {link.label}
-              </Button>
+              </NavButton>
             </li>
           ))}
         </ul>
@@ -93,14 +131,14 @@ export function SiteHeader() {
         <ul className="absolute top-16 w-[calc(100%-2rem)] max-w-3xl space-y-1 rounded-3xl border border-line bg-surface/95 p-3 backdrop-blur-xl md:hidden">
           {navLinks.map((link) => (
             <li key={link.href}>
-              <Button
-                variant="ghost"
-                size="sm"
+              <NavButton
+                href={link.href}
+                onHome={onHome}
+                onNavigate={scrollTo}
                 className="w-full justify-start"
-                onClick={() => scrollTo(link.href)}
               >
                 {link.label}
-              </Button>
+              </NavButton>
             </li>
           ))}
         </ul>
