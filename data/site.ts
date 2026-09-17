@@ -9,7 +9,7 @@ export const siteConfig = {
   description:
     "Full Stack Developer building web applications, games, and the systems behind them.",
   url: "https://example.com",
-  email: "you@example.com",
+  email: "garazav.johnpaul@gmail.com",
   githubUrl: "https://github.com/afjk-x3/",
   resumePath: "/resume.pdf",
   /**

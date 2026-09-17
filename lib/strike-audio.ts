@@ -26,9 +26,9 @@ const muteListeners = new Set<() => void>();
 
 function readMuted() {
   try {
-    return localStorage.getItem(MUTE_KEY) === "1";
+    return localStorage.getItem(MUTE_KEY) !== "0";
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -49,7 +49,7 @@ export function setStrikeMuted(next: boolean) {
   muteListeners.forEach((listener) => listener());
 }
 
-/** Whether strike sounds are muted. `false` on the server and during hydration. */
+/** Whether strike sounds are muted. `true` on the server and during hydration. */
 export function useStrikeMuted(): boolean {
   return useSyncExternalStore(
     (listener) => {
@@ -59,7 +59,7 @@ export function useStrikeMuted(): boolean {
       };
     },
     getMuted,
-    () => false,
+    () => true,
   );
 }
 
