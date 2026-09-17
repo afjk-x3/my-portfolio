@@ -1,9 +1,9 @@
 import { CodeXml, Download } from "lucide-react";
 
 import { HeroBackdropReveal } from "@/components/sections/hero-backdrop-reveal";
+import { AvailabilityStatus, LocalClock } from "@/components/sections/hero-status";
 import { HeroVisual } from "@/components/sections/hero-visual";
 import { InkRevealSection } from "@/components/sections/ink-reveal";
-import { TelemetryBar } from "@/components/sections/telemetry-bar";
 import { Button } from "@/components/ui/button";
 import { baybayin } from "@/data/baybayin";
 import { siteConfig } from "@/data/site";
@@ -17,49 +17,50 @@ export function Hero() {
       {/* Hidden layer behind everything: weave and strike slashes. */}
       <HeroBackdropReveal />
 
-      <div className="relative z-20 mx-auto w-full max-w-7xl">
-        <TelemetryBar />
-      </div>
-
       <div className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col">
         <HeroVisual watermark={siteConfig.watermark} />
 
         {/*
-         * Below lg the copy flows under the portrait. From lg up it is pinned
-         * across the bottom of the stage, overlapping the faded portrait edge.
+         * Below lg the copy flows under the portrait. From lg up it is tucked
+         * into the bottom corners so the portrait and the reveal own the screen:
+         * identity bottom-left, clock and actions bottom-right.
          */}
         <div className="relative z-20 -mt-16 flex flex-col items-center gap-6 text-center lg:absolute lg:inset-x-0 lg:bottom-0 lg:mt-0 lg:flex-row lg:items-end lg:justify-between lg:text-left">
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col items-center gap-3 lg:items-start">
+            <AvailabilityStatus />
             <span className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
               {siteConfig.name}
             </span>
-            <h1 className="font-display text-6xl uppercase leading-[0.85] text-fg sm:text-7xl lg:text-8xl">
+            <h1 className="font-display text-5xl uppercase leading-[0.85] text-fg sm:text-6xl">
               Full Stack
               <span className="block text-accent">Developer</span>
             </h1>
             <p className="flex flex-col items-center gap-1 whitespace-nowrap sm:flex-row sm:items-baseline sm:gap-3 lg:justify-start">
-              <span aria-hidden className="font-baybayin text-lg text-muted">
+              <span aria-hidden className="font-baybayin text-base text-muted">
                 {baybayin.motto.text}
               </span>
-              <span className="font-mono text-[0.65rem] uppercase tracking-[0.3em] text-muted">
+              <span className="font-mono text-[0.625rem] uppercase tracking-[0.3em] text-muted">
                 Diligence &amp; discipline
               </span>
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button asChild size="lg">
-              <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer">
-                <CodeXml aria-hidden />
-                GitHub
-              </a>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <a href={siteConfig.resumePath} download>
-                <Download aria-hidden />
-                Resume
-              </a>
-            </Button>
+          <div className="flex flex-col items-center gap-4 lg:items-end">
+            <LocalClock />
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button asChild>
+                <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer">
+                  <CodeXml aria-hidden />
+                  GitHub
+                </a>
+              </Button>
+              <Button asChild variant="outline">
+                <a href={siteConfig.resumePath} download>
+                  <Download aria-hidden />
+                  Resume
+                </a>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
