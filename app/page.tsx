@@ -5,6 +5,7 @@ import { Contact } from "@/components/sections/contact";
 import { Hero } from "@/components/sections/hero";
 import { ProjectsShowcase } from "@/components/sections/projects-showcase";
 import { Preloader } from "@/components/ui/preloader";
+import { StrikeLine } from "@/components/ui/strike-line";
 
 export default function Home() {
   return (
@@ -14,8 +15,11 @@ export default function Home() {
       <SiteHeader />
       <main>
         <Hero />
+        <StrikeLine angle={1} className="py-6" />
         <ProjectsShowcase />
+        <StrikeLine angle={2} className="py-6" />
         <BentoGrid />
+        <StrikeLine angle={3} className="py-6" />
         <Contact />
       </main>
       <SiteFooter />
