@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import { Anton, Geist, Geist_Mono, Noto_Sans_Tagalog, UnifrakturCook } from "next/font/google";
 
 import { Backdrop } from "@/components/layout/backdrop";
+import { CommandPalette } from "@/components/command-palette/command-palette";
 import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
 import { siteConfig } from "@/data/site";
+import { getCaseStudyProjects } from "@/lib/queries";
+import { PROJECT_CATEGORY_LABELS } from "@/types";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -52,7 +55,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Only what the palette needs, so the full case study text stays on the server.
+  const paletteProjects = (await getCaseStudyProjects()).map((project) => ({
+    slug: project.slug,
+    title: project.title,
+    category: PROJECT_CATEGORY_LABELS[project.category],
+    techStack: project.techStack,
+  }));
+
   return (
     <html
       lang="en"
@@ -63,7 +74,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full bg-bg font-sans text-fg">
         <Backdrop />
-        <SmoothScrollProvider>{children}</SmoothScrollProvider>
+        <SmoothScrollProvider>
+          {children}
+          <CommandPalette projects={paletteProjects} />
+        </SmoothScrollProvider>
       </body>
     </html>
   );
