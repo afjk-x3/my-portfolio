@@ -13,9 +13,6 @@ import {
 
 import { baybayin } from "@/data/baybayin";
 
-/** Present in sessionStorage once the preloader has played in this tab. */
-export const STORAGE_KEY = "portfolio_preloaded";
-
 /**
  * Set on `<html>` while the preloader owns the screen. `app/globals.css` reads
  * it to show the overlay and to lock native scrolling.
@@ -39,24 +36,28 @@ const STATUS_LINES = [
 
 /*
  * Runs synchronously while the browser parses the HTML: before first paint,
- * and before React has loaded. On a first visit it flags `<html>`, which makes
- * the server-rendered overlay visible and locks scrolling. On later visits it
- * does nothing, so the overlay stays `display: none` and never flashes. If
- * sessionStorage is blocked, the preloader is skipped rather than replayed on
- * every load.
+ * and before React has loaded. On every full page load it flags `<html>`,
+ * which makes the server-rendered overlay visible and locks scrolling, so the
+ * intro never flashes in late. It also turns off the browser's scroll
+ * restoration: without that, a reload reopens the page wherever it was
+ * scrolled to, and the intro wipes away to reveal the middle of the page
+ * instead of the hero.
  */
-const GATE_SCRIPT = `try{if(!sessionStorage.getItem("${STORAGE_KEY}"))document.documentElement.setAttribute("${ACTIVE_ATTRIBUTE}","")}catch(e){}`;
+const GATE_SCRIPT = `try{history.scrollRestoration="manual"}catch(e){}document.documentElement.setAttribute("${ACTIVE_ATTRIBUTE}","")`;
+
+/*
+ * Whether the intro has already played in this document. Module state lives
+ * as long as the page: a reload starts a new document and plays the intro
+ * again, but client-side navigation back to the home page does not.
+ */
+let playedThisLoad = false;
 
 function readShouldPlay() {
-  try {
-    return sessionStorage.getItem(STORAGE_KEY) === null;
-  } catch {
-    return false;
-  }
+  return !playedThisLoad;
 }
 
-// sessionStorage has no change event within the same tab, so there is nothing
-// to subscribe to. The store is only read once, after hydration.
+// Nothing to subscribe to: the value only changes when the intro finishes,
+// and that is followed by a state update anyway.
 const subscribe = () => () => {};
 
 /**
@@ -75,13 +76,14 @@ function InlineScript({ html }: { html: string }) {
 }
 
 /**
- * First-visit intro: the Gothic monogram, a telemetry counter from 00 to 100,
- * then an upward wipe that uncovers the hero. Plays once per browser session.
+ * Intro: the Gothic monogram, a telemetry counter from 00 to 100, then an
+ * upward wipe that uncovers the hero. Plays on every full page load, including
+ * reloads.
  */
 export function Preloader() {
   // The server always renders the overlay (CSS keeps it hidden unless the gate
-  // script flagged a first visit). After hydration this switches to the real
-  // sessionStorage value, so React never reads storage during SSR or hydration.
+  // script flagged the page). After hydration this switches to the module
+  // flag, so a client-side return to the home page does not replay the intro.
   const shouldPlay = useSyncExternalStore(subscribe, readShouldPlay, () => true);
   const [counted, setCounted] = useState(false);
   const [exited, setExited] = useState(false);
@@ -102,9 +104,9 @@ export function Preloader() {
   // Keep the `<html>` flag in step with React. In production the gate script
   // has already set it and this is a no-op. In development, Strict Mode's
   // remount strips attributes React does not manage from `<html>`, so this puts
-  // it back before paint. Storage is re-read so that a returning visitor, whose
-  // `shouldPlay` is still the server value during the hydration commit, never
-  // sees the overlay flash.
+  // it back before paint. The flag is re-read so that a client-side return to
+  // the home page, whose `shouldPlay` is still the server value during the
+  // hydration commit, never flashes the overlay.
   useLayoutEffect(() => {
     if (!locked || !readShouldPlay()) return;
     const root = document.documentElement;
@@ -132,11 +134,7 @@ export function Preloader() {
   }, [visible, progress]);
 
   const handleExitComplete = () => {
-    try {
-      sessionStorage.setItem(STORAGE_KEY, "1");
-    } catch {
-      // Storage blocked: the gate script skips the preloader in that case too.
-    }
+    playedThisLoad = true;
     setExited(true);
   };
 

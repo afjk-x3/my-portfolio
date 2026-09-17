@@ -18,7 +18,6 @@ import {
   Zap,
 } from "lucide-react";
 
-import { STORAGE_KEY as PRELOADER_STORAGE_KEY } from "@/components/ui/preloader";
 import { navLinks } from "@/data/navigation";
 import { siteConfig } from "@/data/site";
 import { setCommandPaletteOpen, useCommandPaletteOpen } from "@/hooks/use-command-palette";
@@ -145,13 +144,8 @@ export function CommandPalette() {
   }
 
   function replayIntro() {
-    try {
-      sessionStorage.removeItem(PRELOADER_STORAGE_KEY);
-    } catch {
-      // Storage blocked: the preloader cannot run either way.
-    }
-    // A full page load, not router.push: the preloader's gate script only runs
-    // while the HTML is being parsed.
+    // A full page load, not router.push: the preloader plays on every full load,
+    // and its gate script only runs while the HTML is being parsed.
     window.location.assign(window.location.origin);
   }
 

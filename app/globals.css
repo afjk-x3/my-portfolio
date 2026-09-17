@@ -137,9 +137,9 @@ html.lenis body {
 
 /*
  * Preloader gate. The overlay is in the server HTML on every load but stays
- * hidden unless the inline gate script flagged a first visit on <html>, so
- * returning visitors and no-JS visitors never see it. Unlayered on purpose:
- * this must beat any Tailwind display utility.
+ * hidden unless the inline gate script flagged <html>, which it does on every
+ * full page load; no-JS visitors never see it. Unlayered on purpose: this must
+ * beat any Tailwind display utility.
  *
  * While flagged, native scrolling is locked. `scrollbar-gutter: stable` keeps
  * the scrollbar's space reserved so the page does not shift sideways when the
