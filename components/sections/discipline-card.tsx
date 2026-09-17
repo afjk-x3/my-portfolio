@@ -23,7 +23,7 @@ export function DisciplineCard({ className }: { className?: string }) {
         width={stance.width}
         height={stance.height}
         sizes="(min-width: 1024px) 50vw, 100vw"
-        className="absolute inset-0 h-full w-full object-cover object-top opacity-70 transition-opacity duration-500 group-hover:opacity-0 group-focus-visible:opacity-0"
+        className="absolute inset-0 h-full w-full object-cover object-[center_80%] sm:object-[center_45%] lg:object-[center_80%] opacity-70 transition-opacity duration-500 group-hover:opacity-0 group-focus-visible:opacity-0"
       />
       <Image
         src={action.src}
@@ -31,12 +31,12 @@ export function DisciplineCard({ className }: { className?: string }) {
         width={action.width}
         height={action.height}
         sizes="(min-width: 1024px) 50vw, 100vw"
-        className="absolute inset-0 h-full w-full object-cover object-top opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100"
+        className="absolute inset-0 h-full w-full object-cover object-[center_80%] sm:object-[center_45%] lg:object-[center_80%] opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100"
       />
 
       <div
         aria-hidden
-        className="absolute inset-0 bg-gradient-to-t from-bg via-bg/60 to-transparent"
+        className="absolute inset-0 bg-linear-to-t from-bg via-bg/70 via-20% to-transparent to-40%"
       />
 
       <div className="relative flex flex-col gap-2">
