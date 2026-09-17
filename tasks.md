@@ -5,14 +5,14 @@
 > **Verify** block, then commit. Do not skip ahead, do not batch phases, and do
 > not "improve" adjacent files that the task does not list.
 
-> **Status:** Phases 1–13 are complete and committed. **Start at Phase 14**
-> (remove case studies, slash-cut strike lines), then **Phase 15** (targeted
-> fixes: intro on every load, hero on reload, projects gap, discipline card).
-> The design is in `docs/superpowers/specs/2026-09-16-portfolio-v2-design.md`
-> (§4c and §4d); read it only if a task does not answer a question. Step-by-step
-> history of earlier phases was removed from this file; read Phases 1–10 with
-> `git show 633c7fb:tasks.md`, Phases 11–12 with `git show f9256c3:tasks.md`, and
-> Phase 13 with `git show 76da151:tasks.md` only if a task explicitly tells you to.
+> **Status:** Phases 1–15 are complete and committed. **Start at Phase 16**
+> (interactive sword-slash dividers). The design is in
+> `docs/superpowers/specs/2026-09-16-portfolio-v2-design.md` (§4e); read it only
+> if a task does not answer a question. Step-by-step history of earlier phases
+> was removed from this file; read Phases 1–10 with `git show 633c7fb:tasks.md`,
+> Phases 11–12 with `git show f9256c3:tasks.md`, Phase 13 with
+> `git show 76da151:tasks.md`, and Phases 14–15 with `git show bfb7a61:tasks.md`
+> only if a task explicitly tells you to.
 
 **Goal:** A single-page, dark, motion-driven developer portfolio on Next.js 16 App Router with a command palette, deployed to Vercel.
 
@@ -55,13 +55,13 @@ npm run dev         # visual check at http://localhost:3000
 
 There is no test runner and none should be added. Verification is type check + lint + build + the explicit visual checks each task lists.
 
-Until Task 15.1 lands, the preloader plays once per tab session: replay it with `sessionStorage.removeItem("portfolio_preloaded")` and a reload, skip it with `sessionStorage.setItem("portfolio_preloaded", "1")` and a reload. From Task 15.1 on, it plays on every full page load (about 2.6 s); wait for the wipe before testing.
+The preloader plays on every full page load (about 2.6 s); wait for the wipe before testing.
 
 ---
 
 ## Current file structure
 
-Files marked **[14]** or **[15]** are changed by that phase; Task 14.1 also deletes `app/projects/` and `components/case-study/`.
+Files marked **[16]** are created or changed by Phase 16.
 
 ```
 app/
@@ -89,7 +89,7 @@ components/
     project-card.tsx         # one card in the stack, tilt + spotlight (client)
     bento-grid.tsx           # server: awaits getSkillCategories() (id="stack")
     tech-stack-card.tsx      # one skill group card (server)
-    discipline-card.tsx      # Arnis photo card, hover/focus cross-fade, full-stance crop [15] (client, id="discipline")
+    discipline-card.tsx      # Arnis photo card, hover/focus cross-fade, full-stance crop (client, id="discipline")
     contact.tsx              # contact CTA (server, id="contact")
   providers/
     smooth-scroll-provider.tsx  # Lenis root (client)
@@ -97,8 +97,11 @@ components/
     button.tsx               # cva + Radix Slot, neon variants, strike wipe on hover
     badge.tsx                # tech-stack pill
     section-heading.tsx      # eyebrow + optional baybayin script + title
-    strike-line.tsx          # divider slashed by an Arnis strike: blade, impact, scar [14] (client)
-    preloader.tsx            # intro on every full load: monogram + baybayin name + counter, opens at top [15] (client)
+    strike-line.tsx          # interactive divider: auto cut, STRIKE button, scars, combo, finisher [16] (client)
+    strike-mark.tsx          # one crescent sword slash or stab: effect + scar layers [16] (client)
+    strike-button.tsx        # round beat button, beat ring, PERFECT/MISS feedback, mute toggle [16] (client)
+    strike-finisher.tsx      # full-screen X slash + ANYO COMPLETE [16] (client)
+    preloader.tsx            # intro on every full load: monogram + baybayin name + counter, opens at top (client)
 data/
   site.ts                    # siteConfig (identity, wordmark, watermark, availability, time zone) + socialLinks
   navigation.ts              # nav anchors
@@ -110,17 +113,20 @@ hooks/
   use-ink-trail.ts           # shared ink trail: move-only, speed-sized drops, strike event
   use-command-palette.ts     # palette open state + modifier key label
   use-local-time.ts          # ticking clock via useSyncExternalStore
+  use-strike-rhythm.ts       # 100 BPM beat, PERFECT/GOOD/MISS grading, combo, best combo [16]
   use-media-query.ts         # matchMedia via useSyncExternalStore
   use-pointer-tilt.ts        # mouse-tracked 3D tilt + spotlight motion values
 lib/
   utils.ts                   # cn()
   queries.ts                 # async data access seam (Supabase swap point)
+  strike-audio.ts            # Web Audio clip loading, playback, mute state [16]
 types/
   index.ts                   # shared domain types — extend, do not rewrite
 public/
   resume.pdf                 # placeholder
   images/hero/               # hero-portrait.png (2048×1365), headgear.webp (logo removed), headgear-ghost.webp
   images/about/              # arnis-stance.jpg, arnis-action.jpg
+  audio/strikes/             # slash/stab/finisher/miss .wav + CREDITS.md (CC0) [16]
 ```
 
 ---
@@ -159,9 +165,10 @@ All tokens live in `app/globals.css`. Use the Tailwind classes; never hard-code 
 | `bg-weave` | Tiled woven diamond lattice in white; always on its own `aria-hidden` layer at `opacity-[0.03]`–`opacity-[0.05]` |
 | `.glow` | 22% neon radial glow |
 | `animate-pulse-dot` | Live status dot ring |
+| `animate-beat-ring` | Strike button beat ring **[16]** |
 | `animate-monogram-in`, `animate-monogram-breathe`, `animate-status-in` | Preloader entrance animations |
 
-**Stacking order:** header `z-50`, preloader overlay `z-90`, command palette overlay `z-95` and dialog `z-96`, page-wide film grain `z-100`.
+**Stacking order:** strike dividers `z-10`, header `z-50`, strike finisher `z-80`, preloader overlay `z-90`, command palette overlay `z-95` and dialog `z-96`, page-wide film grain `z-100`.
 
 ---
 
@@ -181,6 +188,7 @@ Read this before changing any of these files.
   - There is one masked SVG per coordinate space because the watermark and the portrait move at different parallax speeds: `HeroBackdropReveal` (whole hero: weave + strike slashes), `HeroWatermark` (outline word + neon fill, drawn from identical `<text>`), and `HeadgearReveal` (portrait pixels: headgear photo over the face).
   - Modes: a fine pointer drives the trail (`pointer`); touch screens get a drop that drifts over the face (`wander`), using the face position that `HeadgearReveal` reports through `setHome`; touch plus reduced motion shows one fixed headgear reveal (`static`) and nothing else.
   - If the portrait or headgear image changes, re-tune only `HEADGEAR` and `FACE` in `headgear-reveal.tsx`.
+- **Strike dividers** (Phase 16; `strike-line.tsx` and the `strike-*` files): each divider owns its cuts (max 12 scars) and a `useStrikeRhythm` instance. The rhythm hook keeps timing in refs and only exposes display state (`combo`, `beat`, `chain`). Bright slash effects render unclipped and unmount after about 0.75 s; scars render in a clipped layer. Audio is one shared module: clips download on hover/focus of a button, the `AudioContext` is created on the first press, and mute/best/hint live in `localStorage` behind `try`/`catch`.
 - **Command palette** (`command-palette.tsx`, `use-command-palette.ts`): rendered once in the root layout, inside the Lenis provider. Open state is a tiny external store, so any component can call `setCommandPaletteOpen(true)`. While open, Lenis is stopped; picked actions run through `run()`, which waits until the palette has closed and Lenis has restarted. The **Secrets** group only renders once 2+ characters are typed.
 
 ---
@@ -200,1330 +208,352 @@ Read this before changing any of these files.
 11. Identity system: baybayin accents, strike line dividers, woven texture, button strike wipe, and the full-hero ink reveal (weave, strike slashes, neon watermark, headgear).
 12. Project case studies at `/projects/[slug]` and the DNF 404 page. The case studies are removed again in Phase 14; the 404 page stays.
 13. Hero refinement (move-only torn reveal, corner copy and telemetry, name wordmark) and the Ctrl+K command palette.
+14. Case studies removed; strike line dividers turned into a slash cut.
+15. Intro on every full load and reloads open at the top; projects pinned near the top; full-stance discipline card.
 
 ---
 
-# Phase 14 — Remove case studies, then slash-cut strike lines
+# Phase 16 — Interactive sword-slash dividers
 
-Two independent changes, in this order: Task 14.1 removes the case study pages and every link to them; Task 14.2 turns the strike line dividers into a literal slash cut. (The discipline card framing moved to Task 15.3.) Task 14.1 was type-checked, linted, and built with Turbopack in a scratch copy at commit `76da151`, then checked in a production build: the cards show only Live Demo / Repository, the palette shows only Navigate and Actions, and `/projects/ledger` returns 404.
+The strike line dividers become a small rhythm game. Each divider still cuts its own strike automatically the first time it scrolls into view. A round **STRIKE** button at its right end then cuts the next Arnis strike on every press:
 
+- **Slashes:** crescent sword slashes (white core, lime glow, afterimage trail) at the strike's angle, curving opposite ways for odd and even strikes; thrusts are stabs; horizontal strikes are tilted 12°. Every cut leaves a faint scar (up to 12 per divider).
+- **Rhythm:** the first press starts a 100 BPM beat, shown by a ring pulsing out of the button. Presses within ±60 ms of a beat are **PERFECT**, within ±150 ms **GOOD**; both extend the combo. Off-beat presses show **MISS** and restart the beat. A full beat with no press ends the combo quietly.
+- **Growth:** slashes grow with the combo (1×, 1.3×, 1.6×, 2×; PERFECT one step larger) and break out of the divider band. 12 on-beat strikes in a row play the finisher: a screen-wide X slash and **ANYO COMPLETE**.
+- **Readout and records:** current strike, `COMBO ×n`, and `BEST ×n` (remembered per browser); a one-time "PRESS ON THE BEAT" hint.
+- **Sound:** sword clips (slash, stab, finisher, miss) play from the first press on; a speaker button mutes them, remembered per browser.
 
-**Task 14.2 background.** The Phase 11 dividers read as plain separators: a 40px slash in a hairline, and angle 03 was horizontal, so it looked like a dash. This phase turns every divider into a literal strike. The first time a divider scrolls into view:
+The design is §4e of `docs/superpowers/specs/2026-09-16-portfolio-v2-design.md`.
 
-1. **Cut (0.22 s):** a tapered neon blade — thick where the stick enters, sharp where it exits — slices across a 128px band (96px on phones) at the strike's real angle, running off the top and bottom of the band. A blurred streak flares behind it.
-2. **Impact:** a flash where the blade crosses the hairline, and a brightness pulse runs outward along the line in both directions.
-3. **Scar:** the blade cools to 25% opacity and stays; the `ANGLE 01 // 135°` label fades in beside the cut.
+Every code block below was type-checked and linted in a scratch copy at commit `bfb7a61`, then run in a production build (built with system fonts, because the network could not reach Google Fonts at the time; the fonts are unrelated to this phase) at 1919×955 with placeholder sounds: a press cut a crescent slash that spilled out of the band with a flash, and left crescent and dot scars; `PERFECT`, the beat ring, `COMBO ×2`, and `BEST` showed; timed clicks scored PERFECT, a press 300 ms off the beat scored MISS and reset the combo, and a beat with no press stopped the ring; 12 on-beat clicks played the full-width X finisher, announced "Anyo complete: 12 strikes on the beat." in the live region, and removed the overlay afterwards; each clip was fetched once per page load; muting one divider muted all four; the console stayed clean. Copy the blocks exactly.
 
-With reduced motion, the scar and label render immediately. Horizontal strikes (3, 4) are no longer allowed as dividers, and each divider cuts the line at a different point.
+**Rules for this phase:**
 
-This block was type-checked, linted, and built with Turbopack in a scratch copy of this repository at commit `76da151`, then checked in a production build at 1919×955: before scrolling into view the divider shows only the hairline; after it plays, the blade is at opacity 0.25 with its mask fully drawn and the label visible; the home page dividers read `ANGLE 01 // 135°`, `ANGLE 02 // 45°`, `ANGLE 09 // 45°`; the case study dividers of that commit also rendered correctly (they are removed by Task 14.1). The in-between frames of the cut (streak, flash, pulse) could not be captured there and are covered by the Verify block. Copy the blocks exactly.
+- No new dependencies. Audio uses the Web Audio API; state that must survive reloads (best combo, mute, hint) uses `localStorage` inside `try`/`catch`, and everything works when storage is blocked.
+- `StrikeLine` keeps its props `{ angle, at, className }`, so `app/page.tsx` and `site-footer.tsx` do not change.
+- Never re-create the STRIKE `<button>` element on a press (no changing `key`): keyboard focus must survive rapid Space / Enter presses.
 
-### Task 14.1: Remove case studies
+### Task 16.1: Add the rhythm engine and the strike audio module
 
 **Files:**
-- Delete: `app/projects/` (the whole folder)
-- Delete: `components/case-study/` (the whole folder)
-- Modify: `components/sections/project-card.tsx` (full replacement)
-- Modify: `components/command-palette/command-palette.tsx` (full replacement)
-- Modify: `app/layout.tsx` (full replacement)
-- Modify: `lib/queries.ts` (full replacement)
-- Modify: `data/projects.ts` (full replacement)
-- Modify: `types/index.ts` (one removal)
-- Modify: `app/globals.css` (one removal)
+- Create: `hooks/use-strike-rhythm.ts`
+- Create: `lib/strike-audio.ts`
 
 **Interfaces produced:**
-- `Project` no longer has `caseStudy`; `CaseStudy`, `CaseStudyStep`, `CaseStudyResult`, `CaseStudyImage` no longer exist.
-- `getProjectBySlug`, `getCaseStudyProjects`, `getNextCaseStudy` no longer exist. `lib/queries.ts` exports only `getProjects` and `getSkillCategories`.
-- `CommandPalette` takes no props; `PaletteProject` no longer exists.
-- The `animate-strike-wipe` class no longer exists.
+- From `@/hooks/use-strike-rhythm`: `BEAT_MS = 600`, `PERFECT_MS = 60`, `GOOD_MS = 150`, `FINISHER_COMBO = 12`; `type StrikeGrade = "start" | "perfect" | "good" | "miss"`; `interface StrikeResult { grade; combo; finisher }`; `useBestStrikeCombo(): number`; `takeFirstStrike(): boolean`; `useStrikeRhythm(): { combo, bestCombo, beat, chain, press }` where `press(): StrikeResult`, `beat` counts beats since the chain started, and `chain` is the chain's start time or `null` while stopped.
+- From `@/lib/strike-audio`: `type StrikeSound = "slash" | "stab" | "finisher" | "miss"`; `setStrikeMuted(next: boolean)`; `useStrikeMuted(): boolean`; `preloadStrikeAudio()`; `unlockStrikeAudio()` (call inside a click or key press); `playStrikeSound(name, { volume?, rate? })`. Clips load from `/audio/strikes/{slash,stab,finisher,miss}.wav`; a missing clip is silently skipped.
 
-**Kept on purpose:** `app/not-found.tsx` (the DNF 404 page, used by every unknown URL), `Project.slug`, and the route-aware `NavButton` in `site-header.tsx`.
-
-The owner decided the portfolio should not have case study pages. Project cards go back to their pre-Phase-12 form: plain title, Live Demo (primary) and Repository (outline) buttons.
-
-- [ ] **Step 1: Delete the case study route and components**
-
-```bash
-git rm -r app/projects components/case-study
-```
-
-- [ ] **Step 2: Replace `components/sections/project-card.tsx`**
-
-```tsx
-"use client";
-
-import { ArrowUpRight, CodeXml } from "lucide-react";
-import {
-  motion,
-  useReducedMotion,
-  useTransform,
-  type MotionValue,
-} from "motion/react";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { usePointerTilt } from "@/hooks/use-pointer-tilt";
-import { PROJECT_CATEGORY_LABELS, type Project } from "@/types";
-
-export interface ProjectCardProps {
-  project: Project;
-  index: number;
-  total: number;
-  /** Scroll progress of the whole stack, 0 at the top and 1 at the bottom. */
-  progress: MotionValue<number>;
-}
-
-export function ProjectCard({ project, index, total, progress }: ProjectCardProps) {
-  const reduceMotion = useReducedMotion() ?? false;
-
-  // Each card shrinks slightly once the next card begins covering it, so the
-  // stack reads as a physical deck rather than a flat overlay.
-  const targetScale = 1 - (total - index) * 0.04;
-  const scale = useTransform(progress, [index / total, 1], [1, targetScale]);
-
-  const { handlers, tiltStyle, spotlight } = usePointerTilt({ disabled: reduceMotion });
-
-  return (
-    <div className="sticky top-0 flex h-screen items-center justify-center px-6">
-      {/*
-       * Scroll layer: stack scale and offset. It is also the pointer
-       * measurement box, which is why it must never rotate.
-       */}
-      <motion.div
-        {...handlers}
-        style={{
-          scale: reduceMotion ? 1 : scale,
-          top: `${index * 1.5}rem`,
-        }}
-        className="relative w-full max-w-4xl"
-      >
-        {/* Tilt layer. */}
-        <motion.article
-          style={tiltStyle}
-          className="group relative overflow-hidden rounded-card border border-line bg-surface p-8 transition-[border-color,box-shadow] duration-300 hover:border-accent/50 hover:shadow-[0_0_60px_-24px_var(--color-accent)] sm:p-12"
-        >
-          <motion.div
-            aria-hidden
-            style={{ background: spotlight }}
-            className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-          />
-
-          <div className="relative flex flex-col gap-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <Badge variant="accent">{PROJECT_CATEGORY_LABELS[project.category]}</Badge>
-              <span className="font-mono text-xs text-muted">{project.year}</span>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <h3 className="text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
-                {project.title}
-              </h3>
-              <p className="text-lg text-fg/80">{project.summary}</p>
-              <p className="max-w-2xl text-sm leading-relaxed text-muted">
-                {project.description}
-              </p>
-            </div>
-
-            <ul className="flex flex-wrap gap-2">
-              {project.techStack.map((tech) => (
-                <li key={tech}>
-                  <Badge>{tech}</Badge>
-                </li>
-              ))}
-            </ul>
-
-            <div className="flex flex-wrap gap-3">
-              {project.liveUrl ? (
-                <Button asChild size="sm">
-                  <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
-                    Live Demo
-                    <ArrowUpRight aria-hidden />
-                  </a>
-                </Button>
-              ) : null}
-              {project.repoUrl ? (
-                <Button asChild variant="outline" size="sm">
-                  <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
-                    <CodeXml aria-hidden />
-                    Repository
-                  </a>
-                </Button>
-              ) : null}
-            </div>
-          </div>
-        </motion.article>
-      </motion.div>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 3: Replace `components/command-palette/command-palette.tsx`**
-
-The **Case studies** group, the `projects` prop, and the `FileText` icon are removed; everything else is unchanged.
-
-```tsx
-"use client";
-
-import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import * as Dialog from "@radix-ui/react-dialog";
-import { Command } from "cmdk";
-import { useLenis } from "lenis/react";
-import {
-  ArrowUp,
-  Check,
-  Clipboard,
-  CodeXml,
-  CornerDownLeft,
-  Download,
-  Hash,
-  RotateCcw,
-  Search,
-  Zap,
-} from "lucide-react";
-
-import { STORAGE_KEY as PRELOADER_STORAGE_KEY } from "@/components/ui/preloader";
-import { navLinks } from "@/data/navigation";
-import { siteConfig } from "@/data/site";
-import { setCommandPaletteOpen, useCommandPaletteOpen } from "@/hooks/use-command-palette";
-import { INK_STRIKE_EVENT } from "@/hooks/use-ink-trail";
-
-/** Characters typed before the hidden commands start matching. */
-const SECRET_MIN_QUERY = 2;
-
-interface PaletteItemProps {
-  value: string;
-  keywords?: string[];
-  icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
-  hint?: string;
-  onSelect: () => void;
-  children: ReactNode;
-}
-
-function PaletteItem({ value, keywords, icon: Icon, hint, onSelect, children }: PaletteItemProps) {
-  return (
-    <Command.Item
-      value={value}
-      keywords={keywords}
-      onSelect={onSelect}
-      className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-fg/80 transition-colors data-[selected=true]:bg-accent/10 data-[selected=true]:text-accent"
-    >
-      <Icon aria-hidden className="size-4 shrink-0" />
-      <span className="flex-1 truncate">{children}</span>
-      {hint ? (
-        <span className="font-mono text-[0.625rem] uppercase tracking-[0.2em] text-muted">
-          {hint}
-        </span>
-      ) : null}
-    </Command.Item>
-  );
-}
-
-/**
- * Site-wide command palette, opened with Ctrl+K / ⌘K or any button that calls
- * `setCommandPaletteOpen(true)`. Jumps to sections, runs quick actions, and
- * hides two easter eggs that only match once something is typed.
- */
-export function CommandPalette() {
-  const open = useCommandPaletteOpen();
-  const [search, setSearch] = useState("");
-  const [copied, setCopied] = useState(false);
-  const router = useRouter();
-  const onHome = usePathname() === "/";
-  const lenis = useLenis();
-  // An action picked in the palette runs only after the palette has closed and
-  // Lenis has restarted; restarting Lenis cancels any scroll already in flight.
-  const pendingAction = useRef<(() => void) | null>(null);
-
-  // Ctrl+K / ⌘K toggles the palette from anywhere, except during the preloader.
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key.toLowerCase() !== "k" || !(event.metaKey || event.ctrlKey)) return;
-      if (document.documentElement.hasAttribute("data-preloader-active")) return;
-      event.preventDefault();
-      setCommandPaletteOpen(!open);
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
-
-  // Lenis would keep scrolling the page under the dialog, so it is stopped while
-  // the palette is open. The cleanup restarts it before the closed-state effect
-  // runs the pending action.
-  useEffect(() => {
-    if (!open) {
-      const action = pendingAction.current;
-      pendingAction.current = null;
-      action?.();
-      return;
-    }
-    lenis?.stop();
-    return () => lenis?.start();
-  }, [lenis, open]);
-
-  function onOpenChange(next: boolean) {
-    setCommandPaletteOpen(next);
-    if (!next) {
-      setSearch("");
-      setCopied(false);
-    }
-  }
-
-  /** Closes the palette, then runs `action` once it has closed. */
-  function run(action: () => void) {
-    pendingAction.current = action;
-    onOpenChange(false);
-  }
-
-  function scrollToTarget(target: string | number, onComplete?: () => void) {
-    if (lenis) {
-      lenis.scrollTo(target, { offset: typeof target === "string" ? -96 : 0, onComplete });
-      return;
-    }
-    if (typeof target === "string") document.querySelector(target)?.scrollIntoView();
-    else window.scrollTo(0, target);
-    onComplete?.();
-  }
-
-  function goToSection(href: string) {
-    if (onHome) scrollToTarget(href);
-    else router.push(`/${href}`);
-  }
-
-  function downloadResume() {
-    const link = document.createElement("a");
-    link.href = siteConfig.resumePath;
-    link.download = "";
-    link.click();
-  }
-
-  async function copyEmail() {
-    try {
-      await navigator.clipboard.writeText(siteConfig.email);
-      setCopied(true);
-      window.setTimeout(() => onOpenChange(false), 900);
-    } catch {
-      // Clipboard blocked (e.g. insecure context): fall back to the mail app.
-      run(() => window.location.assign(`mailto:${siteConfig.email}`));
-    }
-  }
-
-  function replayIntro() {
-    try {
-      sessionStorage.removeItem(PRELOADER_STORAGE_KEY);
-    } catch {
-      // Storage blocked: the preloader cannot run either way.
-    }
-    // A full page load, not router.push: the preloader's gate script only runs
-    // while the HTML is being parsed.
-    window.location.assign(window.location.origin);
-  }
-
-  function strike() {
-    scrollToTarget(0, () => window.dispatchEvent(new Event(INK_STRIKE_EVENT)));
-  }
-
-  const showSecrets = search.trim().length >= SECRET_MIN_QUERY;
-
-  return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-95 bg-bg/70 backdrop-blur-sm" />
-        <Dialog.Content
-          aria-describedby={undefined}
-          className="fixed top-[12vh] left-1/2 z-96 w-[min(40rem,calc(100%-2rem))] -translate-x-1/2 overflow-hidden rounded-card border border-line bg-surface shadow-[0_0_80px_-30px_var(--color-accent)] focus:outline-none"
-        >
-          <Dialog.Title className="sr-only">Command palette</Dialog.Title>
-
-          <Command label="Command palette" loop className="flex flex-col">
-            <div className="flex items-center gap-3 border-b border-line px-4">
-              <Search aria-hidden className="size-4 shrink-0 text-muted" />
-              <Command.Input
-                value={search}
-                onValueChange={setSearch}
-                placeholder="Jump to a section or run a command…"
-                className="h-14 flex-1 bg-transparent text-sm text-fg placeholder:text-muted focus:outline-none"
-              />
-              <kbd className="rounded-md border border-line px-1.5 py-0.5 font-mono text-[0.625rem] text-muted">
-                ESC
-              </kbd>
-            </div>
-
-            <Command.List
-              data-lenis-prevent
-              className="max-h-[min(24rem,60vh)] overflow-y-auto overscroll-contain p-2 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-2 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[0.625rem] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.25em] [&_[cmdk-group-heading]]:text-muted"
-            >
-              <Command.Empty className="px-3 py-10 text-center font-mono text-xs uppercase tracking-[0.2em] text-muted">
-                No match <span className="text-line-strong">{"//"}</span> try another word
-              </Command.Empty>
-
-              <Command.Group heading="Navigate">
-                <PaletteItem
-                  value="Top"
-                  keywords={["home", "hero", "start"]}
-                  icon={ArrowUp}
-                  onSelect={() => run(() => (onHome ? scrollToTarget(0) : router.push("/")))}
-                >
-                  Top
-                </PaletteItem>
-                {navLinks.map((link) => (
-                  <PaletteItem
-                    key={link.href}
-                    value={link.label}
-                    icon={Hash}
-                    onSelect={() => run(() => goToSection(link.href))}
-                  >
-                    {link.label}
-                  </PaletteItem>
-                ))}
-              </Command.Group>
-
-              <Command.Group heading="Actions">
-                <PaletteItem
-                  value="Download résumé"
-                  keywords={["resume", "cv", "pdf"]}
-                  icon={Download}
-                  onSelect={() => run(downloadResume)}
-                >
-                  Download résumé
-                </PaletteItem>
-                <PaletteItem
-                  value="Copy email"
-                  keywords={["mail", "contact", siteConfig.email]}
-                  icon={copied ? Check : Clipboard}
-                  hint={copied ? "Copied" : siteConfig.email}
-                  onSelect={copyEmail}
-                >
-                  {copied ? "Email copied" : "Copy email"}
-                </PaletteItem>
-                <PaletteItem
-                  value="Open GitHub"
-                  keywords={["code", "repositories", "source"]}
-                  icon={CodeXml}
-                  onSelect={() =>
-                    run(() => window.open(siteConfig.githubUrl, "_blank", "noopener,noreferrer"))
-                  }
-                >
-                  Open GitHub
-                </PaletteItem>
-              </Command.Group>
-
-              {showSecrets ? (
-                <Command.Group heading="Secrets">
-                  <PaletteItem
-                    value="Replay intro"
-                    keywords={["preloader", "intro", "loading", "again"]}
-                    icon={RotateCcw}
-                    onSelect={() => run(replayIntro)}
-                  >
-                    Replay intro
-                  </PaletteItem>
-                  {onHome ? (
-                    <PaletteItem
-                      value="Strike"
-                      keywords={["arnis", "slash", "reveal", "headgear"]}
-                      icon={Zap}
-                      onSelect={() => run(strike)}
-                    >
-                      Strike
-                    </PaletteItem>
-                  ) : null}
-                </Command.Group>
-              ) : null}
-            </Command.List>
-
-            <div className="flex items-center gap-4 border-t border-line px-4 py-2.5 font-mono text-[0.625rem] uppercase tracking-[0.2em] text-muted">
-              <span>↑↓ Navigate</span>
-              <span className="flex items-center gap-1">
-                <CornerDownLeft aria-hidden className="size-3" /> Select
-              </span>
-              <span className="ml-auto text-accent">
-                {siteConfig.initials} {"//"} CMD
-              </span>
-            </div>
-          </Command>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  );
-}
-```
-
-- [ ] **Step 4: Replace `app/layout.tsx`**
-
-The layout no longer loads case studies for the palette, so it is no longer `async`.
-
-```tsx
-import type { Metadata } from "next";
-import { Anton, Geist, Geist_Mono, Noto_Sans_Tagalog, UnifrakturCook } from "next/font/google";
-
-import { Backdrop } from "@/components/layout/backdrop";
-import { CommandPalette } from "@/components/command-palette/command-palette";
-import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
-import { siteConfig } from "@/data/site";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// Condensed display face for the hero watermark and headline. Anton ships a
-// single static weight, so `weight` is required.
-const anton = Anton({
-  variable: "--font-anton",
-  subsets: ["latin"],
-  weight: "400",
-});
-
-// Blackletter face for the preloader monogram. `display: "block"` hides the
-// letter until the font arrives instead of flashing a fallback serif "G"; the
-// file is preloaded, so the wait is short.
-const unifraktur = UnifrakturCook({
-  variable: "--font-unifraktur",
-  subsets: ["latin"],
-  weight: "700",
-  display: "block",
-});
-
-// Baybayin script for the decorative accents in `data/baybayin.ts`. Only the
-// Tagalog subset is loaded, so Latin text never falls back to this face.
-const notoTagalog = Noto_Sans_Tagalog({
-  variable: "--font-noto-tagalog",
-  subsets: ["tagalog"],
-  weight: "400",
-});
-
-export const metadata: Metadata = {
-  title: `${siteConfig.name} — ${siteConfig.role}`,
-  description: siteConfig.description,
-  openGraph: {
-    title: `${siteConfig.name} — ${siteConfig.role}`,
-    description: siteConfig.description,
-    type: "website",
-  },
-};
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
-  return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${unifraktur.variable} ${notoTagalog.variable} h-full antialiased`}
-      // The preloader's inline gate script adds an attribute to <html> before
-      // React hydrates.
-      suppressHydrationWarning
-    >
-      <body className="min-h-full bg-bg font-sans text-fg">
-        <Backdrop />
-        <SmoothScrollProvider>
-          {children}
-          <CommandPalette />
-        </SmoothScrollProvider>
-      </body>
-    </html>
-  );
-}
-```
-
-- [ ] **Step 5: Replace `lib/queries.ts`**
+- [ ] **Step 1: Create `hooks/use-strike-rhythm.ts`**
 
 ```ts
-import { projects } from "@/data/projects";
-import { skillCategories } from "@/data/skills";
-import type { Project, SkillCategory } from "@/types";
-
-/**
- * Data access seam.
- *
- * These are async today even though the local arrays are synchronous. That is
- * deliberate: when these are replaced with Supabase queries, the signatures do
- * not change and no consuming component needs editing.
- */
-
-export async function getProjects(): Promise<Project[]> {
-  return [...projects].sort((a, b) => a.order - b.order);
-}
-
-export async function getSkillCategories(): Promise<SkillCategory[]> {
-  return [...skillCategories].sort((a, b) => a.order - b.order);
-}
-```
-
-- [ ] **Step 6: Replace `data/projects.ts`**
-
-```ts
-import type { Project } from "@/types";
-
-export const projects: Project[] = [
-  {
-    id: "project-ledger",
-    slug: "ledger",
-    title: "Ledger",
-    category: "full-stack",
-    summary: "Real-time expense tracking with shared household budgets.",
-    description:
-      "A full-stack budgeting application with authenticated multi-user households, live balance updates, and monthly reporting. Built around server components with optimistic client updates on the transaction list.",
-    techStack: ["Next.js", "TypeScript", "PostgreSQL", "Tailwind CSS"],
-    liveUrl: "https://example.com",
-    repoUrl: "https://github.com/your-handle/ledger",
-    imageUrl: null,
-    imageAlt: null,
-    year: 2025,
-    order: 1,
-  },
-  {
-    id: "project-driftline",
-    slug: "driftline",
-    title: "Driftline",
-    category: "game-dev",
-    summary: "A top-down arcade racer with procedurally generated circuits.",
-    description:
-      "A 2D racing game featuring a custom drift physics model, lap ghosting, and a seeded track generator. Includes a replay system that records and plays back input frames rather than transforms.",
-    techStack: ["Unity", "C#", "Shader Graph"],
-    liveUrl: null,
-    repoUrl: "https://github.com/your-handle/driftline",
-    imageUrl: null,
-    imageAlt: null,
-    year: 2024,
-    order: 2,
-  },
-  {
-    id: "project-fleetdesk",
-    slug: "fleetdesk",
-    title: "FleetDesk",
-    category: "internship",
-    summary: "Internal dispatch dashboard built during on-the-job training.",
-    description:
-      "An operations dashboard for coordinating vehicle dispatch and driver assignments, delivered during an OJT placement. Replaced a spreadsheet workflow used daily by the dispatch team.",
-    techStack: ["React", "Node.js", "Express", "MySQL"],
-    liveUrl: null,
-    repoUrl: null,
-    imageUrl: null,
-    imageAlt: null,
-    year: 2024,
-    order: 3,
-  },
-];
-```
-
-- [ ] **Step 7: Remove the case study types from `types/index.ts`**
-
-Delete everything from the `caseStudy` field's doc comment (the line starting `  /**` directly above `   * Long-form write-up rendered at`) down to and including the closing `}` of `export interface CaseStudy { ... }`, then close the `Project` interface. The result around that spot must read exactly:
-
-```ts
-  /** Ascending sort key for the scroll stack. Lower renders first. */
-  order: number;
-}
-
-/** Groups the bento tech-stack cards. */
-```
-
-- [ ] **Step 8: Remove the arrival wipe animation from `app/globals.css`**
-
-In the `@theme` block, delete this whole block (it sits directly above `  @keyframes status-in {`):
-
-```css
-  /*
-   * Case study arrival: a skewed panel with a neon leading edge slides off to
-   * the right, uncovering the page. CSS-only, so it also runs without JS.
-   */
-  --animate-strike-wipe: strike-wipe 0.9s cubic-bezier(0.76, 0, 0.24, 1) 0.05s both;
-
-  @keyframes strike-wipe {
-    from {
-      transform: skewX(-12deg) translateX(0);
-    }
-    to {
-      transform: skewX(-12deg) translateX(110%);
-    }
-  }
-
-```
-
-- [ ] **Step 9: Verify**
-
-`.next/types` still describes the deleted route, so regenerate it before type checking:
-
-```bash
-npx next typegen
-npx tsc --noEmit
-npm run lint
-npm run build
-```
-
-Expected: the build's route list shows only `○ /` and `○ /_not-found`.
-
-```bash
-grep -rn "caseStudy\|CaseStudy\|case-study\|getProjectBySlug\|strike-wipe" app components lib types data hooks
-```
-
-Expected: no output.
-
-```bash
-npm run start
-```
-
-- [ ] Project cards: Ledger shows **Live Demo** (lime) and **Repository**; Driftline shows **Repository**; FleetDesk shows no buttons. No title is a link, and there is no "Read case study" button.
-- [ ] Ctrl+K: the palette shows only **Navigate** and **Actions**; typing `unity` shows no project.
-- [ ] http://localhost:3000/projects/ledger shows the DNF 404 page with status 404.
-- [ ] Header, hero reveal, and palette actions still work; console is clean.
-
-- [ ] **Step 10: Commit**
-
-```bash
-git add -A -- app components lib data types
-git commit -m "refactor(projects): remove case study pages and links"
-```
-
-`data/skills.ts` may contain the owner's uncommitted edits; including them in this commit is fine.
-
----
-
-### Task 14.2: Replace the strike line dividers with a slash cut
-
-**Files:**
-- Modify: `components/ui/strike-line.tsx` (full replacement)
-- Modify: `app/page.tsx`
-- Modify: `components/layout/site-footer.tsx`
-
-**Interfaces consumed:** `getStrike` from `@/data/strike-angles`; `cn`; `motion`, `useReducedMotion`, `Variants` from `motion/react`.
-**Interfaces produced:** `StrikeLine` props become `{ angle: number; at?: number; className?: string }`. `at` (default `0.5`) is where the blade crosses the line, from 0 (left) to 1 (right); keep it within 0.15–0.85. `angle` must be 1, 2, 8, 9, or 12: thrusts **and horizontal strikes** now throw during render.
-
-- [ ] **Step 1: Replace `components/ui/strike-line.tsx`**
-
-```tsx
 "use client";
 
-import { useId } from "react";
-import { motion, useReducedMotion, type Variants } from "motion/react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-import { getStrike } from "@/data/strike-angles";
-import { cn } from "@/lib/utils";
+/** One beat at 100 BPM. */
+export const BEAT_MS = 600;
 
-/** Full length of the blade in px. Longer than the band, so both ends run off it. */
-const BLADE_LENGTH = 480;
+/** A press this close to a beat is PERFECT. */
+export const PERFECT_MS = 60;
 
-/** Thickness of the blade where the stick enters, in px. It tapers to a point. */
-const BLADE_WIDTH = 7;
+/** A press this close to a beat is GOOD; anything further is a MISS. */
+export const GOOD_MS = 150;
 
-/** Seconds the blade takes to cut from entry to tip. */
-const CUT_DURATION = 0.22;
-
-/** Seconds until the blade crosses the hairline: the middle of the cut. */
-const IMPACT_AT = CUT_DURATION / 2;
-
-const cut: Variants = {
-  hidden: { pathLength: 0 },
-  strike: { pathLength: 1, transition: { duration: CUT_DURATION, ease: [0.2, 0.8, 0.2, 1] } },
-  rest: { pathLength: 1 },
-};
-
-/** The blade cools from full neon to a faint scar that stays. */
-const scar: Variants = {
-  hidden: { opacity: 1 },
-  strike: { opacity: 0.25, transition: { delay: 0.55, duration: 0.6 } },
-  rest: { opacity: 0.25 },
-};
-
-/** Blurred motion streak that flares while the blade cuts. */
-const streak: Variants = {
-  hidden: { opacity: 0 },
-  strike: { opacity: [0, 0.8, 0], transition: { duration: 0.35, times: [0, 0.4, 1] } },
-  rest: { opacity: 0 },
-};
-
-/** Flash where the blade meets the hairline. */
-const flash: Variants = {
-  hidden: { scale: 0, opacity: 0 },
-  strike: {
-    scale: [0, 1.6],
-    opacity: [1, 0],
-    transition: { delay: IMPACT_AT, duration: 0.4, ease: "easeOut" },
-  },
-  rest: { scale: 0, opacity: 0 },
-};
-
-/** Brightness pulse running outward along the hairline from the impact. */
-const pulse: Variants = {
-  hidden: { scaleX: 0, opacity: 0 },
-  strike: {
-    scaleX: [0, 1],
-    opacity: [1, 0],
-    transition: { delay: IMPACT_AT, duration: 0.7, ease: "easeOut" },
-  },
-  rest: { scaleX: 1, opacity: 0 },
-};
-
-const label: Variants = {
-  hidden: { opacity: 0, y: 4 },
-  strike: { opacity: 1, y: 0, transition: { delay: 0.5, duration: 0.4 } },
-  rest: { opacity: 1, y: 0 },
-};
-
-export interface StrikeLineProps {
-  /**
-   * Strike number from `data/strike-angles.ts`. Only diagonal and overhead
-   * strikes (1, 2, 8, 9, 12) are allowed; thrusts and horizontal strikes throw.
-   */
-  angle: number;
-  /** Where the blade crosses the line, from 0 (left) to 1 (right). Keep within 0.15–0.85. */
-  at?: number;
-  className?: string;
-}
+/** On-beat strikes in a row, counting the first press, that trigger the finisher. */
+export const FINISHER_COMBO = 12;
 
 /**
- * Section divider cut by a real Arnis strike. The first time it scrolls into
- * view, a tapered neon blade slashes across the hairline at the strike's angle
- * with a motion streak, flashes on impact, sends a pulse along the line, and
- * cools to a faint scar beside a telemetry label. With reduced motion it
- * renders straight away as the scar.
+ * - `start`: the first press of a chain (or the first after a combo ended).
+ * - `perfect` / `good`: an on-beat press that extended the combo.
+ * - `miss`: an off-beat press; the combo restarts from this press.
  */
-export function StrikeLine({ angle, at = 0.5, className }: StrikeLineProps) {
-  const reduceMotion = useReducedMotion() ?? false;
-  const maskId = `strike-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+export type StrikeGrade = "start" | "perfect" | "good" | "miss";
 
-  const strike = getStrike(angle);
-  if (strike.degrees === null) {
-    throw new Error(`Strike ${angle} is a thrust and has no line to draw`);
-  }
-  if (strike.degrees % 180 === 0) {
-    throw new Error(`Strike ${angle} is horizontal and reads as a plain line`);
-  }
-
-  const half = BLADE_LENGTH / 2;
-  // Drawn along the x axis, then rotated to the strike's direction of travel:
-  // wide where the stick enters (-half), sharp where it exits (+half).
-  const blade = `${-half},${-BLADE_WIDTH / 2} ${half},0 ${-half},${BLADE_WIDTH / 2}`;
-  const streakShape = `${-half},${-BLADE_WIDTH * 1.5} ${half},0 ${-half},${BLADE_WIDTH * 1.5}`;
-  const text = `ANGLE ${String(strike.number).padStart(2, "0")} // ${strike.degrees}°`;
-  const percent = `${at * 100}%`;
-
-  return (
-    <div aria-hidden className={cn("mx-auto w-full max-w-6xl px-6", className)}>
-      <motion.div
-        initial={reduceMotion ? "rest" : "hidden"}
-        whileInView={reduceMotion ? "rest" : "strike"}
-        viewport={{ once: true, margin: "0px 0px -20% 0px" }}
-        className="relative h-24 overflow-hidden sm:h-32"
-      >
-        <span className="absolute inset-x-0 top-1/2 h-px bg-line" />
-        <motion.span
-          variants={pulse}
-          style={{ width: percent }}
-          className="absolute top-1/2 left-0 h-px origin-right bg-linear-to-l from-accent to-transparent"
-        />
-        <motion.span
-          variants={pulse}
-          style={{ left: percent }}
-          className="absolute top-1/2 right-0 h-px origin-left bg-linear-to-r from-accent to-transparent"
-        />
-
-        <svg className="absolute inset-0 size-full overflow-visible">
-          {/* A nested <svg> puts the origin on the hairline at `at`. */}
-          <svg x={percent} y="50%" overflow="visible">
-            <g transform={`rotate(${strike.degrees})`}>
-              <defs>
-                <mask
-                  id={maskId}
-                  maskUnits="userSpaceOnUse"
-                  x={-half - 20}
-                  y={-40}
-                  width={BLADE_LENGTH + 40}
-                  height={80}
-                >
-                  {/* Drawing this line from entry to tip is what cuts the blade in. */}
-                  <motion.path
-                    d={`M ${-half} 0 L ${half} 0`}
-                    stroke="#fff"
-                    strokeWidth={60}
-                    fill="none"
-                    variants={cut}
-                  />
-                </mask>
-              </defs>
-              <motion.polygon
-                points={streakShape}
-                mask={`url(#${maskId})`}
-                style={{ filter: "blur(6px)" }}
-                className="fill-accent"
-                variants={streak}
-              />
-              <motion.polygon
-                points={blade}
-                mask={`url(#${maskId})`}
-                className="fill-accent"
-                variants={scar}
-              />
-            </g>
-            <motion.circle r={22} className="fill-accent" variants={flash} />
-          </svg>
-        </svg>
-
-        <motion.span
-          variants={label}
-          style={at > 0.6 ? { right: `calc(${(1 - at) * 100}% + 32px)` } : { left: `calc(${percent} + 32px)` }}
-          className="absolute top-1/2 -translate-y-[calc(100%+12px)] font-mono text-[0.65rem] tracking-[0.25em] whitespace-nowrap text-muted"
-        >
-          {text}
-        </motion.span>
-      </motion.div>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 2: Update the home page dividers**
-
-In `app/page.tsx`, replace:
-
-```tsx
-        <StrikeLine angle={1} className="py-6" />
-        <ProjectsShowcase />
-        <StrikeLine angle={2} className="py-6" />
-        <BentoGrid />
-        <StrikeLine angle={3} className="py-6" />
-```
-
-with:
-
-```tsx
-        <StrikeLine angle={1} at={0.3} />
-        <ProjectsShowcase />
-        <StrikeLine angle={2} at={0.68} />
-        <BentoGrid />
-        <StrikeLine angle={9} at={0.42} />
-```
-
-- [ ] **Step 3: Update the footer divider**
-
-In `components/layout/site-footer.tsx`, replace:
-
-```tsx
-      <StrikeLine angle={12} className="mb-10 px-0" />
-```
-
-with:
-
-```tsx
-      <StrikeLine angle={12} at={0.5} className="mb-6 px-0" />
-```
-
-- [ ] **Step 4: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run start
-```
-
-With the preloader skipped, at http://localhost:3000, scroll slowly past each divider:
-
-- [ ] **Hero → Projects:** a neon blade cuts from top-right to bottom-left across the line at about 30% from the left, fast. A soft glow streak flares with it, a flash pops where it crosses the line, and a bright pulse runs outward along the line both ways. The blade then fades to a faint scar and `ANGLE 01 // 135°` appears to its right.
-- [ ] **Projects → Stack:** cuts top-left to bottom-right at about 68%; the label `ANGLE 02 // 45°` sits to the **left** of the cut.
-- [ ] **Stack → Contact:** `ANGLE 09 // 45°`, top-left to bottom-right at about 42%.
-- [ ] **Footer:** a vertical cut in the middle, `ANGLE 12 // 90°`.
-- [ ] Each blade is visibly thicker at its starting end and pointed at the other end.
-- [ ] Each divider plays once; scrolling back up and down again shows only the scar.
-- [ ] Reduced motion (DevTools → Rendering → prefers-reduced-motion: reduce, reload): every divider is already a scar with its label; nothing animates.
-- [ ] At 375px: the band is shorter, the label does not overlap the blade or run off the screen, and there is no horizontal scrollbar.
-- [ ] Console is clean.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add components/ui/strike-line.tsx app/page.tsx components/layout/site-footer.tsx
-git commit -m "feat(identity): turn strike line dividers into a slash cut"
-```
-
----
-
-# Phase 15 — Targeted fixes: intro on every load, hero on reload, projects gap, discipline card
-
-Four fixes reported by the owner after Phase 13, plus a check of the Next.js "1 Issue" badge. Run this phase **after Phase 14**: Tasks 15.1 and 15.2 edit files that Task 14.1 replaces, and their anchors match the Task 14.1 versions.
-
-**Diagnosis (checked by the architect against the owner's dev server and a production build, 1895×916):**
-
-- **"The hero portrait is pushed up behind the navbar."** The layout is not broken. At scroll position 0 the whole hood and face are visible below the header, and the headgear reveal lines up with the face. The owner's screenshots were taken **after a reload while scrolled down**: the browser restores the old scroll position (reloading at `scrollY` 620 reproduces the screenshots exactly: the 916px hero mostly scrolled out, the corner copy at the top edge, the header in its scrolled glass style, and the headgear's lower neck guard showing over the chest). So the fix is to always open at the top on a full load, which also suits the intro playing on every load. No padding, `object-fit`, or headgear coordinate changes are needed, and none should be made.
-- **Gap before Projects.** Each project card is pinned in a full-screen `sticky` wrapper with `items-center`, so the first card sat about 300px below the "Projects" heading. Pinning the cards near the top instead (below the header) brings that to 112px; the section's top padding is also reduced.
-- **Discipline card.** The photos use `object-top` in a short, wide card, so only the tent roof shows.
-- **"1 Issue" badge.** Could not be reproduced: on the owner's running dev server and on a fresh dev server of commit `76da151`, a first load with the intro, a reload while scrolled, scrolling, and opening/closing the command palette all left the console and the Next.js dev overlay empty. Task 15.4 tells you how to capture it if it reappears.
-
-Every code block below was type-checked, linted, and built with Turbopack in a scratch copy at commit `76da151`, then checked in a production build at 1895×916: reloading from `scrollY` 620 shows the intro immediately (`data-preloader-active` set, overlay `display: flex`), `history.scrollRestoration` is `manual`, and the page is at `scrollY` 0; the "Projects" heading ends 112px above the first card; the stack still ends before the Stack section; the discipline card measures 568×576 with `object-position: 50% 80%`. The intro's counter and wipe could not run to completion there (the test browser pauses animation while hidden) and are covered by Task 15.4. Copy the blocks exactly.
-
-### Task 15.1: Play the intro on every load and always open at the top
-
-**Files:**
-- Modify: `components/ui/preloader.tsx` (full replacement)
-- Modify: `components/command-palette/command-palette.tsx` (two edits)
-- Modify: `app/globals.css` (comment only)
-
-**Interfaces consumed:** none new.
-**Interfaces produced:** `STORAGE_KEY` is no longer exported from `@/components/ui/preloader`, and `sessionStorage` is no longer used anywhere. The gate script now sets `history.scrollRestoration = "manual"` on every full load.
-
-**Behaviour after this task:**
-- Every full page load (first visit, reload, typing the URL) plays the intro and opens the page at the top.
-- Client-side navigation back to the home page (for example from the 404 page's "Back to the start" link) does not replay it; a module-level flag remembers that it already played in this document.
-- The palette's **Replay intro** simply loads the home page again.
-
-- [ ] **Step 1: Replace `components/ui/preloader.tsx`**
-
-```tsx
-"use client";
-
-import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
-import { useLenis } from "lenis/react";
-import {
-  AnimatePresence,
-  animate,
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useTransform,
-} from "motion/react";
-
-import { baybayin } from "@/data/baybayin";
-
-/**
- * Set on `<html>` while the preloader owns the screen. `app/globals.css` reads
- * it to show the overlay and to lock native scrolling.
- */
-const ACTIVE_ATTRIBUTE = "data-preloader-active";
-
-/** Seconds the counter takes to run from 00 to 100. */
-const COUNT_DURATION = 1.6;
-
-/** Seconds the overlay holds at 100% before it wipes away. */
-const EXIT_HOLD = 0.2;
-
-const EASE_OUT_QUINT = [0.22, 1, 0.36, 1] as const;
-const EASE_IN_OUT_QUART = [0.76, 0, 0.24, 1] as const;
-
-const STATUS_LINES = [
-  { label: "GARAZA", value: "DEV PORTFOLIO", accent: false },
-  { label: "SYS.INIT", value: "OK", accent: true },
-  { label: "LATENCY", value: "12MS", accent: false },
-] as const;
-
-/*
- * Runs synchronously while the browser parses the HTML: before first paint,
- * and before React has loaded. On every full page load it flags `<html>`,
- * which makes the server-rendered overlay visible and locks scrolling, so the
- * intro never flashes in late. It also turns off the browser's scroll
- * restoration: without that, a reload reopens the page wherever it was
- * scrolled to, and the intro wipes away to reveal the middle of the page
- * instead of the hero.
- */
-const GATE_SCRIPT = `try{history.scrollRestoration="manual"}catch(e){}document.documentElement.setAttribute("${ACTIVE_ATTRIBUTE}","")`;
-
-/*
- * Whether the intro has already played in this document. Module state lives
- * as long as the page: a reload starts a new document and plays the intro
- * again, but client-side navigation back to the home page does not.
- */
-let playedThisLoad = false;
-
-function readShouldPlay() {
-  return !playedThisLoad;
+export interface StrikeResult {
+  grade: StrikeGrade;
+  /** Combo after this press. 1 for `start` and `miss`. */
+  combo: number;
+  /** True when this press completed the combo; the rhythm has already reset. */
+  finisher: boolean;
 }
 
-// Nothing to subscribe to: the value only changes when the intro finishes,
-// and that is followed by a state update anyway.
-const subscribe = () => () => {};
+const BEST_KEY = "portfolio_strike_best";
+const HINT_KEY = "portfolio_strike_hint_seen";
 
-/**
- * An inline script that executes during HTML parsing only. On the client it
- * renders as `text/plain`, which stops React warning about `<script>` tags;
- * `suppressHydrationWarning` absorbs the `type` difference.
- */
-function InlineScript({ html }: { html: string }) {
-  return (
-    <script
-      type={typeof window === "undefined" ? "text/javascript" : "text/plain"}
-      suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
-}
+let best: number | null = null;
+const bestListeners = new Set<() => void>();
 
-/**
- * Intro: the Gothic monogram, a telemetry counter from 00 to 100, then an
- * upward wipe that uncovers the hero. Plays on every full page load, including
- * reloads.
- */
-export function Preloader() {
-  // The server always renders the overlay (CSS keeps it hidden unless the gate
-  // script flagged the page). After hydration this switches to the module
-  // flag, so a client-side return to the home page does not replay the intro.
-  const shouldPlay = useSyncExternalStore(subscribe, readShouldPlay, () => true);
-  const [counted, setCounted] = useState(false);
-  const [exited, setExited] = useState(false);
-
-  const reduceMotion = useReducedMotion();
-  const lenis = useLenis();
-
-  const visible = shouldPlay && !counted;
-  // The lock outlasts `visible`: it is released only after the wipe finishes.
-  const locked = shouldPlay && !exited;
-
-  const progress = useMotionValue(0);
-  const percent = useTransform(progress, (value) =>
-    Math.round(value).toString().padStart(2, "0"),
-  );
-  const barScale = useTransform(progress, [0, 100], [0, 1]);
-
-  // Keep the `<html>` flag in step with React. In production the gate script
-  // has already set it and this is a no-op. In development, Strict Mode's
-  // remount strips attributes React does not manage from `<html>`, so this puts
-  // it back before paint. The flag is re-read so that a client-side return to
-  // the home page, whose `shouldPlay` is still the server value during the
-  // hydration commit, never flashes the overlay.
-  useLayoutEffect(() => {
-    if (!locked || !readShouldPlay()) return;
-    const root = document.documentElement;
-    root.setAttribute(ACTIVE_ATTRIBUTE, "");
-    return () => root.removeAttribute(ACTIVE_ATTRIBUTE);
-  }, [locked]);
-
-  // Lenis drives scrolling programmatically, so `overflow: hidden` alone does
-  // not stop wheel scrolling. With reduced motion there is no Lenis instance
-  // and the CSS lock is enough.
-  useEffect(() => {
-    if (!lenis || !locked) return;
-    lenis.stop();
-    return () => lenis.start();
-  }, [lenis, locked]);
-
-  useEffect(() => {
-    if (!visible) return;
-    const controls = animate(progress, 100, {
-      duration: COUNT_DURATION,
-      ease: EASE_OUT_QUINT,
-      onComplete: () => setCounted(true),
-    });
-    return () => controls.stop();
-  }, [visible, progress]);
-
-  const handleExitComplete = () => {
-    playedThisLoad = true;
-    setExited(true);
-  };
-
-  return (
-    <>
-      <InlineScript html={GATE_SCRIPT} />
-      <AnimatePresence onExitComplete={handleExitComplete}>
-        {visible && (
-          <motion.div
-            key="preloader"
-            // `display` is owned by the `[data-preloader]` rules in globals.css,
-            // so there is deliberately no `flex` class here.
-            data-preloader
-            role="status"
-            exit={
-              reduceMotion
-                ? { opacity: 0, transition: { duration: 0.4, delay: EXIT_HOLD } }
-                : {
-                    y: "-100%",
-                    transition: { duration: 0.8, delay: EXIT_HOLD, ease: EASE_IN_OUT_QUART },
-                  }
-            }
-            className="fixed inset-0 z-90 flex-col items-center justify-center overflow-hidden bg-bg select-none"
-          >
-            <span className="sr-only">Loading portfolio</span>
-
-            {/*
-             * Atmosphere. The grid is repeated here because the page-wide grid
-             * sits behind this opaque overlay. The film grain is not: the
-             * page-wide noise layer is at z-100, already above this overlay.
-             */}
-            <div aria-hidden className="bg-grid pointer-events-none absolute inset-0" />
-            <div
-              aria-hidden
-              className="glow pointer-events-none absolute top-1/2 left-1/2 size-[26rem] -translate-x-1/2 -translate-y-1/2"
-            />
-
-            <div aria-hidden className="relative flex flex-col items-center">
-              {/*
-               * `𝕲` (U+1D572) is a math symbol that no bundled font covers, so
-               * each OS would substitute its own glyph. A plain "G" in
-               * UnifrakturCook renders the same blackletter capital everywhere.
-               */}
-              <span className="animate-monogram-in block">
-                <span className="animate-monogram-breathe block font-gothic text-8xl leading-none text-fg drop-shadow-[0_0_25px_rgba(204,255,0,0.35)] md:text-[10rem]">
-                  G
-                </span>
-              </span>
-
-              <span className="animate-status-in mt-4 font-baybayin text-2xl text-accent/80 md:text-3xl">
-                {baybayin.name.text}
-              </span>
-
-              <div className="mt-8 flex items-baseline font-mono tabular-nums">
-                <motion.span className="text-5xl font-medium tracking-tight text-fg md:text-6xl">
-                  {percent}
-                </motion.span>
-                <span className="ml-1 text-xl text-accent md:text-2xl">%</span>
-              </div>
-
-              <div className="mt-4 h-px w-56 overflow-hidden bg-line">
-                <motion.div style={{ scaleX: barScale }} className="h-full origin-left bg-accent" />
-              </div>
-
-              <ul className="mt-8 flex flex-col items-center gap-2 font-mono text-[0.65rem] uppercase tracking-[0.3em] text-muted md:text-xs">
-                {STATUS_LINES.map((line, index) => (
-                  <li
-                    key={line.label}
-                    className="animate-status-in"
-                    style={{ animationDelay: `${0.3 + index * 0.18}s` }}
-                  >
-                    {line.label} <span className="text-line-strong">{"//"}</span>{" "}
-                    <span className={line.accent ? "text-accent" : "text-fg"}>{line.value}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Neon leading edge, visible as the overlay wipes upward. */}
-            <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-accent" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  );
-}
-```
-
-- [ ] **Step 2: Update the command palette**
-
-In `components/command-palette/command-palette.tsx`, delete this import line:
-
-```tsx
-import { STORAGE_KEY as PRELOADER_STORAGE_KEY } from "@/components/ui/preloader";
-```
-
-Then replace:
-
-```tsx
-  function replayIntro() {
+function getBest() {
+  if (best === null) {
     try {
-      sessionStorage.removeItem(PRELOADER_STORAGE_KEY);
+      best = Number(localStorage.getItem(BEST_KEY)) || 0;
     } catch {
-      // Storage blocked: the preloader cannot run either way.
+      best = 0;
     }
-    // A full page load, not router.push: the preloader's gate script only runs
-    // while the HTML is being parsed.
-    window.location.assign(window.location.origin);
   }
-```
+  return best;
+}
 
-with:
-
-```tsx
-  function replayIntro() {
-    // A full page load, not router.push: the preloader plays on every full load,
-    // and its gate script only runs while the HTML is being parsed.
-    window.location.assign(window.location.origin);
+function recordBest(combo: number) {
+  if (combo <= getBest()) return;
+  best = combo;
+  try {
+    localStorage.setItem(BEST_KEY, String(combo));
+  } catch {
+    // Storage blocked: the record lasts until reload.
   }
+  bestListeners.forEach((listener) => listener());
+}
+
+/** Best combo ever reached in this browser. 0 on the server and during hydration. */
+export function useBestStrikeCombo(): number {
+  return useSyncExternalStore(
+    (listener) => {
+      bestListeners.add(listener);
+      return () => {
+        bestListeners.delete(listener);
+      };
+    },
+    getBest,
+    () => 0,
+  );
+}
+
+/**
+ * True the first time it is called in this browser, false afterwards. Used to
+ * show the "press on the beat" hint once.
+ */
+export function takeFirstStrike(): boolean {
+  try {
+    if (localStorage.getItem(HINT_KEY)) return false;
+    localStorage.setItem(HINT_KEY, "1");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Latest time the on-beat press after beat `lastBeat` can still land. */
+function deadlineFor(anchor: number, lastBeat: number) {
+  return anchor + (lastBeat + 1) * BEAT_MS + GOOD_MS;
+}
+
+/**
+ * Beat clock and combo for one strike divider. The first press starts a fixed
+ * 100 BPM beat; each later press is graded against the nearest beat. `beat`
+ * counts beats since the chain started and `chain` identifies the current
+ * chain (null while the beat is stopped), so a view can restart its beat
+ * animation on every beat and every new chain.
+ */
+export function useStrikeRhythm() {
+  const [combo, setCombo] = useState(0);
+  const [chain, setChain] = useState<number | null>(null);
+  const [beat, setBeat] = useState(0);
+  const anchorRef = useRef<number | null>(null);
+  const lastBeatRef = useRef(0);
+  const comboRef = useRef(0);
+  const bestCombo = useBestStrikeCombo();
+
+  const stop = useCallback(() => {
+    anchorRef.current = null;
+    comboRef.current = 0;
+    setCombo(0);
+    setChain(null);
+    setBeat(0);
+  }, []);
+
+  // While a chain runs: advance `beat` on every beat, and end the combo quietly
+  // once a beat's window closes without a press.
+  useEffect(() => {
+    if (chain === null) return;
+    let timer = 0;
+    function tick() {
+      const anchor = anchorRef.current;
+      if (anchor === null) return;
+      const now = performance.now();
+      if (now > deadlineFor(anchor, lastBeatRef.current)) {
+        stop();
+        return;
+      }
+      setBeat(Math.floor((now - anchor) / BEAT_MS));
+      const nextBeat = anchor + (Math.floor((now - anchor) / BEAT_MS) + 1) * BEAT_MS;
+      const closes = deadlineFor(anchor, lastBeatRef.current) + 1;
+      timer = window.setTimeout(tick, Math.max(0, Math.min(nextBeat, closes) - now));
+    }
+    timer = window.setTimeout(tick, Math.max(0, chain + BEAT_MS - performance.now()));
+    return () => window.clearTimeout(timer);
+  }, [chain, stop]);
+
+  const press = useCallback((): StrikeResult => {
+    const now = performance.now();
+
+    function begin(grade: "start" | "miss"): StrikeResult {
+      anchorRef.current = now;
+      lastBeatRef.current = 0;
+      comboRef.current = 1;
+      setCombo(1);
+      setChain(now);
+      setBeat(0);
+      return { grade, combo: 1, finisher: false };
+    }
+
+    const anchor = anchorRef.current;
+    if (anchor === null || now > deadlineFor(anchor, lastBeatRef.current)) return begin("start");
+
+    const index = Math.round((now - anchor) / BEAT_MS);
+    const offset = Math.abs(now - anchor - index * BEAT_MS);
+    if (index !== lastBeatRef.current + 1 || offset > GOOD_MS) return begin("miss");
+
+    lastBeatRef.current = index;
+    const next = comboRef.current + 1;
+    recordBest(next);
+    const grade = offset <= PERFECT_MS ? "perfect" : "good";
+    if (next >= FINISHER_COMBO) {
+      stop();
+      return { grade, combo: next, finisher: true };
+    }
+    comboRef.current = next;
+    setCombo(next);
+    return { grade, combo: next, finisher: false };
+  }, [stop]);
+
+  return { combo, bestCombo, beat, chain, press };
+}
 ```
 
-- [ ] **Step 3: Update the gate comment in `app/globals.css`**
+- [ ] **Step 2: Create `lib/strike-audio.ts`**
 
-Replace:
+```ts
+import { useSyncExternalStore } from "react";
 
-```css
- * Preloader gate. The overlay is in the server HTML on every load but stays
- * hidden unless the inline gate script flagged a first visit on <html>, so
- * returning visitors and no-JS visitors never see it. Unlayered on purpose:
- * this must beat any Tailwind display utility.
+/**
+ * Sounds for the interactive strike dividers. The clips live in
+ * `public/audio/strikes/`; their sources and licences are in `CREDITS.md`
+ * there. A PERFECT press reuses the stab clip, pitched up, as a short ring.
+ */
+export type StrikeSound = "slash" | "stab" | "finisher" | "miss";
+
+const SOURCES: Record<StrikeSound, string> = {
+  slash: "/audio/strikes/slash.wav",
+  stab: "/audio/strikes/stab.wav",
+  finisher: "/audio/strikes/finisher.wav",
+  miss: "/audio/strikes/miss.wav",
+};
+
+/** localStorage key holding "1" while strike sounds are muted. */
+const MUTE_KEY = "portfolio_strike_muted";
+
+let context: AudioContext | null = null;
+/** Raw clip bytes, fetched ahead of the first press. */
+const downloads = new Map<StrikeSound, Promise<ArrayBuffer | null>>();
+/** Decoded clips, available once audio is unlocked. */
+const decoded = new Map<StrikeSound, Promise<AudioBuffer | null>>();
+const muteListeners = new Set<() => void>();
+
+function readMuted() {
+  try {
+    return localStorage.getItem(MUTE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+let muted: boolean | null = null;
+
+function getMuted() {
+  if (muted === null) muted = readMuted();
+  return muted;
+}
+
+export function setStrikeMuted(next: boolean) {
+  muted = next;
+  try {
+    localStorage.setItem(MUTE_KEY, next ? "1" : "0");
+  } catch {
+    // Storage blocked: the choice lasts until reload.
+  }
+  muteListeners.forEach((listener) => listener());
+}
+
+/** Whether strike sounds are muted. `false` on the server and during hydration. */
+export function useStrikeMuted(): boolean {
+  return useSyncExternalStore(
+    (listener) => {
+      muteListeners.add(listener);
+      return () => {
+        muteListeners.delete(listener);
+      };
+    },
+    getMuted,
+    () => false,
+  );
+}
+
+/**
+ * Starts downloading the clips without touching audio, so the first press is
+ * not silent. Call on hover or focus of a STRIKE button. Safe to call repeatedly.
+ */
+export function preloadStrikeAudio() {
+  if (typeof window === "undefined") return;
+  (Object.keys(SOURCES) as StrikeSound[]).forEach((name) => {
+    if (downloads.has(name)) return;
+    downloads.set(
+      name,
+      fetch(SOURCES[name])
+        .then((response) => (response.ok ? response.arrayBuffer() : null))
+        .catch(() => null),
+    );
+  });
+}
+
+/**
+ * Creates the audio context and decodes the clips. Must be called from inside a
+ * user gesture (a click or key press): browsers keep audio locked until then,
+ * and creating the context earlier logs a warning. Safe to call on every press.
+ * A clip that fails to download or decode stays silent.
+ */
+export function unlockStrikeAudio() {
+  if (typeof window === "undefined" || !("AudioContext" in window)) return;
+  preloadStrikeAudio();
+  if (context) {
+    if (context.state === "suspended") void context.resume();
+    return;
+  }
+  const audio = new AudioContext();
+  context = audio;
+  (Object.keys(SOURCES) as StrikeSound[]).forEach((name) => {
+    decoded.set(
+      name,
+      downloads
+        .get(name)!
+        .then((bytes) => (bytes ? audio.decodeAudioData(bytes.slice(0)) : null))
+        .catch(() => null),
+    );
+  });
+}
+
+/**
+ * Plays a clip if audio is unlocked and sound is not muted. `volume` is 0–1;
+ * `rate` above 1 plays faster and higher-pitched. A clip still decoding when
+ * requested plays as soon as it is ready, unless that takes over 250 ms.
+ */
+export function playStrikeSound(name: StrikeSound, { volume = 1, rate = 1 } = {}) {
+  const audio = context;
+  const pending = decoded.get(name);
+  if (!audio || !pending || getMuted()) return;
+  const requested = performance.now();
+  void pending.then((buffer) => {
+    if (!buffer || getMuted() || performance.now() - requested > 250) return;
+    const source = audio.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = rate;
+    const gain = audio.createGain();
+    gain.gain.value = volume;
+    source.connect(gain).connect(audio.destination);
+    source.start();
+  });
+}
 ```
-
-with:
-
-```css
- * Preloader gate. The overlay is in the server HTML on every load but stays
- * hidden unless the inline gate script flagged <html>, which it does on every
- * full page load; no-JS visitors never see it. Unlayered on purpose: this must
- * beat any Tailwind display utility.
-```
-
-- [ ] **Step 4: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run start
-```
-
-```bash
-grep -rn "sessionStorage\|portfolio_preloaded\|STORAGE_KEY" app components hooks lib
-```
-
-Expected: no output.
-
-At http://localhost:3000:
-
-- [ ] Load the page: the intro plays (monogram, counter to 100, upward wipe) and reveals the hero at the top.
-- [ ] Scroll halfway down the page, then reload (F5): the intro plays again, and after the wipe the page is at the very top with the full hood and face visible below the header.
-- [ ] Repeat the reload several times: the intro plays every time.
-- [ ] Open http://localhost:3000/does-not-exist, click **Back to the start**: the home page appears without the intro (client-side navigation). Reload there: the intro plays.
-- [ ] Ctrl+K → type `intro` → **Replay intro**: the page reloads and the intro plays.
-- [ ] During the intro, the wheel, keyboard, and Ctrl+K do nothing; right after the wipe, scrolling works.
-- [ ] Console is clean, with no hydration warning.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add components/ui/preloader.tsx components/command-palette/command-palette.tsx app/globals.css
-git commit -m "feat(preloader): play the intro on every load and open at the top"
-```
-
----
-
-### Task 15.2: Tighten the gap before the projects
-
-**Files:**
-- Modify: `components/sections/projects-showcase.tsx` (one class change)
-- Modify: `components/sections/project-card.tsx` (one class change)
-
-**Interfaces consumed / produced:** none.
-
-- [ ] **Step 1: Reduce the section's top padding**
-
-In `components/sections/projects-showcase.tsx`, replace:
-
-```tsx
-    <section id="projects" className="relative px-6 py-24">
-```
-
-with:
-
-```tsx
-    <section id="projects" className="relative px-6 pt-8 pb-24">
-```
-
-- [ ] **Step 2: Pin the cards near the top instead of the vertical centre**
-
-In `components/sections/project-card.tsx`, replace:
-
-```tsx
-    <div className="sticky top-0 flex h-screen items-center justify-center px-6">
-```
-
-with:
-
-```tsx
-    <div className="sticky top-0 flex h-screen items-start justify-center px-6 pt-28">
-```
-
-`pt-28` (112px) keeps a pinned card clear of the floating header.
 
 - [ ] **Step 3: Verify**
 
@@ -1531,77 +561,672 @@ with:
 npx tsc --noEmit
 npm run lint
 npm run build
-npm run start
 ```
 
-At 1440px or wider:
-
-- [ ] Between the hero and "SELECTED WORK / Projects" there is only the strike line divider and a small margin; no empty screen-height gap.
-- [ ] The first project card starts roughly 110px below the "Projects" heading instead of in the middle of the screen.
-- [ ] Scrolling through the projects: each card pins just below the header and the next card stacks over it, slightly lower, exactly as before. No card is hidden behind the header.
-- [ ] After the last card, the Stack section follows without any card overlapping it.
-- [ ] At 375px: cards pin below the header and stay fully readable; no horizontal scrollbar.
+Expected: all pass. Nothing on the page changes yet (both files are unused until Task 16.2).
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add components/sections/projects-showcase.tsx components/sections/project-card.tsx
-git commit -m "fix(projects): pin cards near the top and tighten the section gap"
+git add hooks/use-strike-rhythm.ts lib/strike-audio.ts
+git commit -m "feat(strike): add rhythm engine and strike audio module"
 ```
 
 ---
 
-### Task 15.3: Show the fighter's full stance on the Athletics & Discipline card
+### Task 16.2: Build the interactive sword-slash dividers
 
 **Files:**
-- Modify: `components/sections/discipline-card.tsx` (three class changes)
-- Modify: `components/sections/bento-grid.tsx` (one class change)
+- Create: `components/ui/strike-mark.tsx`
+- Create: `components/ui/strike-button.tsx`
+- Create: `components/ui/strike-finisher.tsx`
+- Modify: `components/ui/strike-line.tsx` (full replacement)
+- Modify: `app/globals.css` (one insertion)
 
-**Interfaces consumed / produced:** none.
+**Interfaces consumed:** everything produced by Task 16.1; `getStrike` from `@/data/strike-angles`; `cn`; `motion`, `AnimatePresence`, `useAnimate`, `useReducedMotion` from `motion/react`; `Sword`, `Volume2`, `VolumeX` from `lucide-react`.
+**Interfaces produced:**
+- `StrikeMark` with props `{ cut: StrikeCut; layer: "effect" | "scar" }` and `interface StrikeCut { id; strike; at; scale; perfect; animate }`.
+- `StrikeButton` with props `{ label, beat, chain, feedback, muted, onStrike, onToggleMute, onPrime? }` and `interface StrikeFeedback { id; grade }`.
+- `StrikeFinisher` with props `{ onDone: () => void }` (renders into `document.body`).
+- `StrikeLine` keeps `{ angle: number; at?: number; className?: string }`; `angle` may now be any strike 1–12.
+- Tailwind class `animate-beat-ring`.
 
-**Why these values.** Both photos are portrait (3024×4032); the athlete runs from about 22% (top of the headgear) to 95% (feet) of the photo height, with the tent roof above. The architect rendered the exact `object-cover` crop of both photos at each card size:
+- [ ] **Step 1: Add the beat ring animation to `app/globals.css`**
 
-| Breakpoint | Card | Focal point | What is in frame |
-| --- | --- | --- | --- |
-| Phone | `aspect-4/5` (≈327×409) | `center 80%` | headgear to feet |
-| Tablet (`sm`) | `aspect-4/3` (≈720×540) | `center 45%` | headgear to knees; a landscape card cannot fit a full standing figure, and 80% here would cut the headgear off |
-| Desktop (`lg`) | two rows, `min-h-[36rem]` (≈568×576) | `center 80%` | headgear to feet |
+In the `@theme` block, insert this directly above `  @keyframes status-in {`:
 
-The text gradient is shortened to the bottom 40% (solid at the bottom, 70% at 20% height), so the red gear stays bright and only the feet sit under the text. On desktop, the taller card also makes the two grid rows it spans taller, so the tech stack cards beside it grow.
+```css
+  /* Strike divider beat: a ring expanding out of the STRIKE button once per beat. */
+  --animate-beat-ring: beat-ring 0.6s cubic-bezier(0, 0, 0.2, 1) both;
 
-- [ ] **Step 1: Set the focal point on both photos**
+  @keyframes beat-ring {
+    from {
+      transform: scale(1);
+      opacity: 0.9;
+    }
+    to {
+      transform: scale(2.2);
+      opacity: 0;
+    }
+  }
 
-In `components/sections/discipline-card.tsx`, replace `object-cover object-top` with `object-cover object-[center_80%] sm:object-[center_45%] lg:object-[center_80%]` in **both** `<Image>` `className`s.
-
-- [ ] **Step 2: Shorten the text gradient**
-
-In the same file, replace:
-
-```tsx
-        className="absolute inset-0 bg-gradient-to-t from-bg via-bg/60 to-transparent"
 ```
 
-with:
+- [ ] **Step 2: Create `components/ui/strike-mark.tsx`**
 
 ```tsx
-        className="absolute inset-0 bg-linear-to-t from-bg via-bg/70 via-20% to-transparent to-40%"
+"use client";
+
+import { useId, useState } from "react";
+import { motion } from "motion/react";
+
+import { getStrike } from "@/data/strike-angles";
+
+/** One cut on a strike divider. */
+export interface StrikeCut {
+  id: number;
+  /** Strike number, 1–12. */
+  strike: number;
+  /** Where it lands along the line, 0 (left) to 1 (right). */
+  at: number;
+  /** Size multiplier from the combo: 1, 1.3, 1.6, 2, or 2.3 for a PERFECT at max. */
+  scale: number;
+  perfect: boolean;
+  /** False with reduced motion: the scar appears without the swing. */
+  animate: boolean;
+}
+
+/** Half the chord of a size-1 crescent, in px. */
+const ARC_HALF = 130;
+/** How far a size-1 crescent bows out from its chord, in px. */
+const ARC_DEPTH = 34;
+/** Thickness of a size-1 crescent at its middle, in px. */
+const ARC_THICKNESS = 12;
+
+/** Seconds the swing takes to sweep from one tip to the other. */
+const SWEEP = 0.2;
+/** Seconds the bright slash lingers before it is removed, leaving the scar. */
+const EFFECT_LIFE = 0.75;
+
+/** Horizontal strikes are tilted this far so they still read as a swing. */
+const HORIZONTAL_TILT = 12;
+
+/**
+ * Direction of travel and bow for a strike. Odd strikes bow one way and even
+ * strikes the other, so forehand and backhand swings curve oppositely.
+ */
+function swingFor(strike: number) {
+  const { degrees } = getStrike(strike);
+  if (degrees === null) return null;
+  let rotation = degrees;
+  if (degrees === 0) rotation = HORIZONTAL_TILT;
+  if (degrees === 180) rotation = 180 - HORIZONTAL_TILT;
+  return { rotation, bow: strike % 2 === 1 ? -1 : 1 };
+}
+
+/**
+ * Crescent between two quadratic curves sharing their tips. It is thickest at
+ * the middle and sharp at both ends; `bow` flips which side it curves toward.
+ */
+function crescent(half: number, depth: number, thickness: number, bow: number) {
+  const outer = -2 * depth * bow;
+  const inner = -2 * (depth - thickness) * bow;
+  return `M ${-half} 0 Q 0 ${outer} ${half} 0 Q 0 ${inner} ${-half} 0 Z`;
+}
+
+/**
+ * Renders one strike: a crescent sword slash, or a stab for a thrust. The
+ * bright effect is drawn on the unclipped layer and removed after
+ * `EFFECT_LIFE`; the faint scar is drawn on the clipped band layer and stays.
+ */
+export function StrikeMark({ cut, layer }: { cut: StrikeCut; layer: "effect" | "scar" }) {
+  const swing = swingFor(cut.strike);
+  const maskId = `slash-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  const [effectDone, setEffectDone] = useState(!cut.animate);
+
+  const s = cut.scale;
+  const half = ARC_HALF * s;
+  const depth = ARC_DEPTH * s;
+  const thickness = ARC_THICKNESS * s;
+  const box = half * 2 + 120;
+  const position = { left: `${cut.at * 100}%`, top: "50%" };
+  // Shift the crescent so the middle of its bow crosses the hairline.
+  const lift = swing ? depth * 0.6 * swing.bow : 0;
+
+  if (layer === "scar") {
+    return (
+      <motion.svg
+        initial={cut.animate ? { opacity: 0 } : false}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.6 } }}
+        transition={{ delay: cut.animate ? SWEEP : 0, duration: 0.5 }}
+        width={box}
+        height={box}
+        viewBox={`${-box / 2} ${-box / 2} ${box} ${box}`}
+        style={position}
+        className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 overflow-visible"
+      >
+        {swing ? (
+          <g transform={`rotate(${swing.rotation}) translate(0 ${lift})`}>
+            <path d={crescent(half, depth, thickness * 0.3, swing.bow)} className="fill-accent" opacity={0.28} />
+          </g>
+        ) : (
+          <circle r={3 + s} className="fill-accent" opacity={0.45} />
+        )}
+      </motion.svg>
+    );
+  }
+
+  if (effectDone) return null;
+
+  return (
+    <motion.svg
+      width={box}
+      height={box}
+      viewBox={`${-box / 2} ${-box / 2} ${box} ${box}`}
+      style={position}
+      className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 overflow-visible"
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 0 }}
+      transition={{ delay: SWEEP + 0.15, duration: EFFECT_LIFE - SWEEP - 0.15 }}
+      onAnimationComplete={() => setEffectDone(true)}
+    >
+      {swing ? (
+        <g transform={`rotate(${swing.rotation}) translate(0 ${lift})`}>
+          <defs>
+            <mask id={maskId} maskUnits="userSpaceOnUse" x={-box} y={-box} width={box * 2} height={box * 2}>
+              {/* Drawing this stroke tip to tip is the sword sweeping through. */}
+              <motion.path
+                d={`M ${-half} 0 Q 0 ${-2 * (depth - thickness / 2) * swing.bow} ${half} 0`}
+                stroke="#fff"
+                strokeWidth={thickness * 4 + 20}
+                strokeLinecap="round"
+                fill="none"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: SWEEP, ease: [0.2, 0.8, 0.2, 1] }}
+              />
+            </mask>
+          </defs>
+          {/* Afterimage: a fainter crescent trailing a few degrees behind. */}
+          <g transform={`rotate(${-8 * swing.bow})`} mask={`url(#${maskId})`}>
+            <path d={crescent(half, depth, thickness, swing.bow)} className="fill-accent" opacity={0.25} />
+          </g>
+          <g mask={`url(#${maskId})`}>
+            <path
+              d={crescent(half * 1.04, depth * 1.08, thickness * 1.8, swing.bow)}
+              className="fill-accent"
+              style={{ filter: `blur(${cut.perfect ? 10 : 6}px)` }}
+              opacity={0.9}
+            />
+            <path d={crescent(half, depth, thickness, swing.bow)} className="fill-accent" />
+            <path d={crescent(half * 0.94, depth * 0.94, thickness * 0.45, swing.bow)} fill="#fff" />
+          </g>
+        </g>
+      ) : (
+        <g>
+          {/* Stab: a narrow spike driving down into the line. */}
+          <motion.g
+            initial={{ y: -90 * s, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.12, ease: "easeIn" }}
+          >
+            <path
+              d={`M ${-5 * s} ${-110 * s} L ${5 * s} ${-110 * s} L 0 0 Z`}
+              className="fill-accent"
+              style={{ filter: "blur(4px)" }}
+            />
+            <path d={`M ${-2 * s} ${-100 * s} L ${2 * s} ${-100 * s} L 0 0 Z`} fill="#fff" />
+          </motion.g>
+          <motion.circle
+            r={26 * s}
+            fill="none"
+            strokeWidth={3}
+            className="stroke-accent"
+            initial={{ scale: 0, opacity: 1 }}
+            animate={{ scale: 1.8, opacity: 0 }}
+            transition={{ delay: 0.1, duration: 0.45, ease: "easeOut" }}
+          />
+        </g>
+      )}
+      {/* Impact flash where the strike meets the hairline. */}
+      <motion.circle
+        r={(cut.perfect ? 30 : 20) * s}
+        fill={cut.perfect ? "#fff" : undefined}
+        className={cut.perfect ? undefined : "fill-accent"}
+        initial={{ scale: 0, opacity: 0.9 }}
+        animate={{ scale: 1.5, opacity: 0 }}
+        transition={{ delay: SWEEP / 2, duration: 0.35, ease: "easeOut" }}
+      />
+    </motion.svg>
+  );
+}
 ```
 
-- [ ] **Step 3: Give the card a portrait-friendly shape**
-
-In `components/sections/bento-grid.tsx`, replace:
+- [ ] **Step 3: Create `components/ui/strike-button.tsx`**
 
 ```tsx
-          <DisciplineCard className="min-h-80 sm:col-span-2 lg:col-span-3 lg:row-span-2" />
+"use client";
+
+import { useEffect } from "react";
+import { AnimatePresence, motion, useAnimate, useReducedMotion } from "motion/react";
+import { Sword, Volume2, VolumeX } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+/** Latest press feedback. `id` changes on every press so repeats replay. */
+export interface StrikeFeedback {
+  id: number;
+  grade: "start" | "perfect" | "good" | "miss";
+}
+
+export interface StrikeButtonProps {
+  /** Accessible name, including the strike this press will cut. */
+  label: string;
+  /** Beats since the chain started; the ring replays on every change. */
+  beat: number;
+  /** Identifies the running chain, or null while the beat is stopped. */
+  chain: number | null;
+  feedback: StrikeFeedback | null;
+  muted: boolean;
+  onStrike: () => void;
+  onToggleMute: () => void;
+  /** Called on hover or focus, before a press: a chance to preload sounds. */
+  onPrime?: () => void;
+}
+
+function token(name: string) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/**
+ * Round STRIKE button with a beat ring, PERFECT / MISS feedback, and a mute
+ * toggle. The ring expands on every beat while a chain runs; with reduced
+ * motion it blinks instead. The button element is never re-created, so
+ * keyboard focus survives rapid Space / Enter presses.
+ */
+export function StrikeButton({
+  label,
+  beat,
+  chain,
+  feedback,
+  muted,
+  onStrike,
+  onToggleMute,
+  onPrime,
+}: StrikeButtonProps) {
+  const reduceMotion = useReducedMotion() ?? false;
+  const [scope, animate] = useAnimate<HTMLButtonElement>();
+  const grade = feedback?.grade;
+
+  // Press feedback: squash on every press, shake on MISS, lime flash on PERFECT.
+  useEffect(() => {
+    const button = scope.current;
+    if (!feedback || !button || reduceMotion) return;
+    if (feedback.grade === "miss") {
+      animate(button, { x: [0, -5, 5, -3, 3, 0], scale: [0.9, 1] }, { duration: 0.3 });
+      return;
+    }
+    animate(button, { scale: [0.86, 1] }, { duration: 0.2, ease: "easeOut" });
+    if (feedback.grade === "perfect") {
+      const accent = token("--color-accent");
+      const ink = token("--color-accent-ink");
+      const bg = token("--color-bg");
+      animate(button, { backgroundColor: [accent, bg], color: [ink, accent] }, { duration: 0.45 });
+    }
+  }, [feedback, reduceMotion, animate, scope]);
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="relative">
+        {chain !== null ? (
+          <span
+            key={`${chain}-${beat}`}
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute inset-0 rounded-full border border-accent",
+              reduceMotion ? (beat % 2 === 0 ? "opacity-80" : "opacity-20") : "animate-beat-ring",
+            )}
+          />
+        ) : null}
+
+        <button
+          ref={scope}
+          type="button"
+          aria-label={label}
+          onClick={onStrike}
+          onPointerEnter={onPrime}
+          onFocus={onPrime}
+          className="relative flex size-10 items-center justify-center rounded-full border border-accent/60 bg-bg text-accent transition-[border-color] duration-150 hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:size-11"
+        >
+          <Sword aria-hidden className="size-4" />
+        </button>
+
+        <AnimatePresence>
+          {feedback && (grade === "perfect" || grade === "miss") ? (
+            <motion.span
+              key={feedback.id}
+              aria-hidden
+              initial={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 0, y: reduceMotion ? 0 : -18 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className={cn(
+                "pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 font-mono text-[0.6rem] tracking-[0.2em] whitespace-nowrap",
+                grade === "perfect" ? "text-fg" : "text-muted",
+              )}
+            >
+              {grade === "perfect" ? "PERFECT" : "MISS"}
+            </motion.span>
+          ) : null}
+        </AnimatePresence>
+      </div>
+
+      <button
+        type="button"
+        aria-label={muted ? "Unmute strike sounds" : "Mute strike sounds"}
+        aria-pressed={muted}
+        onClick={onToggleMute}
+        className="flex size-8 items-center justify-center rounded-full text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      >
+        {muted ? <VolumeX aria-hidden className="size-4" /> : <Volume2 aria-hidden className="size-4" />}
+      </button>
+    </div>
+  );
+}
 ```
 
-with:
+- [ ] **Step 4: Create `components/ui/strike-finisher.tsx`**
 
 ```tsx
-          <DisciplineCard className="aspect-4/5 sm:col-span-2 sm:aspect-4/3 lg:col-span-3 lg:row-span-2 lg:aspect-auto lg:min-h-[36rem]" />
+"use client";
+
+import { createPortal } from "react-dom";
+import { motion, useReducedMotion } from "motion/react";
+
+/** Crescent swept from the top-left corner to the bottom-right, in a 0–100 box. */
+const SLASH_DOWN = "M -8 8 Q 46 34 108 92 Q 50 50 -8 8 Z";
+/** The mirrored crescent, top-right to bottom-left. */
+const SLASH_UP = "M 108 8 Q 54 34 -8 92 Q 50 50 108 8 Z";
+
+function FinisherSlash({ d, sweep, delay }: { d: string; sweep: string; delay: number }) {
+  return (
+    <g>
+      <defs>
+        <mask id={`finisher-${delay}`} maskUnits="userSpaceOnUse" x="-20" y="-20" width="140" height="140">
+          <motion.path
+            d={sweep}
+            stroke="#fff"
+            strokeWidth={30}
+            fill="none"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ delay, duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
+          />
+        </mask>
+      </defs>
+      <g mask={`url(#finisher-${delay})`}>
+        <path d={d} className="fill-accent" style={{ filter: "blur(10px)" }} />
+        <path d={d} className="fill-accent" />
+        <path d={d} fill="#fff" transform="translate(0 1.2) scale(1 0.985)" opacity={0.9} />
+      </g>
+    </g>
+  );
+}
+
+/**
+ * The combo finisher: two giant crescent slashes cross the whole viewport in an
+ * X, the screen flashes, and "ANYO COMPLETE" lands in the middle, then it all
+ * fades. With reduced motion only the text appears. Never intercepts clicks.
+ */
+export function StrikeFinisher({ onDone }: { onDone: () => void }) {
+  const reduceMotion = useReducedMotion() ?? false;
+
+  return createPortal(
+    <motion.div
+      aria-hidden
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 0 }}
+      transition={{ delay: 1.3, duration: 0.4 }}
+      onAnimationComplete={onDone}
+      className="pointer-events-none fixed inset-0 z-80 flex items-center justify-center overflow-hidden"
+    >
+      {reduceMotion ? null : (
+        <>
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full">
+            <FinisherSlash d={SLASH_DOWN} sweep="M -8 8 Q 48 42 108 92" delay={0} />
+            <FinisherSlash d={SLASH_UP} sweep="M 108 8 Q 52 42 -8 92" delay={0.22} />
+          </svg>
+          <motion.div
+            className="absolute inset-0 bg-fg"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.2, 0] }}
+            transition={{ delay: 0.36, duration: 0.35 }}
+          />
+        </>
+      )}
+      <motion.p
+        initial={{ opacity: 0, scale: reduceMotion ? 1 : 1.35 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: reduceMotion ? 0 : 0.42, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="relative text-center font-display text-[clamp(3rem,11vw,9rem)] leading-[0.85] text-accent uppercase drop-shadow-[0_0_30px_rgba(204,255,0,0.45)]"
+      >
+        Anyo
+        <span className="block text-fg">complete</span>
+      </motion.p>
+    </motion.div>,
+    document.body,
+  );
+}
 ```
 
-- [ ] **Step 4: Verify**
+- [ ] **Step 5: Replace `components/ui/strike-line.tsx`**
+
+```tsx
+"use client";
+
+import { useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+
+import { StrikeButton, type StrikeFeedback } from "@/components/ui/strike-button";
+import { StrikeFinisher } from "@/components/ui/strike-finisher";
+import { StrikeMark, type StrikeCut } from "@/components/ui/strike-mark";
+import { getStrike } from "@/data/strike-angles";
+import { FINISHER_COMBO, takeFirstStrike, useStrikeRhythm } from "@/hooks/use-strike-rhythm";
+import {
+  playStrikeSound,
+  preloadStrikeAudio,
+  setStrikeMuted,
+  unlockStrikeAudio,
+  useStrikeMuted,
+} from "@/lib/strike-audio";
+import { cn } from "@/lib/utils";
+
+/** Scars kept per divider; the oldest fades out beyond this. */
+const MAX_SCARS = 12;
+
+/** Slash size by combo level (1–3, 4–6, 7–9, 10–12), plus one step for PERFECT. */
+const SIZES = [1, 1.3, 1.6, 2, 2.3];
+
+function sizeFor(combo: number, perfect: boolean) {
+  const level = Math.min(3, Math.floor((combo - 1) / 3));
+  return SIZES[level + (perfect ? 1 : 0)];
+}
+
+function labelFor(strike: number) {
+  const { degrees } = getStrike(strike);
+  const number = String(strike).padStart(2, "0");
+  return `ANGLE ${number} // ${degrees === null ? "THRUST" : `${degrees}°`}`;
+}
+
+function nextAfter(strike: number) {
+  return (strike % 12) + 1;
+}
+
+const pulse = {
+  initial: { scaleX: 0, opacity: 1 },
+  animate: { scaleX: 1, opacity: 0 },
+  transition: { delay: 0.1, duration: 0.7, ease: "easeOut" },
+} as const;
+
+export interface StrikeLineProps {
+  /** Strike number (1–12) of the automatic first cut. */
+  angle: number;
+  /** Where the first cut lands along the line, 0 (left) to 1 (right). */
+  at?: number;
+  className?: string;
+}
+
+/**
+ * Interactive section divider. It cuts its own strike automatically the first
+ * time it scrolls into view. Its STRIKE button then cuts the next Arnis strike
+ * on every press: crescent sword slashes (stabs for thrusts) that leave scars,
+ * grow with an on-beat combo, and end in a finisher after 12 in a row.
+ */
+export function StrikeLine({ angle, at = 0.5, className }: StrikeLineProps) {
+  const reduceMotion = useReducedMotion() ?? false;
+  const muted = useStrikeMuted();
+  const { combo, bestCombo, beat, chain, press } = useStrikeRhythm();
+
+  const [cuts, setCuts] = useState<StrikeCut[]>([]);
+  const [lastStrike, setLastStrike] = useState(angle);
+  const [nextStrike, setNextStrike] = useState(nextAfter(angle));
+  // Mirrors `nextStrike` for presses that land before React re-renders.
+  const nextStrikeRef = useRef(nextAfter(angle));
+  const [feedback, setFeedback] = useState<StrikeFeedback | null>(null);
+  const [finisher, setFinisher] = useState<number | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const [hint, setHint] = useState(false);
+  const idRef = useRef(0);
+
+  function addCut(strike: number, where: number, scale: number, perfect: boolean) {
+    idRef.current += 1;
+    const cut: StrikeCut = { id: idRef.current, strike, at: where, scale, perfect, animate: !reduceMotion };
+    setCuts((list) => [...list, cut].slice(-MAX_SCARS));
+    setLastStrike(strike);
+    return cut.id;
+  }
+
+  function firstView() {
+    if (idRef.current === 0) addCut(angle, at, 1, false);
+  }
+
+  function strike() {
+    unlockStrikeAudio();
+    const result = press();
+    const current = nextStrikeRef.current;
+    nextStrikeRef.current = nextAfter(current);
+    const perfect = result.grade === "perfect";
+    const id = addCut(current, 0.12 + Math.random() * 0.76, sizeFor(result.combo, perfect), perfect);
+    setNextStrike(nextStrikeRef.current);
+    setFeedback({ id, grade: result.grade });
+
+    const thrust = getStrike(current).degrees === null;
+    playStrikeSound(thrust ? "stab" : "slash", {
+      volume: Math.min(1, 0.55 + result.combo * 0.04),
+      rate: 1 + (result.combo - 1) * 0.02,
+    });
+    if (perfect) playStrikeSound("stab", { volume: 0.35, rate: 1.8 });
+    if (result.grade === "miss") playStrikeSound("miss", { volume: 0.7 });
+    if (result.finisher) {
+      setFinisher(id);
+      playStrikeSound("finisher");
+      setAnnouncement(`Anyo complete: ${FINISHER_COMBO} strikes on the beat.`);
+    }
+    if (takeFirstStrike()) {
+      setHint(true);
+      window.setTimeout(() => setHint(false), 3500);
+    }
+  }
+
+  const latest = cuts.at(-1);
+
+  return (
+    <div className={cn("relative z-10 mx-auto w-full max-w-6xl px-6", className)}>
+      <div className="flex h-24 items-center gap-4 sm:h-32">
+        <motion.div
+          onViewportEnter={firstView}
+          viewport={{ once: true, margin: "0px 0px -20% 0px" }}
+          aria-hidden
+          className="relative h-full flex-1"
+        >
+          <span className="absolute inset-x-0 top-1/2 h-px bg-line" />
+
+          {/* Scars stay inside the band. */}
+          <div className="absolute inset-0 overflow-hidden">
+            <AnimatePresence>
+              {cuts.map((cut) => (
+                <StrikeMark key={cut.id} cut={cut} layer="scar" />
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {/* Bright slashes may spill over neighbouring content. */}
+          <div className="pointer-events-none absolute inset-0">
+            {cuts.map((cut) => (
+              <StrikeMark key={cut.id} cut={cut} layer="effect" />
+            ))}
+            {latest?.animate ? (
+              <div key={latest.id}>
+                <motion.span
+                  {...pulse}
+                  style={{ width: `${latest.at * 100}%` }}
+                  className="absolute top-1/2 left-0 h-px origin-right bg-linear-to-l from-accent to-transparent"
+                />
+                <motion.span
+                  {...pulse}
+                  style={{ left: `${latest.at * 100}%` }}
+                  className="absolute top-1/2 right-0 h-px origin-left bg-linear-to-r from-accent to-transparent"
+                />
+              </div>
+            ) : null}
+          </div>
+        </motion.div>
+
+        <div className="relative flex shrink-0 items-center gap-3">
+          <div className="hidden flex-col items-end gap-1 font-mono text-[0.65rem] tracking-[0.25em] text-muted sm:flex">
+            <span>{labelFor(lastStrike)}</span>
+            <span className={cn("text-accent", combo > 1 ? "opacity-100" : "opacity-0")}>
+              COMBO ×{Math.max(combo, 1)}
+            </span>
+            {bestCombo > 1 ? <span>BEST ×{bestCombo}</span> : null}
+          </div>
+
+          <StrikeButton
+            label={`Strike ${nextStrike}: ${getStrike(nextStrike).target}`}
+            beat={beat}
+            chain={chain}
+            feedback={feedback}
+            muted={muted}
+            onStrike={strike}
+            onToggleMute={() => setStrikeMuted(!muted)}
+            onPrime={preloadStrikeAudio}
+          />
+
+          <AnimatePresence>
+            {hint ? (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="pointer-events-none absolute top-full right-0 mt-1 font-mono text-[0.6rem] tracking-[0.25em] whitespace-nowrap text-accent"
+              >
+                PRESS ON THE BEAT
+              </motion.p>
+            ) : null}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      <p aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
+      {finisher !== null ? <StrikeFinisher key={finisher} onDone={() => setFinisher(null)} /> : null}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 6: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1610,75 +1235,102 @@ npm run build
 npm run start
 ```
 
-Scroll to **Stack & Discipline**:
+There are no sound files yet (Task 16.3), so everything below is silent. After the intro, at 1440px:
 
-- [ ] **Desktop (1440px):** the card is roughly square. The whole fighter is visible from the top of the headgear down to the feet, with only a strip of tent roof above; the red armour is bright, not darkened.
-- [ ] Hover the card, and Tab to it: the action photo fades in with the same framing (headgear, armour, stick, and lunge all in frame).
-- [ ] "Athletics & Discipline", "Competitive Arnis", and the paragraph are readable over the dark bottom of the card.
-- [ ] **Tablet (768px):** a 4:3 card across both columns; the headgear is not cut off at the top.
-- [ ] **Phone (375px):** a 4:5 card with the full stance above and behind the text; no horizontal scrollbar.
-- [ ] The tech stack cards still line up with no overlap.
+- [ ] Each divider (hero → projects, projects → stack, stack → contact, footer) shows the hairline, a label such as `ANGLE 01 // 135°` at the right, a round lime-outlined button with a sword icon, and a speaker icon.
+- [ ] Scrolling a divider into view cuts one crescent slash automatically, leaving a thin crescent scar.
+- [ ] Press the sword button once: a bright crescent slash (white core, lime glow) sweeps across the line with a flash where it crosses and a pulse running along the line; the label advances to the next strike; a ring pulses out of the button every 0.6 s; the very first time ever, "PRESS ON THE BEAT" appears for a few seconds.
+- [ ] Press in time with the ring: `COMBO ×2`, `×3` … appear, well-timed presses flash the button lime with a "PERFECT" pop, and by `×7` and beyond the slashes are clearly bigger and spill over the content above and below.
+- [ ] Thrust strikes (5, 6, 7, 10, 11) show a downward stab with a ring burst and leave a dot; strikes 3 and 4 still look like diagonal swings.
+- [ ] Press clearly off the beat: "MISS", the button shakes, the combo disappears, and a normal-size slash is still cut.
+- [ ] Stop pressing: within about a second the ring stops and the combo disappears. `BEST ×n` shows your best combo, and it is still there after a reload.
+- [ ] Keep 12 presses in a row on the beat: a giant X of two slashes crosses the whole screen, the screen flashes, and "ANYO COMPLETE" appears, then everything fades and the combo resets. The page stays clickable throughout.
+- [ ] Tab to a sword button and tap Space in rhythm: it works the same as clicking, and focus stays on the button.
+- [ ] Pressing many times keeps at most 12 scars per divider; the oldest fade out.
+- [ ] Reduced motion (DevTools → Rendering → prefers-reduced-motion: reduce, reload): presses add scars without the sweep, the ring blinks instead of expanding, the finisher shows only the text.
+- [ ] At 375px: the label is hidden, the sword and speaker buttons fit at the right, and there is no horizontal scrollbar.
+- [ ] Console is clean.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add components/sections/discipline-card.tsx components/sections/bento-grid.tsx
-git commit -m "fix(bento): show the fighter's full stance on the discipline card"
+git add app/globals.css components/ui/strike-mark.tsx components/ui/strike-button.tsx components/ui/strike-finisher.tsx components/ui/strike-line.tsx
+git commit -m "feat(strike): make strike dividers an interactive sword-slash rhythm game"
 ```
 
 ---
 
-### Task 15.4: Phase 15 verification pass and the Next.js issue badge
+### Task 16.3: Add the sword sound clips
+
+**Files:**
+- Commit (added by the architect — do not edit): `public/audio/strikes/slash.wav`, `stab.wav`, `finisher.wav`, `miss.wav`, `CREDITS.md`
+
+**Interfaces consumed:** the clip paths in `lib/strike-audio.ts` (Task 16.1).
+
+The architect sources the clips (CC0 only), trims and shrinks them, and places them in `public/audio/strikes/` with `CREDITS.md` listing each clip's source URL, author, and licence. **If that folder does not exist yet, skip this task, leave its boxes unchecked, and say so in your summary.**
+
+- [ ] **Step 1: Check the files**
+
+```bash
+ls -la public/audio/strikes
+```
+
+Expected: `slash.wav`, `stab.wav`, `finisher.wav`, `miss.wav`, and `CREDITS.md`; each `.wav` under about 60 KB.
+
+- [ ] **Step 2: Verify**
+
+```bash
+npm run build
+npm run start
+```
+
+- [ ] First press on a sword button: a sword whoosh plays (it may be silent on the very first press if the clips were still loading; the second press must play).
+- [ ] Thrust strikes play a sharp stab/clash; PERFECT presses add a short high ring; MISS plays a dull thud; the finisher plays a heavier slash sound.
+- [ ] The speaker button mutes all dividers at once and shows a crossed-out speaker; the choice survives a reload.
+- [ ] No sound plays before the first press on the page.
+- [ ] Console is clean.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add public/audio/strikes
+git commit -m "feat(strike): add CC0 sword sound clips"
+```
+
+---
+
+### Task 16.4: Phase 16 verification pass
 
 **Files:** none created; fix whatever this task surfaces.
 
-- [ ] **Step 1: Clean restart of the dev server**
-
-Stale errors from hot reloads while files were being edited are a common source of the dev overlay's issue badge, so start from a clean slate:
+- [ ] **Step 1: Clean production build**
 
 ```bash
-rm -rf .next
-npx next typegen
 npx tsc --noEmit
 npm run lint
-npm run dev
-```
-
-- [ ] **Step 2: Walk the site in `npm run dev`, then check the badge**
-
-1. Load http://localhost:3000 and let the intro finish.
-2. Move the mouse across the hero; scroll to the footer and back; open and close the palette with Ctrl+K; run **Strike** from the palette.
-3. Reload while scrolled halfway down.
-4. Open http://localhost:3000/nope and click **Back to the start**.
-
-After each step, look at the bottom-left Next.js badge and the browser console:
-
-- [ ] **No badge and a clean console:** the issue was a stale hot-reload error. Nothing to fix.
-- [ ] **A badge appears:** click it, and copy the exact error title, message, and the first stack frame that points into `app/` or `components/` into your handoff. If it is a hydration mismatch, also note which element the diff highlights. Do not guess at a fix: report it so the architect can plan one.
-
-- [ ] **Step 3: Production walk**
-
-```bash
 npm run build
 npm run start
 ```
 
-- [ ] Every Task 15.1–15.3 check still passes together.
-- [ ] Phase 14 checks still pass: no case study links, strike line dividers slash in, palette shows Navigate and Actions.
-- [ ] At 375px, 768px, and 1440px: `document.documentElement.scrollWidth === document.documentElement.clientWidth` is `true`.
-- [ ] Console is clean.
+- [ ] **Step 2: Walk the production build**
 
-- [ ] **Step 4: Commit any fixes**
+- [ ] **Performance:** DevTools → Performance, CPU throttling 4×, record while pressing a sword button on the beat for 10 seconds. No long frames (red bars) from the slashes. If frames drop, report it rather than changing constants.
+- [ ] **Hero untouched:** the ink reveal, palette, and preloader still behave as before.
+- [ ] **Storage blocked** (DevTools → Application → Storage → "Clear site data", then block third-party/site data or use a private window with storage disabled): the dividers still work; only BEST, mute memory, and the hint are not remembered.
+- [ ] **Widths** 375px, 768px, 1440px: no horizontal scrollbar; big slashes and the finisher never create one.
+- [ ] **Keyboard only:** every sword and speaker button is reachable with Tab and shows a focus ring.
+- [ ] **Console:** clean.
+
+- [ ] **Step 3: Commit any fixes**
 
 ```bash
 git add -A -- app components data hooks lib types
-git commit -m "fix: address phase 15 verification findings"
+git commit -m "fix: address phase 16 verification findings"
 ```
 
 If nothing needed fixing, skip the commit.
 
 ---
-
 ## Handoff checklist (owner-supplied content)
 
 Only the repository owner can resolve these. Do not invent values.
@@ -1691,4 +1343,4 @@ Only the repository owner can resolve these. Do not invent values.
 6. `data/strike-angles.ts` — **launch blocker.** Every entry is `confirmed: false`. Check each number, target, and on-screen direction against the owner's sport Arnis anyo.
 7. `components/ui/preloader.tsx` — `STATUS_LINES` are hard-coded (`GARAZA // DEV PORTFOLIO`, `SYS.INIT // OK`, `LATENCY // 12MS`); `12MS` is decorative.
 
-**Next phases (planned in the spec, not yet written as tasks):** Phase 16, new home sections (About, Experience, Arnis, Now — the owner picks which); Phase 17, polish and reach (tech marquee, heading reveals, OG images, sitemap, robots, JSON-LD, Vercel Web Analytics, Lighthouse ≥ 90).
+**Next phases (planned in the spec, not yet written as tasks):** Phase 17, new home sections (About, Experience, Arnis, Now — the owner picks which); Phase 18, polish and reach (tech marquee, heading reveals, OG images, sitemap, robots, JSON-LD, Vercel Web Analytics, Lighthouse ≥ 90).
