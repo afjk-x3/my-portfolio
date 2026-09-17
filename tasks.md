@@ -99,7 +99,7 @@ components/
     section-heading.tsx      # eyebrow + optional baybayin script + title
     strike-line.tsx          # interactive divider: auto cut, STRIKE button, scars, combo, finisher [16] (client)
     strike-mark.tsx          # one crescent sword slash or stab: effect + scar layers [16] (client)
-    strike-button.tsx        # round beat button, beat ring, PERFECT/MISS feedback, mute toggle [16] (client)
+    strike-button.tsx        # round STRIKE button, approach ring, press-down input, feedback, mute toggle [16] (client)
     strike-finisher.tsx      # full-screen X slash + ANYO COMPLETE [16] (client)
     preloader.tsx            # intro on every full load: monogram + baybayin name + counter, opens at top (client)
 data/
@@ -113,7 +113,7 @@ hooks/
   use-ink-trail.ts           # shared ink trail: move-only, speed-sized drops, strike event
   use-command-palette.ts     # palette open state + modifier key label
   use-local-time.ts          # ticking clock via useSyncExternalStore
-  use-strike-rhythm.ts       # 100 BPM beat, PERFECT/GOOD/MISS grading, combo, best combo [16]
+  use-strike-rhythm.ts       # adaptive tempo from the visitor's presses, PERFECT/GOOD/MISS, combo, best combo [16]
   use-media-query.ts         # matchMedia via useSyncExternalStore
   use-pointer-tilt.ts        # mouse-tracked 3D tilt + spotlight motion values
 lib/
@@ -165,7 +165,7 @@ All tokens live in `app/globals.css`. Use the Tailwind classes; never hard-code 
 | `bg-weave` | Tiled woven diamond lattice in white; always on its own `aria-hidden` layer at `opacity-[0.03]`–`opacity-[0.05]` |
 | `.glow` | 22% neon radial glow |
 | `animate-pulse-dot` | Live status dot ring |
-| `animate-beat-ring` | Strike button beat ring **[16]** |
+| `animate-approach-ring` | Strike button approach ring; duration set inline to the tempo **[16]** |
 | `animate-monogram-in`, `animate-monogram-breathe`, `animate-status-in` | Preloader entrance animations |
 
 **Stacking order:** strike dividers `z-10`, header `z-50`, strike finisher `z-80`, preloader overlay `z-90`, command palette overlay `z-95` and dialog `z-96`, page-wide film grain `z-100`.
@@ -188,7 +188,7 @@ Read this before changing any of these files.
   - There is one masked SVG per coordinate space because the watermark and the portrait move at different parallax speeds: `HeroBackdropReveal` (whole hero: weave + strike slashes), `HeroWatermark` (outline word + neon fill, drawn from identical `<text>`), and `HeadgearReveal` (portrait pixels: headgear photo over the face).
   - Modes: a fine pointer drives the trail (`pointer`); touch screens get a drop that drifts over the face (`wander`), using the face position that `HeadgearReveal` reports through `setHome`; touch plus reduced motion shows one fixed headgear reveal (`static`) and nothing else.
   - If the portrait or headgear image changes, re-tune only `HEADGEAR` and `FACE` in `headgear-reveal.tsx`.
-- **Strike dividers** (Phase 16; `strike-line.tsx` and the `strike-*` files): each divider owns its cuts (max 12 scars) and a `useStrikeRhythm` instance. The rhythm hook keeps timing in refs and only exposes display state (`combo`, `beat`, `chain`). Bright slash effects render unclipped and unmount after about 0.75 s; scars render in a clipped layer. Audio is one shared module: clips download on hover/focus of a button, the `AudioContext` is created on the first press, and mute/best/hint live in `localStorage` behind `try`/`catch`.
+- **Strike dividers** (Phase 16; `strike-line.tsx` and the `strike-*` files): each divider owns its cuts (max 12 scars) and a `useStrikeRhythm` instance. The rhythm hook keeps timing in refs and only exposes display state (`combo` and the next-press `cue`); the tempo comes from the visitor's own presses. Bright slash effects render unclipped and unmount after about 0.75 s; scars render in a clipped layer. Audio is one shared module: clips download on hover/focus of a button, the `AudioContext` is created on the first press, and mute/best/hint live in `localStorage` behind `try`/`catch`.
 - **Command palette** (`command-palette.tsx`, `use-command-palette.ts`): rendered once in the root layout, inside the Lenis provider. Open state is a tiny external store, so any component can call `setCommandPaletteOpen(true)`. While open, Lenis is stopped; picked actions run through `run()`, which waits until the palette has closed and Lenis has restarted. The **Secrets** group only renders once 2+ characters are typed.
 
 ---
@@ -218,14 +218,15 @@ Read this before changing any of these files.
 The strike line dividers become a small rhythm game. Each divider still cuts its own strike automatically the first time it scrolls into view. A round **STRIKE** button at its right end then cuts the next Arnis strike on every press:
 
 - **Slashes:** crescent sword slashes (white core, lime glow, afterimage trail) at the strike's angle, curving opposite ways for odd and even strikes; thrusts are stabs; horizontal strikes are tilted 12°. Every cut leaves a faint scar (up to 12 per divider).
-- **Rhythm:** the first press starts a 100 BPM beat, shown by a ring pulsing out of the button. Presses within ±60 ms of a beat are **PERFECT**, within ±150 ms **GOOD**; both extend the combo. Off-beat presses show **MISS** and restart the beat. A full beat with no press ends the combo quietly.
-- **Growth:** slashes grow with the combo (1×, 1.3×, 1.6×, 2×; PERFECT one step larger) and break out of the divider band. 12 on-beat strikes in a row play the finisher: a screen-wide X slash and **ANYO COMPLETE**.
-- **Readout and records:** current strike, `COMBO ×n`, and `BEST ×n` (remembered per browser); a one-time "PRESS ON THE BEAT" hint.
+- **Rhythm follows the visitor:** there is no fixed beat. The first press starts a combo; the gap to the second press (anything from 0.3 s to 1.2 s) sets the tempo. Each later press is graded against that tempo: within ±8% is **PERFECT**, within ±25% **GOOD**; both extend the combo, and the tempo drifts 40% toward every on-pace gap, so speeding up or slowing down gradually is fine. A press far too early (or a double-click under 0.3 s) is a **MISS** and restarts the combo. No press by tempo + 25% ends the combo quietly.
+- **Approach ring:** once a tempo exists, a ring shrinks steadily onto the button and touches it exactly when the next press is due. Presses count on pointer-down / key-down, not on release.
+- **Growth:** slashes grow with the combo (1×, 1.3×, 1.6×, 2×; PERFECT one step larger) and break out of the divider band. 12 strikes in a row play the finisher: a screen-wide X slash and **ANYO COMPLETE**.
+- **Readout and records:** current strike, `COMBO ×n`, and `BEST ×n` (remembered per browser); a one-time "KEEP YOUR PACE" hint.
 - **Sound:** sword clips (slash, stab, finisher, miss) play from the first press on; a speaker button mutes them, remembered per browser.
 
 The design is §4e of `docs/superpowers/specs/2026-09-16-portfolio-v2-design.md`.
 
-Every code block below was type-checked and linted in a scratch copy at commit `bfb7a61`, then run in a production build (built with system fonts, because the network could not reach Google Fonts at the time; the fonts are unrelated to this phase) at 1919×955 with placeholder sounds: a press cut a crescent slash that spilled out of the band with a flash, and left crescent and dot scars; `PERFECT`, the beat ring, `COMBO ×2`, and `BEST` showed; timed clicks scored PERFECT, a press 300 ms off the beat scored MISS and reset the combo, and a beat with no press stopped the ring; 12 on-beat clicks played the full-width X finisher, announced "Anyo complete: 12 strikes on the beat." in the live region, and removed the overlay afterwards; each clip was fetched once per page load; muting one divider muted all four; the console stayed clean. Copy the blocks exactly.
+Every code block below was type-checked, linted, and built with Turbopack in a scratch copy at commit `cb32fe1`, then run in a production build with the real sound clips. Checked: pointer-down presses at an uneven human pace (gaps 600–760 ms) followed by a gradual speed-up to 450 ms kept the combo all the way to the finisher, which announced "Anyo complete: 12 strikes in a row." in the live region; a press 40% early and a 150 ms double-click each reset the combo; a pause stopped the approach ring; the approach ring shrank linearly from 2.6× and landed at scale 1 exactly at the tempo it was given; real mouse clicks and the Enter key each counted exactly once (no second count from the click event); the earlier build of this phase (fixed beat) also confirmed the crescent slashes, scars, PERFECT pop, finisher X, per-press sounds (slash, PERFECT ring, stab, miss thud), and a shared mute across all four dividers, and those parts are unchanged. Space could not be sent by the test tooling and is covered by the Verify block. Copy the blocks exactly.
 
 **Rules for this phase:**
 
@@ -240,7 +241,7 @@ Every code block below was type-checked and linted in a scratch copy at commit `
 - Create: `lib/strike-audio.ts`
 
 **Interfaces produced:**
-- From `@/hooks/use-strike-rhythm`: `BEAT_MS = 600`, `PERFECT_MS = 60`, `GOOD_MS = 150`, `FINISHER_COMBO = 12`; `type StrikeGrade = "start" | "perfect" | "good" | "miss"`; `interface StrikeResult { grade; combo; finisher }`; `useBestStrikeCombo(): number`; `takeFirstStrike(): boolean`; `useStrikeRhythm(): { combo, bestCombo, beat, chain, press }` where `press(): StrikeResult`, `beat` counts beats since the chain started, and `chain` is the chain's start time or `null` while stopped.
+- From `@/hooks/use-strike-rhythm`: `MIN_GAP_MS = 300`, `MAX_GAP_MS = 1200`, `PERFECT_RATIO = 0.08`, `GOOD_RATIO = 0.25`, `FINISHER_COMBO = 12`; `type StrikeGrade = "start" | "perfect" | "good" | "miss"`; `interface StrikeResult { grade; combo; finisher }`; `interface StrikeCue { id; from; duration }` (the next press is due `duration` ms after `performance.now()` value `from`); `useBestStrikeCombo(): number`; `takeFirstStrike(): boolean`; `useStrikeRhythm(): { combo, bestCombo, cue, press }` where `press(): StrikeResult` and `cue` is `null` until a tempo exists and after the combo ends.
 - From `@/lib/strike-audio`: `type StrikeSound = "slash" | "stab" | "finisher" | "miss"`; `setStrikeMuted(next: boolean)`; `useStrikeMuted(): boolean`; `preloadStrikeAudio()`; `unlockStrikeAudio()` (call inside a click or key press); `playStrikeSound(name, { volume?, rate? })`. Clips load from `/audio/strikes/{slash,stab,finisher,miss}.wav`; a missing clip is silently skipped.
 
 - [ ] **Step 1: Create `hooks/use-strike-rhythm.ts`**
@@ -250,22 +251,28 @@ Every code block below was type-checked and linted in a scratch copy at commit `
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-/** One beat at 100 BPM. */
-export const BEAT_MS = 600;
+/** Shortest gap between presses that can set or keep a tempo; faster is a double-click. */
+export const MIN_GAP_MS = 300;
 
-/** A press this close to a beat is PERFECT. */
-export const PERFECT_MS = 60;
+/** Longest gap that can set or keep a tempo; slower starts a new combo. */
+export const MAX_GAP_MS = 1200;
 
-/** A press this close to a beat is GOOD; anything further is a MISS. */
-export const GOOD_MS = 150;
+/** A press within this fraction of the current tempo is PERFECT. */
+export const PERFECT_RATIO = 0.08;
 
-/** On-beat strikes in a row, counting the first press, that trigger the finisher. */
+/** A press within this fraction of the current tempo is GOOD; anything else is a MISS. */
+export const GOOD_RATIO = 0.25;
+
+/** How far the tempo moves toward each new on-pace gap, so it follows gradual changes. */
+const TEMPO_FOLLOW = 0.4;
+
+/** Presses in a row, counting the first, that trigger the finisher. */
 export const FINISHER_COMBO = 12;
 
 /**
- * - `start`: the first press of a chain (or the first after a combo ended).
- * - `perfect` / `good`: an on-beat press that extended the combo.
- * - `miss`: an off-beat press; the combo restarts from this press.
+ * - `start`: the first press of a combo.
+ * - `perfect` / `good`: a press that kept pace and extended the combo.
+ * - `miss`: a press far too early; the combo restarts from this press.
  */
 export type StrikeGrade = "start" | "perfect" | "good" | "miss";
 
@@ -275,6 +282,15 @@ export interface StrikeResult {
   combo: number;
   /** True when this press completed the combo; the rhythm has already reset. */
   finisher: boolean;
+}
+
+/** When the next press is due: `duration` ms after the press at `from`. */
+export interface StrikeCue {
+  /** Changes on every press, so a view can restart its countdown. */
+  id: number;
+  /** `performance.now()` of the press the countdown starts from. */
+  from: number;
+  duration: number;
 }
 
 const BEST_KEY = "portfolio_strike_best";
@@ -321,7 +337,7 @@ export function useBestStrikeCombo(): number {
 
 /**
  * True the first time it is called in this browser, false afterwards. Used to
- * show the "press on the beat" hint once.
+ * show the "keep the pace" hint once.
  */
 export function takeFirstStrike(): boolean {
   try {
@@ -333,91 +349,96 @@ export function takeFirstStrike(): boolean {
   }
 }
 
-/** Latest time the on-beat press after beat `lastBeat` can still land. */
-function deadlineFor(anchor: number, lastBeat: number) {
-  return anchor + (lastBeat + 1) * BEAT_MS + GOOD_MS;
-}
-
 /**
- * Beat clock and combo for one strike divider. The first press starts a fixed
- * 100 BPM beat; each later press is graded against the nearest beat. `beat`
- * counts beats since the chain started and `chain` identifies the current
- * chain (null while the beat is stopped), so a view can restart its beat
- * animation on every beat and every new chain.
+ * Combo tracking for one strike divider, following the visitor's own rhythm.
+ * The first press starts a combo; the gap to the second press sets the tempo;
+ * every later press is graded by how close its gap is to that tempo, and the
+ * tempo drifts toward each on-pace gap. The combo ends quietly when the next
+ * press is overdue.
  */
 export function useStrikeRhythm() {
   const [combo, setCombo] = useState(0);
-  const [chain, setChain] = useState<number | null>(null);
-  const [beat, setBeat] = useState(0);
-  const anchorRef = useRef<number | null>(null);
-  const lastBeatRef = useRef(0);
+  const [cue, setCue] = useState<StrikeCue | null>(null);
+  const [deadline, setDeadline] = useState<number | null>(null);
+  const lastRef = useRef<number | null>(null);
+  const tempoRef = useRef<number | null>(null);
   const comboRef = useRef(0);
+  const cueIdRef = useRef(0);
   const bestCombo = useBestStrikeCombo();
 
   const stop = useCallback(() => {
-    anchorRef.current = null;
+    lastRef.current = null;
+    tempoRef.current = null;
     comboRef.current = 0;
     setCombo(0);
-    setChain(null);
-    setBeat(0);
+    setCue(null);
+    setDeadline(null);
   }, []);
 
-  // While a chain runs: advance `beat` on every beat, and end the combo quietly
-  // once a beat's window closes without a press.
+  // End the combo quietly once the next press is overdue.
   useEffect(() => {
-    if (chain === null) return;
-    let timer = 0;
-    function tick() {
-      const anchor = anchorRef.current;
-      if (anchor === null) return;
-      const now = performance.now();
-      if (now > deadlineFor(anchor, lastBeatRef.current)) {
-        stop();
-        return;
-      }
-      setBeat(Math.floor((now - anchor) / BEAT_MS));
-      const nextBeat = anchor + (Math.floor((now - anchor) / BEAT_MS) + 1) * BEAT_MS;
-      const closes = deadlineFor(anchor, lastBeatRef.current) + 1;
-      timer = window.setTimeout(tick, Math.max(0, Math.min(nextBeat, closes) - now));
-    }
-    timer = window.setTimeout(tick, Math.max(0, chain + BEAT_MS - performance.now()));
+    if (deadline === null) return;
+    const timer = window.setTimeout(stop, Math.max(0, deadline - performance.now()));
     return () => window.clearTimeout(timer);
-  }, [chain, stop]);
+  }, [deadline, stop]);
 
   const press = useCallback((): StrikeResult => {
     const now = performance.now();
+    const last = lastRef.current;
+    const tempo = tempoRef.current;
 
-    function begin(grade: "start" | "miss"): StrikeResult {
-      anchorRef.current = now;
-      lastBeatRef.current = 0;
+    function keep(nextTempo: number | null) {
+      lastRef.current = now;
+      tempoRef.current = nextTempo;
+      if (nextTempo === null) {
+        setCue(null);
+        setDeadline(now + MAX_GAP_MS);
+        return;
+      }
+      cueIdRef.current += 1;
+      setCue({ id: cueIdRef.current, from: now, duration: nextTempo });
+      setDeadline(now + nextTempo * (1 + GOOD_RATIO));
+    }
+
+    function restart(grade: "start" | "miss"): StrikeResult {
       comboRef.current = 1;
       setCombo(1);
-      setChain(now);
-      setBeat(0);
+      keep(null);
       return { grade, combo: 1, finisher: false };
     }
 
-    const anchor = anchorRef.current;
-    if (anchor === null || now > deadlineFor(anchor, lastBeatRef.current)) return begin("start");
+    if (last === null) return restart("start");
+    const gap = now - last;
 
-    const index = Math.round((now - anchor) / BEAT_MS);
-    const offset = Math.abs(now - anchor - index * BEAT_MS);
-    if (index !== lastBeatRef.current + 1 || offset > GOOD_MS) return begin("miss");
+    let grade: "perfect" | "good";
+    let nextTempo: number;
+    if (tempo === null) {
+      // Second press: any comfortable gap sets the tempo.
+      if (gap < MIN_GAP_MS) return restart("miss");
+      if (gap > MAX_GAP_MS) return restart("start");
+      grade = "good";
+      nextTempo = gap;
+    } else {
+      const off = Math.abs(gap / tempo - 1);
+      // Far too late means the combo had already lapsed: start over quietly.
+      if (off > GOOD_RATIO) return restart(gap > tempo ? "start" : "miss");
+      grade = off <= PERFECT_RATIO ? "perfect" : "good";
+      nextTempo = Math.min(MAX_GAP_MS, Math.max(MIN_GAP_MS, tempo + (gap - tempo) * TEMPO_FOLLOW));
+    }
 
-    lastBeatRef.current = index;
     const next = comboRef.current + 1;
     recordBest(next);
-    const grade = offset <= PERFECT_MS ? "perfect" : "good";
     if (next >= FINISHER_COMBO) {
       stop();
       return { grade, combo: next, finisher: true };
     }
     comboRef.current = next;
     setCombo(next);
+    keep(nextTempo);
     return { grade, combo: next, finisher: false };
   }, [stop]);
 
-  return { combo, bestCombo, beat, chain, press };
+  return { combo, bestCombo, cue, press };
 }
 ```
 
@@ -586,27 +607,31 @@ git commit -m "feat(strike): add rhythm engine and strike audio module"
 **Interfaces consumed:** everything produced by Task 16.1; `getStrike` from `@/data/strike-angles`; `cn`; `motion`, `AnimatePresence`, `useAnimate`, `useReducedMotion` from `motion/react`; `Sword`, `Volume2`, `VolumeX` from `lucide-react`.
 **Interfaces produced:**
 - `StrikeMark` with props `{ cut: StrikeCut; layer: "effect" | "scar" }` and `interface StrikeCut { id; strike; at; scale; perfect; animate }`.
-- `StrikeButton` with props `{ label, beat, chain, feedback, muted, onStrike, onToggleMute, onPrime? }` and `interface StrikeFeedback { id; grade }`.
+- `StrikeButton` with props `{ label, cue, feedback, muted, onStrike, onToggleMute, onPrime? }` and `interface StrikeFeedback { id; grade }`. It calls `onStrike` on pointer-down (primary button) and on Space / Enter key-down (not on key repeat); a `click` only counts when no pointer or key press happened in the previous 500 ms (screen-reader activation).
 - `StrikeFinisher` with props `{ onDone: () => void }` (renders into `document.body`).
 - `StrikeLine` keeps `{ angle: number; at?: number; className?: string }`; `angle` may now be any strike 1–12.
-- Tailwind class `animate-beat-ring`.
+- Tailwind class `animate-approach-ring` (its `animation-duration` is set inline to the tempo).
 
-- [ ] **Step 1: Add the beat ring animation to `app/globals.css`**
+- [ ] **Step 1: Add the approach ring animation to `app/globals.css`**
 
 In the `@theme` block, insert this directly above `  @keyframes status-in {`:
 
 ```css
-  /* Strike divider beat: a ring expanding out of the STRIKE button once per beat. */
-  --animate-beat-ring: beat-ring 0.6s cubic-bezier(0, 0, 0.2, 1) both;
+  /*
+   * Strike approach ring: shrinks steadily onto the STRIKE button and touches
+   * it when the next press is due. Linear, so its speed is easy to read; the
+   * component sets `animation-duration` to the visitor's tempo.
+   */
+  --animate-approach-ring: approach-ring 0.6s linear both;
 
-  @keyframes beat-ring {
+  @keyframes approach-ring {
     from {
-      transform: scale(1);
-      opacity: 0.9;
+      transform: scale(2.6);
+      opacity: 0.15;
     }
     to {
-      transform: scale(2.2);
-      opacity: 0;
+      transform: scale(1);
+      opacity: 1;
     }
   }
 
@@ -808,10 +833,11 @@ export function StrikeMark({ cut, layer }: { cut: StrikeCut; layer: "effect" | "
 ```tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from "motion/react";
 import { Sword, Volume2, VolumeX } from "lucide-react";
 
+import type { StrikeCue } from "@/hooks/use-strike-rhythm";
 import { cn } from "@/lib/utils";
 
 /** Latest press feedback. `id` changes on every press so repeats replay. */
@@ -823,10 +849,8 @@ export interface StrikeFeedback {
 export interface StrikeButtonProps {
   /** Accessible name, including the strike this press will cut. */
   label: string;
-  /** Beats since the chain started; the ring replays on every change. */
-  beat: number;
-  /** Identifies the running chain, or null while the beat is stopped. */
-  chain: number | null;
+  /** When the next press is due, or null before a tempo exists. */
+  cue: StrikeCue | null;
   feedback: StrikeFeedback | null;
   muted: boolean;
   onStrike: () => void;
@@ -835,20 +859,24 @@ export interface StrikeButtonProps {
   onPrime?: () => void;
 }
 
+/** A click this soon after a pointer or key press is that same press. */
+const CLICK_DEDUPE_MS = 500;
+
 function token(name: string) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
 /**
- * Round STRIKE button with a beat ring, PERFECT / MISS feedback, and a mute
- * toggle. The ring expands on every beat while a chain runs; with reduced
- * motion it blinks instead. The button element is never re-created, so
- * keyboard focus survives rapid Space / Enter presses.
+ * Round STRIKE button with an approach ring, PERFECT / MISS feedback, and a
+ * mute toggle. Presses count the moment the pointer or key goes down, not on
+ * release, so timing is not delayed by the click. The approach ring shrinks
+ * onto the button and touches it exactly when the next press is due; with
+ * reduced motion the button's ring blinks at that moment instead. The button
+ * element is never re-created, so keyboard focus survives rapid presses.
  */
 export function StrikeButton({
   label,
-  beat,
-  chain,
+  cue,
   feedback,
   muted,
   onStrike,
@@ -857,7 +885,14 @@ export function StrikeButton({
 }: StrikeButtonProps) {
   const reduceMotion = useReducedMotion() ?? false;
   const [scope, animate] = useAnimate<HTMLButtonElement>();
+  const [dueCue, setDueCue] = useState<number | null>(null);
+  const lastInput = useRef(-Infinity);
   const grade = feedback?.grade;
+
+  function press() {
+    lastInput.current = performance.now();
+    onStrike();
+  }
 
   // Press feedback: squash on every press, shake on MISS, lime flash on PERFECT.
   useEffect(() => {
@@ -876,17 +911,31 @@ export function StrikeButton({
     }
   }, [feedback, reduceMotion, animate, scope]);
 
+  // Reduced motion: mark the moment the next press is due, for a static blink.
+  useEffect(() => {
+    if (!cue || !reduceMotion) return;
+    const timer = window.setTimeout(
+      () => setDueCue(cue.id),
+      Math.max(0, cue.from + cue.duration - performance.now()),
+    );
+    return () => window.clearTimeout(timer);
+  }, [cue, reduceMotion]);
+
   return (
     <div className="flex items-center gap-1.5">
       <div className="relative">
-        {chain !== null ? (
+        {cue && !reduceMotion ? (
           <span
-            key={`${chain}-${beat}`}
+            key={cue.id}
             aria-hidden
-            className={cn(
-              "pointer-events-none absolute inset-0 rounded-full border border-accent",
-              reduceMotion ? (beat % 2 === 0 ? "opacity-80" : "opacity-20") : "animate-beat-ring",
-            )}
+            style={{ animationDuration: `${cue.duration}ms` }}
+            className="animate-approach-ring pointer-events-none absolute inset-0 rounded-full border-2 border-accent"
+          />
+        ) : null}
+        {cue && reduceMotion && dueCue === cue.id ? (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -inset-1 rounded-full border-2 border-accent"
           />
         ) : null}
 
@@ -894,10 +943,26 @@ export function StrikeButton({
           ref={scope}
           type="button"
           aria-label={label}
-          onClick={onStrike}
+          onPointerDown={(event) => {
+            if (event.button === 0) press();
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== " " && event.key !== "Enter") return;
+            event.preventDefault();
+            if (!event.repeat) press();
+          }}
+          onKeyUp={(event) => {
+            // Stops Space from also firing a click on release.
+            if (event.key === " ") event.preventDefault();
+          }}
+          onClick={() => {
+            // Only activations with no pointer or key press before them, such
+            // as a screen reader's, reach here as a new press.
+            if (performance.now() - lastInput.current > CLICK_DEDUPE_MS) press();
+          }}
           onPointerEnter={onPrime}
           onFocus={onPrime}
-          className="relative flex size-10 items-center justify-center rounded-full border border-accent/60 bg-bg text-accent transition-[border-color] duration-150 hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:size-11"
+          className="relative flex size-10 touch-manipulation items-center justify-center rounded-full border border-accent/60 bg-bg text-accent transition-[border-color] duration-150 select-none hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:size-11"
         >
           <Sword aria-hidden className="size-4" />
         </button>
@@ -1080,12 +1145,12 @@ export interface StrikeLineProps {
  * Interactive section divider. It cuts its own strike automatically the first
  * time it scrolls into view. Its STRIKE button then cuts the next Arnis strike
  * on every press: crescent sword slashes (stabs for thrusts) that leave scars,
- * grow with an on-beat combo, and end in a finisher after 12 in a row.
+ * grow with a combo kept at your own pace, and end in a finisher after 12 in a row.
  */
 export function StrikeLine({ angle, at = 0.5, className }: StrikeLineProps) {
   const reduceMotion = useReducedMotion() ?? false;
   const muted = useStrikeMuted();
-  const { combo, bestCombo, beat, chain, press } = useStrikeRhythm();
+  const { combo, bestCombo, cue, press } = useStrikeRhythm();
 
   const [cuts, setCuts] = useState<StrikeCut[]>([]);
   const [lastStrike, setLastStrike] = useState(angle);
@@ -1130,7 +1195,7 @@ export function StrikeLine({ angle, at = 0.5, className }: StrikeLineProps) {
     if (result.finisher) {
       setFinisher(id);
       playStrikeSound("finisher");
-      setAnnouncement(`Anyo complete: ${FINISHER_COMBO} strikes on the beat.`);
+      setAnnouncement(`Anyo complete: ${FINISHER_COMBO} strikes in a row.`);
     }
     if (takeFirstStrike()) {
       setHint(true);
@@ -1193,8 +1258,7 @@ export function StrikeLine({ angle, at = 0.5, className }: StrikeLineProps) {
 
           <StrikeButton
             label={`Strike ${nextStrike}: ${getStrike(nextStrike).target}`}
-            beat={beat}
-            chain={chain}
+            cue={cue}
             feedback={feedback}
             muted={muted}
             onStrike={strike}
@@ -1210,7 +1274,7 @@ export function StrikeLine({ angle, at = 0.5, className }: StrikeLineProps) {
                 exit={{ opacity: 0 }}
                 className="pointer-events-none absolute top-full right-0 mt-1 font-mono text-[0.6rem] tracking-[0.25em] whitespace-nowrap text-accent"
               >
-                PRESS ON THE BEAT
+                KEEP YOUR PACE
               </motion.p>
             ) : null}
           </AnimatePresence>
@@ -1235,19 +1299,21 @@ npm run build
 npm run start
 ```
 
-There are no sound files yet (Task 16.3), so everything below is silent. After the intro, at 1440px:
+The sound clips are already in the working tree, so presses may play sounds; Task 16.3 checks them. After the intro, at 1440px:
 
 - [ ] Each divider (hero → projects, projects → stack, stack → contact, footer) shows the hairline, a label such as `ANGLE 01 // 135°` at the right, a round lime-outlined button with a sword icon, and a speaker icon.
 - [ ] Scrolling a divider into view cuts one crescent slash automatically, leaving a thin crescent scar.
-- [ ] Press the sword button once: a bright crescent slash (white core, lime glow) sweeps across the line with a flash where it crosses and a pulse running along the line; the label advances to the next strike; a ring pulses out of the button every 0.6 s; the very first time ever, "PRESS ON THE BEAT" appears for a few seconds.
-- [ ] Press in time with the ring: `COMBO ×2`, `×3` … appear, well-timed presses flash the button lime with a "PERFECT" pop, and by `×7` and beyond the slashes are clearly bigger and spill over the content above and below.
+- [ ] Press the sword button once: a bright crescent slash (white core, lime glow) sweeps across the line with a flash where it crosses and a pulse running along the line; the label advances to the next strike; the very first time ever, "KEEP YOUR PACE" appears for a few seconds. No ring yet.
+- [ ] Press again at any comfortable pace (roughly 0.3–1.2 s later): `COMBO ×2` appears and a lime ring starts large and shrinks steadily onto the button.
+- [ ] Keep pressing whenever the ring touches the button: the combo keeps climbing; presses right on time flash the button lime with a "PERFECT" pop; slightly early or late presses still count. Gradually speeding up or slowing down keeps the combo going. By `×7` and beyond the slashes are clearly bigger and spill over the content above and below.
+- [ ] The press counts the moment the mouse button or finger goes **down**, not when it is released.
 - [ ] Thrust strikes (5, 6, 7, 10, 11) show a downward stab with a ring burst and leave a dot; strikes 3 and 4 still look like diagonal swings.
-- [ ] Press clearly off the beat: "MISS", the button shakes, the combo disappears, and a normal-size slash is still cut.
-- [ ] Stop pressing: within about a second the ring stops and the combo disappears. `BEST ×n` shows your best combo, and it is still there after a reload.
-- [ ] Keep 12 presses in a row on the beat: a giant X of two slashes crosses the whole screen, the screen flashes, and "ANYO COMPLETE" appears, then everything fades and the combo resets. The page stays clickable throughout.
-- [ ] Tab to a sword button and tap Space in rhythm: it works the same as clicking, and focus stays on the button.
+- [ ] Press much too early (about half-way through the ring's shrink) or double-click fast: "MISS", the button shakes, the combo disappears, and a normal-size slash is still cut.
+- [ ] Stop pressing: shortly after the ring lands, it disappears and the combo ends. `BEST ×n` shows your best combo, and it is still there after a reload.
+- [ ] Keep 12 presses in a row: a giant X of two slashes crosses the whole screen, the screen flashes, and "ANYO COMPLETE" appears, then everything fades and the combo resets. The page stays clickable throughout.
+- [ ] Tab to a sword button and tap Space, then Enter, at a steady pace: each key press cuts exactly one slash (never two), holding a key down does not repeat, and focus stays on the button.
 - [ ] Pressing many times keeps at most 12 scars per divider; the oldest fade out.
-- [ ] Reduced motion (DevTools → Rendering → prefers-reduced-motion: reduce, reload): presses add scars without the sweep, the ring blinks instead of expanding, the finisher shows only the text.
+- [ ] Reduced motion (DevTools → Rendering → prefers-reduced-motion: reduce, reload): presses add scars without the sweep, there is no shrinking ring (a ring simply appears around the button when the next press is due), and the finisher shows only the text.
 - [ ] At 375px: the label is hidden, the sword and speaker buttons fit at the right, and there is no horizontal scrollbar.
 - [ ] Console is clean.
 
@@ -1267,7 +1333,7 @@ git commit -m "feat(strike): make strike dividers an interactive sword-slash rhy
 
 **Interfaces consumed:** the clip paths in `lib/strike-audio.ts` (Task 16.1).
 
-The architect has already placed the four clips and `CREDITS.md` in `public/audio/strikes/` (uncommitted). They are derived from the CC0 pack "20 Sword Sound Effects (Attacks and Clashes)" by StarNinjas; `CREDITS.md` records the source and every edit. **If that folder is missing, skip this task, leave its boxes unchecked, and say so in your summary.**
+The architect sources the clips (CC0 only), trims and shrinks them, and places them in `public/audio/strikes/` with `CREDITS.md` listing each clip's source URL, author, and licence. **If that folder does not exist yet, skip this task, leave its boxes unchecked, and say so in your summary.**
 
 - [ ] **Step 1: Check the files**
 
@@ -1275,7 +1341,7 @@ The architect has already placed the four clips and `CREDITS.md` in `public/audi
 ls -la public/audio/strikes
 ```
 
-Expected: `slash.wav` (≈16 KB), `stab.wav` (≈19 KB), `finisher.wav` (≈51 KB), `miss.wav` (≈20 KB), and `CREDITS.md`.
+Expected: `slash.wav`, `stab.wav`, `finisher.wav`, `miss.wav`, and `CREDITS.md`; each `.wav` under about 60 KB.
 
 - [ ] **Step 2: Verify**
 
@@ -1284,7 +1350,7 @@ npm run build
 npm run start
 ```
 
-- [ ] Hover a sword button, then press it: a sword whoosh plays on that first press.
+- [ ] First press on a sword button: a sword whoosh plays (it may be silent on the very first press if the clips were still loading; the second press must play).
 - [ ] Thrust strikes play a sharp stab/clash; PERFECT presses add a short high ring; MISS plays a dull thud; the finisher plays a heavier slash sound.
 - [ ] The speaker button mutes all dividers at once and shows a crossed-out speaker; the choice survives a reload.
 - [ ] No sound plays before the first press on the page.
@@ -1314,7 +1380,7 @@ npm run start
 
 - [ ] **Step 2: Walk the production build**
 
-- [ ] **Performance:** DevTools → Performance, CPU throttling 4×, record while pressing a sword button on the beat for 10 seconds. No long frames (red bars) from the slashes. If frames drop, report it rather than changing constants.
+- [ ] **Performance:** DevTools → Performance, CPU throttling 4×, record while pressing a sword button at a steady pace for 10 seconds. No long frames (red bars) from the slashes. If frames drop, report it rather than changing constants.
 - [ ] **Hero untouched:** the ink reveal, palette, and preloader still behave as before.
 - [ ] **Storage blocked** (DevTools → Application → Storage → "Clear site data", then block third-party/site data or use a private window with storage disabled): the dividers still work; only BEST, mute memory, and the hint are not remembered.
 - [ ] **Widths** 375px, 768px, 1440px: no horizontal scrollbar; big slashes and the finisher never create one.

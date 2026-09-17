@@ -181,21 +181,24 @@ The Phase 14 strike line dividers become a small rhythm game. Each divider is in
 
 ### Button
 
-- One round, lime-outlined beat button with a sword icon at the right end of each divider, with a small speaker toggle beside it.
+- One round, lime-outlined STRIKE button with a sword icon at the right end of each divider, with a small speaker toggle beside it.
 - Squashes on press, flashes lime on PERFECT, shakes on MISS.
-- Space or Enter strikes while it has focus. Its accessible name includes the current strike.
+- Space or Enter strikes while it has focus. Its accessible name includes the next strike.
 
 ### Rhythm and combo
 
-- **Beat:** fixed 100 BPM (600 ms). The first press cuts a slash and starts the beat; a ring pulses out from the button on each beat.
-- **Grading:** a press within ±60 ms of a beat is PERFECT, within ±150 ms is GOOD. Both add 1 to the combo.
+Revised 2026-09-17 after owner testing: a fixed 100 BPM beat graded on `click` was too hard (click fires on release, and the expanding ring gave no warning of the next beat). The rhythm now follows the visitor.
+
+- **Tempo:** the first press starts a combo; the gap to the second press (300–1200 ms) sets the tempo. After each on-pace press the tempo moves 40% toward that gap, clamped to 300–1200 ms.
+- **Grading:** a gap within ±8% of the tempo is PERFECT, within ±25% GOOD; both add 1 to the combo. A press far too early, or a second press under 300 ms, is a MISS: "MISS", a dull thud, the combo restarts from that press, and a normal-size slash is still cut.
+- **Ending:** no press by tempo × 1.25 (1200 ms before a tempo exists) ends the combo quietly.
+- **Cue:** once a tempo exists, an approach ring shrinks linearly from 2.6× onto the button and touches it exactly when the next press is due. With reduced motion, a static ring appears at that moment instead.
+- **Input:** presses count on pointer-down and on Space / Enter key-down (no key repeat); a `click` counts only without a preceding pointer or key press (assistive-technology activation).
 - **Slash size by combo level:** 1–3 → 1×, 4–6 → 1.3×, 7–9 → 1.6×, 10–12 → 2×. A PERFECT press is one size step larger than its level, with a white flash and a "PERFECT" pop.
-- **Off-beat press:** "MISS", a dull thud, the combo resets, a normal-size slash is still cut, and the beat restarts from that press.
-- **No press for a whole beat window:** the combo ends quietly and the ring stops.
-- **Finisher:** 12 consecutive on-beat presses (one full strike cycle) play an X-shaped double slash across the full viewport width, a flash, the finisher sound, and "ANYO COMPLETE"; then the combo resets.
+- **Finisher:** 12 presses in a row play an X-shaped double slash across the full viewport width, a flash, the finisher sound, and "ANYO COMPLETE"; then the combo resets.
 - **Readout:** the divider label shows the current strike, `COMBO ×n` while a combo runs, and `BEST ×n`.
 - **Best combo:** remembered per browser (`localStorage`, read and written defensively; the feature works without it).
-- **First-press hint:** "PRESS ON THE BEAT" for a few seconds, the first time a visitor ever presses a STRIKE button (remembered per browser).
+- **First-press hint:** "KEEP YOUR PACE" for a few seconds, the first time a visitor ever presses a STRIKE button (remembered per browser).
 
 ### Sound
 
@@ -206,7 +209,7 @@ The Phase 14 strike line dividers become a small rhythm game. Each divider is in
 
 ### Reduced motion
 
-The rhythm still works. The beat ring blinks instead of expanding; slashes and stabs appear directly as scars; the finisher shows its text without the screen-wide X; no shake or squash.
+The rhythm still works. The approach ring does not animate (a static ring appears when the next press is due); slashes and stabs appear directly as scars; the finisher shows its text without the screen-wide X; no shake or squash.
 
 ### Accessibility
 
@@ -216,10 +219,10 @@ Decorative SVG stays `aria-hidden`. Only the finisher is announced, through a po
 
 | Unit | Responsibility |
 | --- | --- |
-| `hooks/use-strike-rhythm.ts` | Beat clock, PERFECT/GOOD/MISS grading, combo level, best combo. No rendering. |
+| `hooks/use-strike-rhythm.ts` | Adaptive tempo from the visitor's presses, PERFECT/GOOD/MISS grading, combo, next-press cue, best combo. No rendering. |
 | `lib/strike-audio.ts` | Lazily loads and decodes the clips, plays them with volume and pitch, mute state. |
 | `components/ui/strike-mark.tsx` | Renders one crescent slash or stab: bright effect layer plus scar. |
-| `components/ui/strike-button.tsx` | Round beat button, beat ring, feedback pops, mute toggle. |
+| `components/ui/strike-button.tsx` | Round STRIKE button, approach ring, press-down input, feedback pops, mute toggle. |
 | `components/ui/strike-finisher.tsx` | Full-width X-slash overlay and "ANYO COMPLETE". |
 | `components/ui/strike-line.tsx` | The divider: owns the list of cuts, wires button, rhythm, audio, marks, and finisher. Keeps its `{ angle, at, className }` props (the first automatic cut). |
 
