@@ -62,7 +62,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       // React hydrates.
       suppressHydrationWarning
     >
-      <body className="min-h-full bg-bg font-sans text-fg">
+      <body className="min-h-full bg-bg font-sans text-fg" suppressHydrationWarning>
         <Backdrop />
         <SmoothScrollProvider>
           {children}
