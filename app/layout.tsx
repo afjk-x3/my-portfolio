@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Anton, Geist, Geist_Mono, UnifrakturCook } from "next/font/google";
+import { Anton, Geist, Geist_Mono, Noto_Sans_Tagalog, UnifrakturCook } from "next/font/google";
 
 import { Backdrop } from "@/components/layout/backdrop";
 import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
@@ -34,6 +34,14 @@ const unifraktur = UnifrakturCook({
   display: "block",
 });
 
+// Baybayin script for the decorative accents in `data/baybayin.ts`. Only the
+// Tagalog subset is loaded, so Latin text never falls back to this face.
+const notoTagalog = Noto_Sans_Tagalog({
+  variable: "--font-noto-tagalog",
+  subsets: ["tagalog"],
+  weight: "400",
+});
+
 export const metadata: Metadata = {
   title: `${siteConfig.name} — ${siteConfig.role}`,
   description: siteConfig.description,
@@ -48,7 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${unifraktur.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${unifraktur.variable} ${notoTagalog.variable} h-full antialiased`}
       // The preloader's inline gate script adds an attribute to <html> before
       // React hydrates.
       suppressHydrationWarning

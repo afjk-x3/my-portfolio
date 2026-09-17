@@ -96,3 +96,37 @@ export interface SocialLink {
   /** `lucide-react` export name resolved through an explicit icon map. */
   icon: string;
 }
+
+/**
+ * One decorative baybayin string. Baybayin is always `aria-hidden` and always
+ * sits beside English, so `meaning` is documentation, not rendered alt text.
+ */
+export interface BaybayinEntry {
+  /** Baybayin characters (Unicode Tagalog block, U+1700–U+171F). */
+  text: string;
+  /** The Filipino word(s) the characters spell. */
+  latin: string;
+  /** English meaning. */
+  meaning: string;
+  /**
+   * Flipped to `true` only after someone who reads baybayin has checked the
+   * `text`. The launch gate fails while any entry is `false`.
+   */
+  reviewed: boolean;
+}
+
+/** One of the twelve basic Arnis strikes. */
+export interface StrikeAngle {
+  /** 1–12, as numbered in the owner's sport Arnis anyo. */
+  number: number;
+  /** Where the strike lands on the opponent, e.g. "Left temple". */
+  target: string;
+  /**
+   * Direction of the stick's path on screen, in degrees: 0 points right and
+   * angles grow clockwise, so 90 is straight down. `null` for thrusts, which
+   * travel toward the viewer and have no on-screen line.
+   */
+  degrees: number | null;
+  /** Flipped to `true` once the owner confirms this entry for their style. */
+  confirmed: boolean;
+}
