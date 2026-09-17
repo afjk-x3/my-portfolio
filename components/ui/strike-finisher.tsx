@@ -70,8 +70,8 @@ export function StrikeFinisher({ onDone }: { onDone: () => void }) {
         transition={{ delay: reduceMotion ? 0 : 0.42, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         className="relative text-center font-display text-[clamp(3rem,11vw,9rem)] leading-[0.85] text-accent uppercase drop-shadow-[0_0_30px_rgba(204,255,0,0.45)]"
       >
-        Anyo
-        <span className="block text-fg">complete</span>
+        <span className="block text-fg">Pugay</span>
+        Po!
       </motion.p>
     </motion.div>,
     document.body,

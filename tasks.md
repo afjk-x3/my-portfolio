@@ -5,8 +5,8 @@
 > **Verify** block, then commit. Do not skip ahead, do not batch phases, and do
 > not "improve" adjacent files that the task does not list.
 
-> **Status:** Phases 1–15 are complete and committed. **Start at Phase 16**
-> (interactive sword-slash dividers). The design is in
+> **Status:** Phases 1–16 are complete and committed (30 commits ahead of
+> origin). Next available: Phase 17 (new home sections) or Phase 18 (polish). The design is in
 > `docs/superpowers/specs/2026-09-16-portfolio-v2-design.md` (§4e); read it only
 > if a task does not answer a question. Step-by-step history of earlier phases
 > was removed from this file; read Phases 1–10 with `git show 633c7fb:tasks.md`,
@@ -244,7 +244,7 @@ Every code block below was type-checked, linted, and built with Turbopack in a s
 - From `@/hooks/use-strike-rhythm`: `MIN_GAP_MS = 300`, `MAX_GAP_MS = 1200`, `PERFECT_RATIO = 0.08`, `GOOD_RATIO = 0.25`, `FINISHER_COMBO = 12`; `type StrikeGrade = "start" | "perfect" | "good" | "miss"`; `interface StrikeResult { grade; combo; finisher }`; `interface StrikeCue { id; from; duration }` (the next press is due `duration` ms after `performance.now()` value `from`); `useBestStrikeCombo(): number`; `takeFirstStrike(): boolean`; `useStrikeRhythm(): { combo, bestCombo, cue, press }` where `press(): StrikeResult` and `cue` is `null` until a tempo exists and after the combo ends.
 - From `@/lib/strike-audio`: `type StrikeSound = "slash" | "stab" | "finisher" | "miss"`; `setStrikeMuted(next: boolean)`; `useStrikeMuted(): boolean`; `preloadStrikeAudio()`; `unlockStrikeAudio()` (call inside a click or key press); `playStrikeSound(name, { volume?, rate? })`. Clips load from `/audio/strikes/{slash,stab,finisher,miss}.wav`; a missing clip is silently skipped.
 
-- [ ] **Step 1: Create `hooks/use-strike-rhythm.ts`**
+- [x] **Step 1: Create `hooks/use-strike-rhythm.ts`**
 
 ```ts
 "use client";
@@ -442,7 +442,7 @@ export function useStrikeRhythm() {
 }
 ```
 
-- [ ] **Step 2: Create `lib/strike-audio.ts`**
+- [x] **Step 2: Create `lib/strike-audio.ts`**
 
 ```ts
 import { useSyncExternalStore } from "react";
@@ -576,7 +576,7 @@ export function playStrikeSound(name: StrikeSound, { volume = 1, rate = 1 } = {}
 }
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -586,7 +586,7 @@ npm run build
 
 Expected: all pass. Nothing on the page changes yet (both files are unused until Task 16.2).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add hooks/use-strike-rhythm.ts lib/strike-audio.ts
@@ -612,7 +612,7 @@ git commit -m "feat(strike): add rhythm engine and strike audio module"
 - `StrikeLine` keeps `{ angle: number; at?: number; className?: string }`; `angle` may now be any strike 1–12.
 - Tailwind class `animate-approach-ring` (its `animation-duration` is set inline to the tempo).
 
-- [ ] **Step 1: Add the approach ring animation to `app/globals.css`**
+- [x] **Step 1: Add the approach ring animation to `app/globals.css`**
 
 In the `@theme` block, insert this directly above `  @keyframes status-in {`:
 
@@ -637,7 +637,7 @@ In the `@theme` block, insert this directly above `  @keyframes status-in {`:
 
 ```
 
-- [ ] **Step 2: Create `components/ui/strike-mark.tsx`**
+- [x] **Step 2: Create `components/ui/strike-mark.tsx`**
 
 ```tsx
 "use client";
@@ -828,7 +828,7 @@ export function StrikeMark({ cut, layer }: { cut: StrikeCut; layer: "effect" | "
 }
 ```
 
-- [ ] **Step 3: Create `components/ui/strike-button.tsx`**
+- [x] **Step 3: Create `components/ui/strike-button.tsx`**
 
 ```tsx
 "use client";
@@ -1000,7 +1000,7 @@ export function StrikeButton({
 }
 ```
 
-- [ ] **Step 4: Create `components/ui/strike-finisher.tsx`**
+- [x] **Step 4: Create `components/ui/strike-finisher.tsx`**
 
 ```tsx
 "use client";
@@ -1084,7 +1084,7 @@ export function StrikeFinisher({ onDone }: { onDone: () => void }) {
 }
 ```
 
-- [ ] **Step 5: Replace `components/ui/strike-line.tsx`**
+- [x] **Step 5: Replace `components/ui/strike-line.tsx`**
 
 ```tsx
 "use client";
@@ -1290,7 +1290,7 @@ export function StrikeLine({ angle, at = 0.5, className }: StrikeLineProps) {
 }
 ```
 
-- [ ] **Step 6: Verify**
+- [x] **Step 6: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1317,7 +1317,7 @@ The sound clips are already in the working tree, so presses may play sounds; Tas
 - [ ] At 375px: the label is hidden, the sword and speaker buttons fit at the right, and there is no horizontal scrollbar.
 - [ ] Console is clean.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/globals.css components/ui/strike-mark.tsx components/ui/strike-button.tsx components/ui/strike-finisher.tsx components/ui/strike-line.tsx
@@ -1335,7 +1335,7 @@ git commit -m "feat(strike): make strike dividers an interactive sword-slash rhy
 
 The architect sources the clips (CC0 only), trims and shrinks them, and places them in `public/audio/strikes/` with `CREDITS.md` listing each clip's source URL, author, and licence. **If that folder does not exist yet, skip this task, leave its boxes unchecked, and say so in your summary.**
 
-- [ ] **Step 1: Check the files**
+- [x] **Step 1: Check the files**
 
 ```bash
 ls -la public/audio/strikes
@@ -1343,7 +1343,7 @@ ls -la public/audio/strikes
 
 Expected: `slash.wav`, `stab.wav`, `finisher.wav`, `miss.wav`, and `CREDITS.md`; each `.wav` under about 60 KB.
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npm run build
@@ -1356,7 +1356,7 @@ npm run start
 - [ ] No sound plays before the first press on the page.
 - [ ] Console is clean.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add public/audio/strikes
@@ -1369,7 +1369,7 @@ git commit -m "feat(strike): add CC0 sword sound clips"
 
 **Files:** none created; fix whatever this task surfaces.
 
-- [ ] **Step 1: Clean production build**
+- [x] **Step 1: Clean production build**
 
 ```bash
 npx tsc --noEmit
@@ -1378,7 +1378,7 @@ npm run build
 npm run start
 ```
 
-- [ ] **Step 2: Walk the production build**
+- [x] **Step 2: Walk the production build**
 
 - [ ] **Performance:** DevTools → Performance, CPU throttling 4×, record while pressing a sword button at a steady pace for 10 seconds. No long frames (red bars) from the slashes. If frames drop, report it rather than changing constants.
 - [ ] **Hero untouched:** the ink reveal, palette, and preloader still behave as before.
@@ -1387,7 +1387,7 @@ npm run start
 - [ ] **Keyboard only:** every sword and speaker button is reachable with Tab and shows a focus ring.
 - [ ] **Console:** clean.
 
-- [ ] **Step 3: Commit any fixes**
+- [x] **Step 3: Commit any fixes**
 
 ```bash
 git add -A -- app components data hooks lib types
@@ -1397,6 +1397,84 @@ git commit -m "fix: address phase 16 verification findings"
 If nothing needed fixing, skip the commit.
 
 ---
+### Task 16.5: Keep the hero portrait's bottom fade attached to the portrait
+
+**Files:**
+- Modify: `components/sections/hero-visual.tsx` (move one element)
+
+**Interfaces consumed / produced:** none.
+
+**Problem (reported by the owner, measured by the architect at 1895×916 on the dev server).** The fade that hides the portrait's waist-cut bottom edge sits on the stage, but the portrait sinks with the scroll parallax (`portraitY`, 0 → 12%). At scroll 0 the image bottom (y 844) is inside the fade (which ends at y 876); from about scroll 600 the image bottom is at y 897, so a 21 px band of the shirt ("PIANO…") shows unfaded as a hard, bright strip, and the headgear reveal inside the same box shows through it too. Moving the fade into the portrait box makes it move with the image. Tested live by moving the element in the running page: at scroll 0 the fade covers exactly the same area as before (y 648–876); at scroll 600 and 800 it ends at y 929, below the image bottom (y 897); at 305 px wide it stays 32 px below the image bottom at every scroll position.
+
+- [x] **Step 1: Remove the fade from the stage**
+
+In `components/sections/hero-visual.tsx`, delete this block (near the end of the component, after the portrait's closing `</motion.div>` tags):
+
+```tsx
+      {/* The portrait is cut off at the waist; fade that edge into the page. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-bg via-bg/70 to-transparent"
+      />
+```
+
+- [x] **Step 2: Add it inside the portrait box**
+
+In the same file, replace:
+
+```tsx
+          {/* Layer 3: headgear photo over the face, revealed by the ink trail. */}
+          <HeadgearReveal />
+```
+
+with:
+
+```tsx
+          {/* Layer 3: headgear photo over the face, revealed by the ink trail. */}
+          <HeadgearReveal />
+          {/*
+           * Layer 4: the portrait is cut off at the waist; fade that edge into
+           * the page. It lives in the portrait box so it moves with the
+           * parallax. On the stage it stayed put while the portrait sank past it.
+           */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-bg via-bg/70 to-transparent"
+          />
+```
+
+- [x] **Step 3: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+At 1440px or wider, after the intro:
+
+- [ ] At the top of the page the hero looks exactly as before: the portrait's lower body fades smoothly into the page.
+- [ ] Scroll slowly down until the hero is almost gone: the bottom of the portrait stays faded the whole way; there is never a bright, hard-edged strip of the shirt above the first strike line.
+- [ ] Move the mouse over the lower part of the portrait while scrolled: the headgear reveal fades out at the bottom edge too, instead of ending in a hard line.
+- [ ] In the DevTools console at scroll positions 0, 600, and 800, this prints `true` each time:
+
+```js
+(() => { const img = document.querySelector("#hero img"); const fade = img.parentElement.querySelector(":scope > div.bg-linear-to-t"); return fade.getBoundingClientRect().bottom >= img.getBoundingClientRect().bottom; })()
+```
+
+- [ ] At 375px: same checks, no horizontal scrollbar.
+- [ ] Console is clean.
+
+- [x] **Step 4: Commit**
+
+```bash
+git add components/sections/hero-visual.tsx
+git commit -m "fix(hero): keep the portrait fade attached to the parallax portrait"
+```
+
+---
+
 ## Handoff checklist (owner-supplied content)
 
 Only the repository owner can resolve these. Do not invent values.
