@@ -1,6 +1,7 @@
 import { CodeXml, Download } from "lucide-react";
 
 import { HeroVisual } from "@/components/sections/hero-visual";
+import { InkRevealSection } from "@/components/sections/ink-reveal";
 import { TelemetryBar } from "@/components/sections/telemetry-bar";
 import { Button } from "@/components/ui/button";
 import { baybayin } from "@/data/baybayin";
@@ -8,7 +9,7 @@ import { siteConfig } from "@/data/site";
 
 export function Hero() {
   return (
-    <section
+    <InkRevealSection
       id="hero"
       className="relative flex flex-col overflow-hidden px-6 pt-24 pb-10 lg:min-h-svh"
     >
@@ -58,6 +59,6 @@ export function Hero() {
           </div>
         </div>
       </div>
-    </section>
+    </InkRevealSection>
   );
 }
