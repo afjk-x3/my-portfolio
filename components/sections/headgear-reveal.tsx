@@ -53,7 +53,9 @@ export function HeadgearReveal() {
       const matrix = svg.getScreenCTM();
       if (!matrix) return;
       const face = new DOMPoint(FACE.x, FACE.y).matrixTransform(matrix);
-      paintInkMask(svg, [{ x: face.x, y: face.y, radius: STATIC_RADIUS * matrix.a }]);
+      paintInkMask(svg, [
+        { x: face.x, y: face.y, radius: STATIC_RADIUS * matrix.a, angle: 0, stretch: 1 },
+      ]);
       return;
     }
 
