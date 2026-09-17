@@ -14,7 +14,7 @@ import {
 import { baybayin } from "@/data/baybayin";
 
 /** Present in sessionStorage once the preloader has played in this tab. */
-const STORAGE_KEY = "portfolio_preloaded";
+export const STORAGE_KEY = "portfolio_preloaded";
 
 /**
  * Set on `<html>` while the preloader owns the screen. `app/globals.css` reads
