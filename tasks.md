@@ -5,15 +5,15 @@
 > **Verify** block, then commit. Do not skip ahead, do not batch phases, and do
 > not "improve" adjacent files that the task does not list.
 
-> **Status:** Phases 1–10 are complete and committed. **Start at Phase 11**
-> (identity system and full-hero cursor reveal), then Phase 12 (project case
-> studies). The design these phases implement is
-> `docs/superpowers/specs/2026-09-16-portfolio-v2-design.md`; read it only if a
-> task does not answer a question. The step-by-step history of Phases 1–10 was
-> removed from this file; read it with `git show 633c7fb:tasks.md` only if a task
-> explicitly tells you to.
+> **Status:** Phases 1–12 are complete and committed. **Start at Phase 13**
+> (hero refinement and command palette). The design is in
+> `docs/superpowers/specs/2026-09-16-portfolio-v2-design.md` (§4b covers Phase
+> 13); read it only if a task does not answer a question. Step-by-step history
+> of earlier phases was removed from this file; read Phases 1–10 with
+> `git show 633c7fb:tasks.md` and Phases 11–12 with `git show f9256c3:tasks.md`
+> only if a task explicitly tells you to.
 
-**Goal:** A single-page, dark, motion-driven developer portfolio on Next.js 16 App Router with per-project case study pages, deployed to Vercel.
+**Goal:** A single-page, dark, motion-driven developer portfolio on Next.js 16 App Router with per-project case study pages and a command palette, deployed to Vercel.
 
 **Architecture:** `app/page.tsx` composes the home page from section components in `components/sections/`. Every section that renders data is an async Server Component that awaits a function from `lib/queries.ts`. Those functions return local typed arrays today, but they already return `Promise`s, so the Supabase swap only changes the data layer and no UI code. Client-side interactivity (smooth scroll, scroll-linked animation, cursor effects, the preloader, the mobile nav) is isolated in leaf `"use client"` components.
 
@@ -60,35 +60,37 @@ To replay the preloader while testing: `sessionStorage.removeItem("portfolio_pre
 
 ## Current file structure
 
-Files marked **[11]** or **[12]** are created or changed by that phase.
+Files marked **[13]** are created or changed by Phase 13.
 
 ```
 app/
-  layout.tsx                 # fonts (Geist, Geist Mono, Anton, UnifrakturCook, Noto Sans Tagalog [11]), metadata, <Backdrop>, <SmoothScrollProvider>
-  page.tsx                   # <Preloader>, <SiteHeader>, sections separated by <StrikeLine> [11], <SiteFooter>
-  globals.css                # theme tokens, utilities (bg-weave [11]), animations (strike-wipe [12]), Lenis base, preloader gate
-  not-found.tsx              # "DNF // Did not finish" 404 [12]
-  projects/[slug]/page.tsx   # case study page, statically generated [12]
+  layout.tsx                 # fonts, metadata, <Backdrop>, <SmoothScrollProvider>, <CommandPalette> [13]
+  page.tsx                   # <Preloader>, <SiteHeader>, sections separated by <StrikeLine>, <SiteFooter>
+  globals.css                # theme tokens, utilities (bg-weave), animations (strike-wipe), Lenis base, preloader gate
+  not-found.tsx              # "DNF // Did not finish" 404
+  projects/[slug]/page.tsx   # case study page, statically generated
 components/
-  case-study/                # [12]
+  command-palette/
+    command-palette.tsx      # Ctrl+K / ⌘K palette: navigate, case studies, actions, secrets [13] (client)
+  case-study/
     case-study-header.tsx    # title band: weave, Anton title, spec row, links
     case-study-body.tsx      # numbered sections; empty ones are hidden
     next-lap.tsx             # next case study card + back link
   layout/
     backdrop.tsx             # page-wide fixed grid + noise layers (server)
-    site-header.tsx          # floating glass nav; smooth-scroll on home, links elsewhere [12] (client)
-    site-footer.tsx          # footer with weave texture and strike line [11] (server)
+    site-header.tsx          # glass nav: name wordmark [13], section links, palette button [13], socials (client)
+    site-footer.tsx          # footer with weave texture and strike line (server)
   sections/
-    hero.tsx                 # <InkRevealSection> [11]: backdrop reveal, telemetry bar, visual stage, copy, motto [11]
+    hero.tsx                 # <InkRevealSection>: backdrop reveal, visual stage, corner copy + status [13]
     hero-visual.tsx          # watermark + glow + portrait, parallax (client)
-    hero-watermark.tsx       # SVG outline word + ink-revealed neon fill [11] (client)
-    hero-backdrop-reveal.tsx # ink-revealed weave + strike slashes across the hero [11] (client)
-    headgear-reveal.tsx      # ink-revealed headgear photo over the face [11] (client)
-    ink-reveal.tsx           # InkRevealSection, InkMask, paintInkMask, useInkMaskLayer [11] (client)
-    telemetry-bar.tsx        # live status dot + local clock (client)
+    hero-watermark.tsx       # SVG outline word + ink-revealed neon fill (client)
+    hero-backdrop-reveal.tsx # ink-revealed weave + strike slashes across the hero (client)
+    headgear-reveal.tsx      # ink-revealed headgear photo over the face (client)
+    ink-reveal.tsx           # InkRevealSection, InkMask (torn-edge filter [13]), paintInkMask, useInkMaskLayer (client)
+    hero-status.tsx          # AvailabilityStatus + LocalClock [13] (client)
     projects-showcase.tsx    # server: awaits getProjects() (id="projects")
     projects-stack.tsx       # sticky scroll stack (client)
-    project-card.tsx         # one card in the stack, tilt + spotlight, case study links [12] (client)
+    project-card.tsx         # one card in the stack, tilt + spotlight, case study links (client)
     bento-grid.tsx           # server: awaits getSkillCategories() (id="stack")
     tech-stack-card.tsx      # one skill group card (server)
     discipline-card.tsx      # Arnis photo card, hover/focus cross-fade (client, id="discipline")
@@ -96,20 +98,21 @@ components/
   providers/
     smooth-scroll-provider.tsx  # Lenis root (client)
   ui/
-    button.tsx               # cva + Radix Slot, neon variants, strike wipe on hover [11]
+    button.tsx               # cva + Radix Slot, neon variants, strike wipe on hover
     badge.tsx                # tech-stack pill
-    section-heading.tsx      # eyebrow + optional baybayin script [11] + title
-    strike-line.tsx          # divider cut at an Arnis strike angle [11] (client)
-    preloader.tsx            # first-visit monogram + baybayin name [11] + counter overlay (client)
+    section-heading.tsx      # eyebrow + optional baybayin script + title
+    strike-line.tsx          # divider cut at an Arnis strike angle (client)
+    preloader.tsx            # first-visit monogram + baybayin name + counter overlay (client)
 data/
-  site.ts                    # siteConfig (identity, watermark, availability, time zone) + socialLinks
+  site.ts                    # siteConfig (identity, wordmark [13], watermark, availability, time zone) + socialLinks
   navigation.ts              # nav anchors
-  projects.ts                # Project[] with case studies [12]
+  projects.ts                # Project[] with case studies
   skills.ts                  # SkillCategory[] + discipline photos
-  baybayin.ts                # every baybayin string, with review flags [11]
-  strike-angles.ts           # the 12 Arnis strikes, with confirmation flags [11]
+  baybayin.ts                # every baybayin string, with review flags
+  strike-angles.ts           # the 12 Arnis strikes, with confirmation flags
 hooks/
-  use-ink-trail.ts           # shared cursor ink trail engine [11]
+  use-ink-trail.ts           # shared ink trail: move-only, speed-sized drops, strike event [13]
+  use-command-palette.ts     # palette open state + modifier key label [13]
   use-local-time.ts          # ticking clock via useSyncExternalStore
   use-media-query.ts         # matchMedia via useSyncExternalStore
   use-pointer-tilt.ts        # mouse-tracked 3D tilt + spotlight motion values
@@ -149,7 +152,7 @@ All tokens live in `app/globals.css`. Use the Tailwind classes; never hard-code 
 | `font-mono` | Geist Mono | Telemetry, labels, counters |
 | `font-display` | Anton | Watermark, hero headline, case study titles |
 | `font-gothic` | UnifrakturCook | Preloader monogram only |
-| `font-baybayin` | Noto Sans Tagalog | Baybayin from `data/baybayin.ts` only **[11]** |
+| `font-baybayin` | Noto Sans Tagalog | Baybayin from `data/baybayin.ts` only |
 
 | Utility / class | Effect |
 | --- | --- |
@@ -157,13 +160,13 @@ All tokens live in `app/globals.css`. Use the Tailwind classes; never hard-code 
 | `text-outline-accent` | Same, with a 60% neon stroke |
 | `bg-grid` | 80px faint grid, radially faded toward the viewport edges |
 | `bg-noise` | Tiled SVG grain; set strength with `opacity-*` |
-| `bg-weave` | Tiled woven diamond lattice in white; always on its own `aria-hidden` layer at `opacity-[0.03]`–`opacity-[0.05]` **[11]** |
+| `bg-weave` | Tiled woven diamond lattice in white; always on its own `aria-hidden` layer at `opacity-[0.03]`–`opacity-[0.05]` |
 | `.glow` | 22% neon radial glow |
 | `animate-pulse-dot` | Live status dot ring |
 | `animate-monogram-in`, `animate-monogram-breathe`, `animate-status-in` | Preloader entrance animations |
-| `animate-strike-wipe` | Case study arrival wipe **[12]** |
+| `animate-strike-wipe` | Case study arrival wipe |
 
-**Stacking order:** header `z-50`, preloader overlay and case study wipe `z-90`, page-wide film grain `z-100`.
+**Stacking order:** header `z-50`, preloader overlay and case study wipe `z-90`, command palette overlay `z-95` and dialog `z-96`, page-wide film grain `z-100`.
 
 ---
 
@@ -178,12 +181,13 @@ Read this before changing any of these files.
   - `animate()` tweens a motion value 0→100 over `COUNT_DURATION` (1.6 s); holds `EXIT_HOLD` (0.2 s); exits with `y: "-100%"` over 0.8 s, or a fade under reduced motion. On exit completion the storage key is written and the scroll lock released.
   - Scroll lock is CSS `overflow: hidden` on `<html>` plus `lenis.stop()`.
 - **Ink reveal** (Phase 11; `use-ink-trail.ts`, `ink-reveal.tsx`, and the three hero layers):
-  - `InkRevealSection` renders the hero `<section>` and owns one **ink trail**: a single `requestAnimationFrame` loop, running only while the hero is on screen, that drops "ink" along the cursor's path. Each drop shrinks away over 900 ms. Positions are in viewport pixels. Nothing in the loop causes a React render.
-  - Each masked layer is an SVG containing an `<InkMask>` (a gooey filter plus a mask of circles). `useInkMaskLayer` registers the SVG with the trail; every frame `paintInkMask` converts the drops into that SVG's own coordinates with `getScreenCTM()` — which already includes parallax and entrance transforms — and resizes the filter region to fit only the live drops.
+  - `InkRevealSection` renders the hero `<section>` and owns one **ink trail**: a single `requestAnimationFrame` loop, running only while the hero is on screen, that drops "ink" along the cursor's path **only while it moves**. Drop size and stretch grow with speed, and each drop shrinks away over 900 ms, so a still cursor shows nothing. A `portfolio:strike` window event plays a scripted diagonal sweep. Positions are in viewport pixels. Nothing in the loop causes a React render.
+  - Each masked layer is an SVG containing an `<InkMask>` (a blur → noise-displacement tear → alpha-threshold filter over a mask of rotated ellipses). `useInkMaskLayer` registers the SVG with the trail; every frame `paintInkMask` converts the drops into that SVG's own coordinates with `getScreenCTM()` — which already includes parallax and entrance transforms — and resizes the filter region to fit only the live drops.
   - There is one masked SVG per coordinate space because the watermark and the portrait move at different parallax speeds: `HeroBackdropReveal` (whole hero: weave + strike slashes), `HeroWatermark` (outline word + neon fill, drawn from identical `<text>`), and `HeadgearReveal` (portrait pixels: headgear photo over the face).
   - Modes: a fine pointer drives the trail (`pointer`); touch screens get a drop that drifts over the face (`wander`), using the face position that `HeadgearReveal` reports through `setHome`; touch plus reduced motion shows one fixed headgear reveal (`static`) and nothing else.
   - If the portrait or headgear image changes, re-tune only `HEADGEAR` and `FACE` in `headgear-reveal.tsx`.
-- **Case studies** (Phase 12): a project with `caseStudy: null` stays card-only. Projects with a case study get a statically generated page at `/projects/<slug>`; `dynamicParams = false` makes every other slug a 404. In `CaseStudyBody`, empty strings and empty arrays hide their section, and the remaining sections are numbered consecutively.
+- **Command palette** (`command-palette.tsx`, `use-command-palette.ts`): rendered once in the root layout, inside the Lenis provider, with case study data passed from the server. Open state is a tiny external store, so any component can call `setCommandPaletteOpen(true)`. While open, Lenis is stopped; picked actions run through `run()`, which waits until the palette has closed and Lenis has restarted. The **Secrets** group only renders once 2+ characters are typed.
+- **Case studies**: a project with `caseStudy: null` stays card-only. Projects with a case study get a statically generated page at `/projects/<slug>`; `dynamicParams = false` makes every other slug a 404. In `CaseStudyBody`, empty strings and empty arrays hide their section, and the remaining sections are numbered consecutively.
 
 ---
 
@@ -199,702 +203,42 @@ Read this before changing any of these files.
 8. 3D headgear reveal with three.js — **superseded by Phase 9, fully removed.**
 9. Photo-based headgear reveal via SVG gooey mask; three.js dependencies removed.
 10. Gothic monogram telemetry preloader (first visit per browser session).
+11. Identity system: baybayin accents, strike line dividers, woven texture, button strike wipe, and the full-hero ink reveal (weave, strike slashes, neon watermark, headgear).
+12. Project case studies at `/projects/[slug]`, the DNF 404 page, and case study links from cards and the header.
 
 ---
 
-# Phase 11 — Identity system and full-hero cursor reveal
+# Phase 13 — Hero refinement and command palette
 
-This phase blends Filipino/Arnis identity into the telemetry design — baybayin accents, Arnis strike lines, and a woven diamond texture — and rebuilds the hero reveal so it works like landonorris.com: the cursor leaves a lingering ink trail **anywhere** in the hero, and inside that trail you see a hidden layer (woven texture, neon strike slashes, the watermark filled in lime, and the headgear over the face).
+This phase brings the hero closer to landonorris.com and adds a site-wide command palette:
 
-Every block below was type-checked, linted, and built with Turbopack in a scratch copy of this repository at commit `a5ce8f3`, then checked in a production build: the reveal was exercised with a real mouse at 1440px (lime watermark fill, headgear, weave, and slash fragments all showed inside the trail; the SVG watermark lands on the exact position of the old HTML one), the page had no horizontal overflow at 375px, and the console was clean. The touch (`wander`) and reduced-motion (`static`) modes and the frame-rate check could not be exercised there and are covered by Task 11.7. Copy the blocks exactly.
+- **Reveal:** ink appears only while the mouse moves. Slow movement leaves small patches, fast movement leaves large ones stretched along the direction of travel, and every edge tears into ragged sideways strips. Within about a second of the mouse stopping, the hero is clean again, even with the cursor still over the face.
+- **Hero layout:** the portrait keeps its current size. The telemetry strip across the top is removed: availability moves above the name in the bottom-left, the local clock sits above the buttons in the bottom-right, and the headline and buttons are smaller.
+- **Header:** the initials become a two-line wordmark (`JOHN PAUL / GARAZA`), and a search button with a `Ctrl K` / `⌘ K` hint opens the palette.
+- **Command palette:** Ctrl+K / ⌘K anywhere. Jump to sections, search case studies by name or tech, download the résumé, copy the email, open GitHub, and two hidden commands that only appear once you type: **Replay intro** and **Strike** (a diagonal reveal sweep across the hero).
+
+Every block below was type-checked, linted, and built with Turbopack in a scratch copy of this repository at commit `40a95ee`, with the owner's current `data/site.ts`, then checked in a production build at 1919×955: moving the mouse shows torn, stretched reveals and the hero is clean 1.5 s after stopping with the cursor still over the face; Ctrl+K opens the palette; typing `unity` leaves only Driftline; typing `strike` reveals the hidden Strike command, and running it from 1,000 px down the page scrolls to the top and plays the sweep (all 36 drops on all three layers, cleared about 1.4 s later); Lenis is running again after the palette closes. The phone-width layout and touch modes were not exercised there and are covered by Task 13.5. Copy the blocks exactly.
 
 **Rules for this phase:**
 
-- The only new dependency is the Noto Sans Tagalog font through `next/font/google`. No npm installs.
-- Never type baybayin characters outside `data/baybayin.ts`, and do not edit its strings: they are written as Unicode escapes on purpose.
-- `components/sections/ink-reveal.tsx` must stay free of per-frame React state. Layers paint by setting SVG attributes directly.
+- The only new dependencies are `cmdk` and `@radix-ui/react-dialog`, installed in Task 13.3. `cmdk` already uses Radix Dialog internally; it is added as a direct dependency because the palette imports it for an accessible dialog title.
+- `data/site.ts` contains the owner's real name, links, and uncommitted edits. Task 13.4 inserts one field into it; never replace that file.
+- Palette actions must go through `run()` in `command-palette.tsx`, which runs them only after the palette has closed. Running a Lenis scroll before that gets cancelled when Lenis restarts.
 
-### Task 11.1: Add the baybayin font, weave texture, motif data, and logo-free headgear
+### Task 13.1: Show the reveal only while the mouse moves, with torn, stretched edges
 
 **Files:**
-- Commit (already modified by the architect — do not edit): `public/images/hero/headgear.webp`
-- Modify: `app/layout.tsx`
-- Modify: `app/globals.css` (two insertions)
-- Modify: `types/index.ts` (append)
-- Create: `data/baybayin.ts`
-- Create: `data/strike-angles.ts`
+- Modify: `hooks/use-ink-trail.ts` (full replacement)
+- Modify: `components/sections/ink-reveal.tsx` (full replacement)
+- Modify: `components/sections/headgear-reveal.tsx`
 
+**Interfaces consumed:** `useMediaQuery`; `useInView`, `useReducedMotion` from `motion/react`.
 **Interfaces produced:**
-- Tailwind classes `font-baybayin` and `bg-weave`.
-- Types `BaybayinEntry` and `StrikeAngle` from `@/types`.
-- `baybayin` from `@/data/baybayin`, with keys `name`, `motto`, `projects`, `stack`, `contact`, each a `BaybayinEntry`.
-- `strikeAngles: StrikeAngle[]` and `getStrike(number: number): StrikeAngle` from `@/data/strike-angles`. `getStrike` throws for numbers outside 1–12.
-
-The architect already replaced `public/images/hero/headgear.webp` with a copy whose STIX logo patch is painted over with the surrounding red padding texture. Same file name and 648×700 size, so `HEADGEAR` and `FACE` do not change. It shows as modified in `git status`; this task commits it.
-
-- [ ] **Step 1: Load the baybayin font in `app/layout.tsx`**
-
-Replace the `next/font/google` import line:
-
-```tsx
-import { Anton, Geist, Geist_Mono, UnifrakturCook } from "next/font/google";
-```
-
-with:
-
-```tsx
-import { Anton, Geist, Geist_Mono, Noto_Sans_Tagalog, UnifrakturCook } from "next/font/google";
-```
-
-Insert this block directly above `export const metadata`:
-
-```tsx
-// Baybayin script for the decorative accents in `data/baybayin.ts`. Only the
-// Tagalog subset is loaded, so Latin text never falls back to this face.
-const notoTagalog = Noto_Sans_Tagalog({
-  variable: "--font-noto-tagalog",
-  subsets: ["tagalog"],
-  weight: "400",
-});
-
-```
-
-In the `<html>` `className`, replace `${unifraktur.variable} h-full antialiased` with `${unifraktur.variable} ${notoTagalog.variable} h-full antialiased`.
-
-- [ ] **Step 2: Add the font token and the weave utility to `app/globals.css`**
-
-In the `@theme inline` block, add one line after `--font-gothic: var(--font-unifraktur);`:
-
-```css
-  --font-baybayin: var(--font-noto-tagalog);
-```
-
-Insert this block directly above the comment that starts `/*` followed by ` * Ambient accent bloom`:
-
-```css
-/*
- * Woven diamond texture, loosely inspired by Ilocano inabel: an interlocking
- * diamond lattice with a smaller diamond inside each cell. Deliberately generic
- * geometry, not a copy of any specific textile. Drawn in white; consumers set
- * the strength with an `opacity-*` utility on a dedicated decorative layer.
- */
-@utility bg-weave {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Cg fill='none' stroke='%23fff' stroke-width='1'%3E%3Cpath d='M16 0 32 16 16 32 0 16Z'/%3E%3Cpath d='M16 9 23 16 16 23 9 16Z'/%3E%3C/g%3E%3Cpath fill='%23fff' d='M16 14.5 17.5 16 16 17.5 14.5 16Z'/%3E%3C/svg%3E");
-  background-size: 32px 32px;
-}
-
-```
-
-- [ ] **Step 3: Append the motif types to `types/index.ts`**
-
-Add to the end of the file:
-
-```ts
-/**
- * One decorative baybayin string. Baybayin is always `aria-hidden` and always
- * sits beside English, so `meaning` is documentation, not rendered alt text.
- */
-export interface BaybayinEntry {
-  /** Baybayin characters (Unicode Tagalog block, U+1700–U+171F). */
-  text: string;
-  /** The Filipino word(s) the characters spell. */
-  latin: string;
-  /** English meaning. */
-  meaning: string;
-  /**
-   * Flipped to `true` only after someone who reads baybayin has checked the
-   * `text`. The launch gate fails while any entry is `false`.
-   */
-  reviewed: boolean;
-}
-
-/** One of the twelve basic Arnis strikes. */
-export interface StrikeAngle {
-  /** 1–12, as numbered in the owner's sport Arnis anyo. */
-  number: number;
-  /** Where the strike lands on the opponent, e.g. "Left temple". */
-  target: string;
-  /**
-   * Direction of the stick's path on screen, in degrees: 0 points right and
-   * angles grow clockwise, so 90 is straight down. `null` for thrusts, which
-   * travel toward the viewer and have no on-screen line.
-   */
-  degrees: number | null;
-  /** Flipped to `true` once the owner confirms this entry for their style. */
-  confirmed: boolean;
-}
-```
-
-- [ ] **Step 4: Create `data/baybayin.ts`**
-
-```ts
-import type { BaybayinEntry } from "@/types";
-
-/*
- * Every baybayin string on the site lives here. Characters are written as
- * Unicode escapes so that no editor, font, or copy-paste can silently change
- * them. Conventions used:
- *
- * - Modern orthography with the krus-kudlit (U+1714) cancelling a final vowel.
- * - The letter DA (U+1707) also writes RA, as in pre-colonial usage.
- * - Z has no letter and is written with SA (U+1710).
- *
- * None of these have been checked by a baybayin reader yet. Do not flip
- * `reviewed` to `true` without one.
- */
-export const baybayin = {
-  name: {
-    text: "\u1704\u1707\u1710",
-    latin: "Garaza",
-    meaning: "The owner's surname",
-    reviewed: false,
-  },
-  motto: {
-    text: "\u1710\u1712\u1709\u1704\u1714 \u1700\u1706\u1714 \u1707\u1712\u1710\u1712\u1709\u1714\u170E\u1712\u1708",
-    latin: "Sipag at Disiplina",
-    meaning: "Diligence and discipline",
-    reviewed: false,
-  },
-  projects: {
-    text: "\u1709\u1714\u1707\u1713\u170C\u1712\u1703\u1714\u1706\u1713",
-    latin: "Proyekto",
-    meaning: "Project",
-    reviewed: false,
-  },
-  stack: {
-    text: "\u1703\u1710\u1708\u170C\u1708\u1714",
-    latin: "Kasanayan",
-    meaning: "Skills",
-    reviewed: false,
-  },
-  contact: {
-    text: "\u1702\u1704\u1714\u1708\u170C\u1708\u1714",
-    latin: "Ugnayan",
-    meaning: "Connection, contact",
-    reviewed: false,
-  },
-} satisfies Record<string, BaybayinEntry>;
-```
-
-- [ ] **Step 5: Create `data/strike-angles.ts`**
-
-```ts
-import type { StrikeAngle } from "@/types";
-
-/*
- * The twelve basic strikes, numbered as commonly taught for sport Arnis anyo
- * and Modern Arnis, from a right-handed striker's point of view. Numbering
- * differs between systems, so every entry stays `confirmed: false` until the
- * owner checks it against their own training.
- */
-export const strikeAngles: StrikeAngle[] = [
-  { number: 1, target: "Left temple", degrees: 135, confirmed: false },
-  { number: 2, target: "Right temple", degrees: 45, confirmed: false },
-  { number: 3, target: "Left side of the body", degrees: 180, confirmed: false },
-  { number: 4, target: "Right side of the body", degrees: 0, confirmed: false },
-  { number: 5, target: "Stomach (thrust)", degrees: null, confirmed: false },
-  { number: 6, target: "Left chest (thrust)", degrees: null, confirmed: false },
-  { number: 7, target: "Right chest (thrust)", degrees: null, confirmed: false },
-  { number: 8, target: "Left knee", degrees: 135, confirmed: false },
-  { number: 9, target: "Right knee", degrees: 45, confirmed: false },
-  { number: 10, target: "Left eye (thrust)", degrees: null, confirmed: false },
-  { number: 11, target: "Right eye (thrust)", degrees: null, confirmed: false },
-  { number: 12, target: "Crown of the head", degrees: 90, confirmed: false },
-];
-
-/** Looks up a strike by number. Throws on a number outside 1–12. */
-export function getStrike(number: number): StrikeAngle {
-  const strike = strikeAngles.find((entry) => entry.number === number);
-  if (!strike) throw new Error(`Unknown strike angle: ${number}`);
-  return strike;
-}
-```
-
-- [ ] **Step 6: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-```
-
-Expected: all three pass. Nothing on the page changes yet except that the build now downloads Noto Sans Tagalog. In `npm run dev`, confirm in DevTools → Elements that `<html>` has a class containing `noto_sans_tagalog`.
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add public/images/hero/headgear.webp app/layout.tsx app/globals.css types/index.ts data/baybayin.ts data/strike-angles.ts
-git commit -m "feat(identity): add baybayin font, weave texture, and motif data"
-```
-
----
-
-### Task 11.2: Add strike line dividers and the woven footer
-
-**Files:**
-- Create: `components/ui/strike-line.tsx`
-- Modify: `app/page.tsx`
-- Modify: `components/layout/site-footer.tsx` (full replacement)
-
-**Interfaces consumed:** `getStrike` (Task 11.1), `bg-weave` (Task 11.1), `cn`.
-**Interfaces produced:** `StrikeLine` with props `{ angle: number; className?: string }`. `angle` must be a strike with a line (1, 2, 3, 4, 8, 9, 12); a thrust number throws during render.
-
-- [ ] **Step 1: Create `components/ui/strike-line.tsx`**
-
-```tsx
-"use client";
-
-import { motion, useReducedMotion } from "motion/react";
-
-import { getStrike } from "@/data/strike-angles";
-import { cn } from "@/lib/utils";
-
-const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
-
-/** Box the diagonal slash is drawn in, in px. */
-const SLASH_BOX = 40;
-
-export interface StrikeLineProps {
-  /** Strike number from `data/strike-angles.ts`. Thrusts (no line) are invalid. */
-  angle: number;
-  className?: string;
-}
-
-/**
- * Section divider: two hairlines meeting at a short neon slash cut at a real
- * Arnis strike angle, with a telemetry label. Draws itself in the first time it
- * scrolls into view; with reduced motion it renders fully drawn.
- */
-export function StrikeLine({ angle, className }: StrikeLineProps) {
-  const reduceMotion = useReducedMotion() ?? false;
-  const strike = getStrike(angle);
-  if (strike.degrees === null) {
-    throw new Error(`Strike ${angle} is a thrust and has no line to draw`);
-  }
-
-  // Unit vector of the stick's path. Screen y grows downward, which matches the
-  // clockwise degree convention in `data/strike-angles.ts`.
-  const radians = (strike.degrees * Math.PI) / 180;
-  const half = SLASH_BOX / 2 - 4;
-  const dx = Math.cos(radians) * half;
-  const dy = Math.sin(radians) * half;
-  const center = SLASH_BOX / 2;
-  const label = `ANGLE ${String(strike.number).padStart(2, "0")} // ${strike.degrees}°`;
-
-  const drawn = { pathLength: 1, scaleX: 1, opacity: 1 };
-  const hidden = reduceMotion ? drawn : { pathLength: 0, scaleX: 0, opacity: 0 };
-  const viewport = { once: true, margin: "0px 0px -15% 0px" } as const;
-
-  return (
-    <div
-      aria-hidden
-      className={cn("mx-auto flex w-full max-w-6xl items-center gap-4 px-6", className)}
-    >
-      <motion.span
-        initial={{ scaleX: hidden.scaleX }}
-        whileInView={{ scaleX: 1 }}
-        viewport={viewport}
-        transition={{ duration: 0.9, ease: EASE_OUT_EXPO }}
-        className="h-px flex-1 origin-right bg-line"
-      />
-
-      <svg
-        width={SLASH_BOX}
-        height={SLASH_BOX}
-        viewBox={`0 0 ${SLASH_BOX} ${SLASH_BOX}`}
-        className="shrink-0 overflow-visible"
-      >
-        {/* The stick travels from the start of the path to its end. */}
-        <motion.path
-          d={`M ${center - dx} ${center - dy} L ${center + dx} ${center + dy}`}
-          className="stroke-accent"
-          strokeWidth={2}
-          strokeLinecap="round"
-          fill="none"
-          initial={{ pathLength: hidden.pathLength }}
-          whileInView={{ pathLength: 1 }}
-          viewport={viewport}
-          transition={{ duration: 0.5, delay: 0.35, ease: EASE_OUT_EXPO }}
-        />
-      </svg>
-
-      <motion.span
-        initial={{ opacity: hidden.opacity }}
-        whileInView={{ opacity: 1 }}
-        viewport={viewport}
-        transition={{ duration: 0.4, delay: 0.6 }}
-        className="shrink-0 font-mono text-[0.65rem] tracking-[0.25em] text-muted"
-      >
-        {label}
-      </motion.span>
-
-      <motion.span
-        initial={{ scaleX: hidden.scaleX }}
-        whileInView={{ scaleX: 1 }}
-        viewport={viewport}
-        transition={{ duration: 0.9, ease: EASE_OUT_EXPO }}
-        className="h-px flex-1 origin-left bg-line"
-      />
-    </div>
-  );
-}
-```
-
-- [ ] **Step 2: Put dividers between the home page sections**
-
-In `app/page.tsx`, add the import after the `Preloader` import:
-
-```tsx
-import { StrikeLine } from "@/components/ui/strike-line";
-```
-
-Replace the four section lines inside `<main>`:
-
-```tsx
-        <Hero />
-        <ProjectsShowcase />
-        <BentoGrid />
-        <Contact />
-```
-
-with:
-
-```tsx
-        <Hero />
-        <StrikeLine angle={1} className="py-6" />
-        <ProjectsShowcase />
-        <StrikeLine angle={2} className="py-6" />
-        <BentoGrid />
-        <StrikeLine angle={3} className="py-6" />
-        <Contact />
-```
-
-- [ ] **Step 3: Replace `components/layout/site-footer.tsx`**
-
-The footer's top border becomes a strike line, over a faint woven texture.
-
-```tsx
-import { CodeXml, Mail } from "lucide-react";
-
-import { StrikeLine } from "@/components/ui/strike-line";
-import { siteConfig, socialLinks } from "@/data/site";
-
-// lucide-react v1 removed brand icons (no `Github` export), so the "Github"
-// key from `data/site.ts` maps to a generic code icon — same as the header.
-const socialIcons = { Github: CodeXml, Mail } as const;
-
-export function SiteFooter() {
-  return (
-    <footer className="relative overflow-hidden px-6 pt-4 pb-10">
-      <div aria-hidden className="bg-weave pointer-events-none absolute inset-0 opacity-[0.04]" />
-
-      <StrikeLine angle={12} className="mb-10 px-0" />
-
-      <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 sm:flex-row">
-        <p className="font-mono text-xs text-muted">
-          © {new Date().getFullYear()} {siteConfig.name}
-        </p>
-
-        <ul className="flex items-center gap-5">
-          {socialLinks.map((link) => {
-            const Icon = socialIcons[link.icon as keyof typeof socialIcons];
-            return (
-              <li key={link.href}>
-                <a
-                  href={link.href}
-                  aria-label={link.label}
-                  target={link.href.startsWith("http") ? "_blank" : undefined}
-                  rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                  className="text-muted transition-colors hover:text-fg"
-                >
-                  <Icon aria-hidden className="size-4" />
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    </footer>
-  );
-}
-```
-
-- [ ] **Step 4: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run dev
-```
-
-At http://localhost:3000, scroll slowly from the hero to the footer:
-
-- [ ] Between hero/projects, projects/stack, and stack/contact, a divider appears: two hairlines grow out from a short neon slash, then a label fades in. Labels read `ANGLE 01 // 135°`, `ANGLE 02 // 45°`, `ANGLE 03 // 180°`.
-- [ ] The slash for angle 01 runs from top-right to bottom-left, angle 02 from top-left to bottom-right, angle 03 is horizontal.
-- [ ] The footer has a divider labelled `ANGLE 12 // 90°` with a vertical slash, and a barely visible diamond texture behind the copyright line.
-- [ ] Each divider animates only the first time it enters the viewport.
-- [ ] With DevTools → Rendering → "Emulate CSS prefers-reduced-motion: reduce" and a reload, every divider is already fully drawn.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add components/ui/strike-line.tsx app/page.tsx components/layout/site-footer.tsx
-git commit -m "feat(identity): add strike line dividers and woven footer"
-```
-
----
-
-### Task 11.3: Add the strike wipe to buttons
-
-**Files:**
-- Modify: `components/ui/button.tsx` (full replacement)
-
-**Interfaces produced:** unchanged `Button` / `buttonVariants` API. `primary` and `outline` variants now clip their content (`overflow-hidden`) and create a stacking context (`isolate`).
-
-- [ ] **Step 1: Replace `components/ui/button.tsx`**
-
-```tsx
-import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
-
-import { cn } from "@/lib/utils";
-
-/*
- * Strike wipe: `before:` is a skewed band parked off the left edge. On hover it
- * slashes across to the right, like a stick cutting through. `isolate` plus
- * `before:-z-10` paints the band above the button's own background but below
- * its label and icon. The global reduced-motion rule shortens the transition to
- * near zero, so the slash is simply skipped there.
- */
-const strikeWipe =
-  "relative isolate overflow-hidden before:pointer-events-none before:absolute before:inset-y-0 before:left-0 before:-z-10 before:w-1/2 before:-translate-x-[150%] before:-skew-x-[30deg] before:transition-transform before:duration-500 before:ease-out hover:before:translate-x-[250%]";
-
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-tight transition-[color,background-color,border-color,box-shadow] duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
-  {
-    variants: {
-      variant: {
-        primary: `${strikeWipe} bg-accent text-accent-ink before:bg-white/45 hover:bg-accent-soft hover:shadow-[0_0_32px_-6px_var(--color-accent)]`,
-        outline: `${strikeWipe} border border-line-strong bg-transparent text-fg before:bg-accent/15 hover:border-accent hover:text-accent hover:shadow-[0_0_32px_-10px_var(--color-accent)]`,
-        ghost: "text-muted hover:text-fg",
-      },
-      size: {
-        sm: "h-9 px-4 text-sm",
-        md: "h-11 px-6 text-sm",
-        lg: "h-13 px-8 text-base",
-      },
-    },
-    defaultVariants: {
-      variant: "primary",
-      size: "md",
-    },
-  },
-);
-
-export interface ButtonProps
-  extends React.ComponentProps<"button">,
-    VariantProps<typeof buttonVariants> {
-  /** Render the child element instead of a <button> — use for <a> links. */
-  asChild?: boolean;
-}
-
-export function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: ButtonProps) {
-  const Comp = asChild ? Slot : "button";
-  return (
-    <Comp className={cn(buttonVariants({ variant, size, className }))} {...props} />
-  );
-}
-
-export { buttonVariants };
-```
-
-- [ ] **Step 2: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run dev
-```
-
-- [ ] Hovering the hero **GitHub** button (primary) sends a pale diagonal band slashing left to right across it, under the label. The label and icon stay fully readable.
-- [ ] Hovering **Resume** (outline) sends a faint lime band across it the same way.
-- [ ] Moving the pointer off a button sends the band back. No band is ever visible outside the button's rounded edge.
-- [ ] Ghost buttons in the header nav have no band.
-- [ ] Keyboard focus still shows the accent outline ring around the whole button (the ring is not clipped).
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add components/ui/button.tsx
-git commit -m "feat(ui): add strike wipe to buttons"
-```
-
----
-
-### Task 11.4: Add baybayin accents to headings, the preloader, and the hero
-
-**Files:**
-- Modify: `components/ui/section-heading.tsx` (full replacement)
-- Modify: `components/sections/projects-showcase.tsx`
-- Modify: `components/sections/bento-grid.tsx`
-- Modify: `components/sections/contact.tsx`
-- Modify: `components/ui/preloader.tsx`
-- Modify: `components/sections/hero.tsx`
-
-**Interfaces consumed:** `baybayin` and `BaybayinEntry` (Task 11.1), `font-baybayin`.
-**Interfaces produced:** `SectionHeading` gains an optional prop `script?: BaybayinEntry`.
-
-- [ ] **Step 1: Replace `components/ui/section-heading.tsx`**
-
-```tsx
-import { cn } from "@/lib/utils";
-import type { BaybayinEntry } from "@/types";
-
-export interface SectionHeadingProps {
-  eyebrow: string;
-  title: string;
-  /** Decorative baybayin shown after the eyebrow. Pass an entry from `data/baybayin.ts`. */
-  script?: BaybayinEntry;
-  className?: string;
-}
-
-export function SectionHeading({ eyebrow, title, script, className }: SectionHeadingProps) {
-  return (
-    <div className={cn("flex flex-col gap-3", className)}>
-      <span className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.25em] text-accent">
-        <span aria-hidden className="h-px w-8 bg-accent" />
-        {eyebrow}
-        {script ? (
-          <span aria-hidden className="font-baybayin text-sm tracking-normal text-muted">
-            {script.text}
-          </span>
-        ) : null}
-      </span>
-      <h2 className="text-balance text-4xl font-semibold tracking-tight text-fg sm:text-5xl">
-        {title}
-      </h2>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 2: Pass scripts from the three sections**
-
-In each file below, add this import directly after the `SectionHeading` import:
-
-```tsx
-import { baybayin } from "@/data/baybayin";
-```
-
-Then make these replacements:
-
-- `components/sections/projects-showcase.tsx`: `<SectionHeading eyebrow="Selected Work" title="Projects" />` → `<SectionHeading eyebrow="Selected Work" title="Projects" script={baybayin.projects} />`
-- `components/sections/bento-grid.tsx`: `<SectionHeading eyebrow="Toolkit" title="Stack & Discipline" />` → `<SectionHeading eyebrow="Toolkit" title="Stack & Discipline" script={baybayin.stack} />`
-- `components/sections/contact.tsx`: in the `<SectionHeading` props, add the line `script={baybayin.contact}` directly after `eyebrow="Contact"`.
-
-- [ ] **Step 3: Add the baybayin name to the preloader**
-
-In `components/ui/preloader.tsx`, add after the `motion/react` import block (after its closing `} from "motion/react";` line):
-
-```tsx
-
-import { baybayin } from "@/data/baybayin";
-```
-
-Then replace:
-
-```tsx
-              <div className="mt-10 flex items-baseline font-mono tabular-nums">
-```
-
-with:
-
-```tsx
-              <span className="animate-status-in mt-4 font-baybayin text-2xl text-accent/80 md:text-3xl">
-                {baybayin.name.text}
-              </span>
-
-              <div className="mt-8 flex items-baseline font-mono tabular-nums">
-```
-
-- [ ] **Step 4: Add the motto under the hero headline**
-
-In `components/sections/hero.tsx`, add this import directly above the `siteConfig` import:
-
-```tsx
-import { baybayin } from "@/data/baybayin";
-```
-
-Then replace:
-
-```tsx
-              <span className="block text-accent">Developer</span>
-            </h1>
-```
-
-with:
-
-```tsx
-              <span className="block text-accent">Developer</span>
-            </h1>
-            <p className="flex flex-col items-center gap-1 whitespace-nowrap sm:flex-row sm:items-baseline sm:gap-3 lg:justify-start">
-              <span aria-hidden className="font-baybayin text-lg text-muted">
-                {baybayin.motto.text}
-              </span>
-              <span className="font-mono text-[0.65rem] uppercase tracking-[0.3em] text-muted">
-                Diligence &amp; discipline
-              </span>
-            </p>
-```
-
-- [ ] **Step 5: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run dev
-```
-
-- [ ] The Projects, Stack & Discipline, and Contact eyebrows each end with a short line of baybayin in grey. It renders as baybayin letters, never as empty boxes (□).
-- [ ] With the preloader key cleared, the preloader shows three baybayin characters in lime between the "G" monogram and the counter.
-- [ ] Under the hero headline, a line of baybayin sits next to `DILIGENCE & DISCIPLINE`. At 375px the two stack vertically and neither wraps mid-line; from 640px up they sit side by side.
-- [ ] No horizontal scrollbar at 375px: `document.documentElement.scrollWidth === document.documentElement.clientWidth` is `true`.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add components/ui/section-heading.tsx components/sections/projects-showcase.tsx components/sections/bento-grid.tsx components/sections/contact.tsx components/ui/preloader.tsx components/sections/hero.tsx
-git commit -m "feat(identity): add baybayin accents to headings, preloader, and hero"
-```
-
----
-
-### Task 11.5: Drive the headgear reveal from a shared ink trail
-
-**Files:**
-- Create: `hooks/use-ink-trail.ts`
-- Create: `components/sections/ink-reveal.tsx`
-- Modify: `components/sections/headgear-reveal.tsx` (full replacement)
-- Modify: `components/sections/hero.tsx`
-
-**Interfaces consumed:** `useMediaQuery` from `@/hooks/use-media-query`; `useInView`, `useReducedMotion` from `motion/react`.
-**Interfaces produced:**
-- From `@/hooks/use-ink-trail`: `type RevealMode = "pointer" | "wander" | "static"`, `interface InkPoint { x; y; radius }`, `type InkLayer`, `type InkHome`, `interface InkTrail { mode; addLayer(layer): () => void; setHome(home | null): void }`, `MAX_DROPS`, `INK_POOL`, `useInkTrail(containerRef)`.
-- From `@/components/sections/ink-reveal`: `InkRevealSection` (accepts every `<section>` prop), `useInkReveal()`, `useSvgId(prefix)`, `InkMask` with props `{ id; x; y; width; height }`, `paintInkMask(svg, points)`, `useInkMaskLayer(svgRef)` (returns the `InkTrail`).
-
-After this task the headgear reveal looks as before when the cursor is over the face, but it now responds anywhere in the hero and leaves a trail that shrinks away. The watermark and background layers come in Task 11.6.
-
-- [ ] **Step 1: Create `hooks/use-ink-trail.ts`**
+- `InkPoint` gains `angle: number` (radians, direction of travel) and `stretch: number` (long axis ÷ short axis, `1` is a circle). Every `InkPoint` literal must now include both.
+- `INK_STRIKE_EVENT = "portfolio:strike"` from `@/hooks/use-ink-trail`. Dispatching `new Event(INK_STRIKE_EVENT)` on `window` plays one diagonal sweep across the hero (used by the palette in Task 13.3).
+- `InkMask` now renders `<ellipse data-ink-drop>` shapes and a torn-edge filter; its props are unchanged.
+
+- [ ] **Step 1: Replace `hooks/use-ink-trail.ts`**
 
 ```ts
 "use client";
@@ -905,7 +249,8 @@ import { useInView, useReducedMotion } from "motion/react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
 /**
- * - `pointer`: a mouse or trackpad drives the reveal.
+ * - `pointer`: a mouse or trackpad drives the reveal. Ink appears only while
+ *   the pointer moves.
  * - `wander`: touch screens; the reveal drifts over the face on its own.
  * - `static`: touch plus reduced motion; one fixed reveal, no animation.
  */
@@ -915,7 +260,12 @@ export type RevealMode = "pointer" | "wander" | "static";
 export interface InkPoint {
   x: number;
   y: number;
+  /** Radius across the drop's short axis before stretching, in px. */
   radius: number;
+  /** Direction of travel in radians; the drop is stretched along it. */
+  angle: number;
+  /** Long axis ÷ short axis. 1 is a circle. */
+  stretch: number;
 }
 
 /** Called once per animation frame with every live drop. */
@@ -935,21 +285,36 @@ export interface InkTrail {
   setHome: (home: InkHome | null) => void;
 }
 
-/** Most drops alive at once, not counting the head that sits under the cursor. */
+/** Window event that plays one diagonal strike across the hero. */
+export const INK_STRIKE_EVENT = "portfolio:strike";
+
+/** Most drops alive at once, not counting the `wander` head. */
 export const MAX_DROPS = 36;
 
-/** Circles every masked layer must render: the drops plus the head. */
+/** Shapes every masked layer must render: the drops plus the `wander` head. */
 export const INK_POOL = MAX_DROPS + 1;
 
 /** Milliseconds a drop takes to shrink from full size to nothing. */
 const DROP_LIFE = 900;
 
-/** Distance in px the head travels between two dropped drops. */
+/** Distance in px the pointer travels between two drops. */
 const DROP_SPACING = 16;
 
+/** Pointer speed in px/s at which drops reach full size and full stretch. */
+const FULL_SPEED = 1800;
+
+/** Size of a drop left by the slowest movement, as a fraction of full size. */
+const MIN_SIZE = 0.3;
+
+/** Stretch of a drop left at `FULL_SPEED` or faster. */
+const MAX_STRETCH = 2.6;
+
+/** Duration of the palette's "strike" sweep, in ms. */
+const STRIKE_DURATION = 650;
+
 /**
- * Drop radius in px. The gooey filter's threshold eats roughly the outer 40%
- * of each circle, so this is larger than the visible blob.
+ * Full drop radius in px. The gooey filter's threshold eats roughly the outer
+ * 40% of each drop, so this is larger than the visible blob.
  */
 function baseRadius() {
   return Math.min(150, window.innerWidth * 0.22);
@@ -959,12 +324,18 @@ function damp(current: number, target: number, lambda: number, dt: number) {
   return current + (target - current) * (1 - Math.exp(-lambda * dt));
 }
 
+function easeInOutCubic(t: number) {
+  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+}
+
 /**
  * The shared cursor trail behind the hero reveal. One `requestAnimationFrame`
- * loop, running only while `containerRef` is on screen, emits "ink drops" along
- * the pointer's path. Each drop shrinks away over `DROP_LIFE`, so fast movement
- * leaves a lingering trail. Registered layers receive every live drop each
- * frame and paint their own masks; nothing here triggers a React render.
+ * loop, running only while `containerRef` is on screen, drops "ink" along the
+ * pointer's path: nothing while the pointer is still, small round drops for
+ * slow movement, large stretched drops for fast movement. Each drop shrinks
+ * away over `DROP_LIFE`, so the reveal is gone within a second of stopping.
+ * Registered layers receive every live drop each frame and paint their own
+ * masks; nothing here triggers a React render.
  */
 export function useInkTrail(containerRef: RefObject<HTMLElement | null>): InkTrail {
   const inView = useInView(containerRef);
@@ -974,13 +345,31 @@ export function useInkTrail(containerRef: RefObject<HTMLElement | null>): InkTra
 
   const layersRef = useRef(new Set<InkLayer>());
   const homeRef = useRef<InkHome | null>(null);
+  // Time a strike was requested. Stored outside the loop, so a strike asked for
+  // while the hero is still scrolling into view plays once the loop starts.
+  const strikeRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    function onStrike() {
+      strikeRef.current = performance.now();
+    }
+    window.addEventListener(INK_STRIKE_EVENT, onStrike);
+    return () => window.removeEventListener(INK_STRIKE_EVENT, onStrike);
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container || !inView || mode === "static") return;
 
     const layers = layersRef.current;
-    const drops: { x: number; y: number; born: number }[] = [];
+    const drops: {
+      x: number;
+      y: number;
+      born: number;
+      size: number;
+      angle: number;
+      stretch: number;
+    }[] = [];
     const pointer = { x: 0, y: 0, seen: false };
     const head = { x: 0, y: 0, placed: false, strength: 0 };
     let lastDrop: { x: number; y: number } | null = null;
@@ -995,15 +384,54 @@ export function useInkTrail(containerRef: RefObject<HTMLElement | null>): InkTra
       pointer.seen = false;
     }
 
+    /** Drops ink every `DROP_SPACING` px from `lastDrop` to `(x, y)`. */
+    function dropAlong(x: number, y: number, speed: number, now: number, fullSize: boolean) {
+      if (!lastDrop) {
+        lastDrop = { x, y };
+        return;
+      }
+      const dx = x - lastDrop.x;
+      const dy = y - lastDrop.y;
+      const distance = Math.hypot(dx, dy);
+      const steps = Math.floor(distance / DROP_SPACING);
+      if (steps === 0) return;
+
+      const pace = Math.min(1, speed / FULL_SPEED);
+      const size = fullSize ? 1 : MIN_SIZE + (1 - MIN_SIZE) * pace;
+      const stretch = 1 + (MAX_STRETCH - 1) * pace;
+      const angle = Math.atan2(dy, dx);
+      for (let i = 1; i <= steps; i++) {
+        const f = (i * DROP_SPACING) / distance;
+        drops.push({ x: lastDrop.x + dx * f, y: lastDrop.y + dy * f, born: now, size, angle, stretch });
+      }
+      const f = (steps * DROP_SPACING) / distance;
+      lastDrop = { x: lastDrop.x + dx * f, y: lastDrop.y + dy * f };
+      if (drops.length > MAX_DROPS) drops.splice(0, drops.length - MAX_DROPS);
+    }
+
     let last = performance.now();
     const start = last;
     let frame = requestAnimationFrame(function tick(now) {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
 
-      // Where the head is heading, and whether it should be showing at all.
-      let target: { x: number; y: number } | null = null;
-      if (mode === "pointer") {
+      // A requested strike overrides the pointer for its duration: a fast
+      // diagonal cut from lower left to upper right across the hero.
+      const strikeAge = strikeRef.current === null ? Infinity : now - strikeRef.current;
+      const striking = strikeAge < STRIKE_DURATION;
+      if (!striking && strikeRef.current !== null && strikeAge !== Infinity) {
+        strikeRef.current = null;
+        lastDrop = null;
+      }
+
+      if (striking) {
+        const rect = container!.getBoundingClientRect();
+        const t = easeInOutCubic(strikeAge / STRIKE_DURATION);
+        const x = rect.left + rect.width * (0.08 + 0.84 * t);
+        const y = rect.top + rect.height * (0.78 - 0.56 * t);
+        dropAlong(x, y, FULL_SPEED, now, true);
+        head.placed = false;
+      } else if (mode === "pointer") {
         // Re-checked every frame: scrolling moves the hero under a still cursor.
         const rect = container!.getBoundingClientRect();
         const inside =
@@ -1012,57 +440,63 @@ export function useInkTrail(containerRef: RefObject<HTMLElement | null>): InkTra
           pointer.x <= rect.right &&
           pointer.y >= rect.top &&
           pointer.y <= rect.bottom;
-        if (inside) target = pointer;
+
+        if (inside) {
+          if (!head.placed) {
+            head.x = pointer.x;
+            head.y = pointer.y;
+            head.placed = true;
+            lastDrop = { x: head.x, y: head.y };
+          }
+          const previousX = head.x;
+          const previousY = head.y;
+          head.x = damp(head.x, pointer.x, 18, dt);
+          head.y = damp(head.y, pointer.y, 18, dt);
+          const speed = dt > 0 ? Math.hypot(head.x - previousX, head.y - previousY) / dt : 0;
+          dropAlong(head.x, head.y, speed, now, false);
+        } else {
+          head.placed = false;
+          lastDrop = null;
+        }
       } else {
         const home = homeRef.current?.();
-        if (home) {
-          const t = (now - start) / 1000;
-          target = {
-            x: home.x + Math.sin(t * 0.6) * home.span,
-            y: home.y + Math.sin(t * 0.9) * home.span * 0.85,
-          };
+        const target = home
+          ? {
+              x: home.x + Math.sin(((now - start) / 1000) * 0.6) * home.span,
+              y: home.y + Math.sin(((now - start) / 1000) * 0.9) * home.span * 0.85,
+            }
+          : null;
+        if (target && !head.placed) {
+          head.x = target.x;
+          head.y = target.y;
+          head.placed = true;
+        }
+        head.strength = damp(head.strength, target ? 1 : 0, 6, dt);
+        if (target) {
+          head.x = damp(head.x, target.x, 18, dt);
+          head.y = damp(head.y, target.y, 18, dt);
+          dropAlong(head.x, head.y, 0, now, true);
+        } else {
+          lastDrop = null;
         }
       }
 
-      if (target && !head.placed) {
-        head.x = target.x;
-        head.y = target.y;
-        head.placed = true;
-      }
-      head.strength = damp(head.strength, target ? 1 : 0, 6, dt);
-      if (target) {
-        head.x = damp(head.x, target.x, 18, dt);
-        head.y = damp(head.y, target.y, 18, dt);
-      }
-
-      // Drop ink at even spacing along the head's path since the last drop.
-      if (target) {
-        if (!lastDrop) lastDrop = { x: head.x, y: head.y };
-        const dx = head.x - lastDrop.x;
-        const dy = head.y - lastDrop.y;
-        const distance = Math.hypot(dx, dy);
-        const steps = Math.floor(distance / DROP_SPACING);
-        for (let i = 1; i <= steps; i++) {
-          const f = (i * DROP_SPACING) / distance;
-          drops.push({ x: lastDrop.x + dx * f, y: lastDrop.y + dy * f, born: now });
-        }
-        if (steps > 0) {
-          const f = (steps * DROP_SPACING) / distance;
-          lastDrop = { x: lastDrop.x + dx * f, y: lastDrop.y + dy * f };
-        }
-        if (drops.length > MAX_DROPS) drops.splice(0, drops.length - MAX_DROPS);
-      } else {
-        lastDrop = null;
-      }
       while (drops.length > 0 && now - drops[0].born > DROP_LIFE) drops.shift();
 
       const radius = baseRadius();
       const points: InkPoint[] = drops.map((drop) => {
         const age = (now - drop.born) / DROP_LIFE;
-        return { x: drop.x, y: drop.y, radius: radius * (1 - age * age) };
+        return {
+          x: drop.x,
+          y: drop.y,
+          radius: radius * drop.size * (1 - age * age),
+          angle: drop.angle,
+          stretch: drop.stretch,
+        };
       });
-      if (head.strength > 0.002) {
-        points.push({ x: head.x, y: head.y, radius: radius * head.strength });
+      // Touch has no pointer to follow, so the drifting head stays visible.
+      if (mode === "wander" && head.strength > 0.002) {
+        points.push({ x: head.x, y: head.y, radius: radius * head.strength, angle: 0, stretch: 1 });
       }
 
       // Skip painting while idle: nothing was showing and nothing is now.
@@ -1106,7 +540,7 @@ export function useInkTrail(containerRef: RefObject<HTMLElement | null>): InkTra
 }
 ```
 
-- [ ] **Step 2: Create `components/sections/ink-reveal.tsx`**
+- [ ] **Step 2: Replace `components/sections/ink-reveal.tsx`**
 
 ```tsx
 "use client";
@@ -1125,6 +559,16 @@ import { INK_POOL, useInkTrail, type InkPoint, type InkTrail } from "@/hooks/use
 
 /** Blur radius of the gooey filter, in screen px. */
 const INK_BLUR = 12;
+
+/**
+ * Torn edges. Noise with a long horizontal and short vertical wavelength slices
+ * the blurred drops into horizontal strips, and each strip is shifted sideways
+ * by up to half of `INK_TEAR` px before the edge is sharpened. Frequencies are
+ * per screen px.
+ */
+const INK_NOISE_X = 0.0025;
+const INK_NOISE_Y = 0.045;
+const INK_TEAR = 180;
 
 const InkTrailContext = createContext<InkTrail | null>(null);
 
@@ -1169,9 +613,10 @@ export interface InkMaskProps {
  * Filter and mask definitions for one masked layer. Place inside `<defs>`,
  * then set `mask="url(#<id>-mask)"` on whatever the trail should reveal.
  *
- * The gooey filter blurs the drops together, then sharpens the alpha back to a
- * crisp edge, so they merge into one liquid shape. Its region starts empty and
- * `paintInkMask` resizes it every frame to fit only the live drops.
+ * The filter blurs the drops together, tears the blurred shape into sideways
+ * strips with a noise displacement, then sharpens the alpha back to a crisp
+ * edge. Its region starts empty and `paintInkMask` resizes it every frame to
+ * fit only the live drops.
  */
 export function InkMask({ id, x, y, width, height }: InkMaskProps) {
   return (
@@ -1186,13 +631,36 @@ export function InkMask({ id, x, y, width, height }: InkMaskProps) {
         height="0"
         colorInterpolationFilters="sRGB"
       >
-        <feGaussianBlur data-ink-blur="" stdDeviation={INK_BLUR} />
-        <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" />
+        <feGaussianBlur in="SourceGraphic" data-ink-blur="" stdDeviation={INK_BLUR} result="blur" />
+        <feTurbulence
+          data-ink-noise=""
+          type="fractalNoise"
+          baseFrequency={`${INK_NOISE_X} ${INK_NOISE_Y}`}
+          numOctaves="2"
+          seed="7"
+          result="noise"
+        />
+        {/* Pin the green channel to 0.5 so the tear only moves strips sideways. */}
+        <feColorMatrix
+          in="noise"
+          values="1 0 0 0 0  0 0 0 0 0.5  0 0 1 0 0  0 0 0 0 1"
+          result="sideways"
+        />
+        <feDisplacementMap
+          in="blur"
+          in2="sideways"
+          data-ink-tear=""
+          scale={INK_TEAR}
+          xChannelSelector="R"
+          yChannelSelector="G"
+          result="torn"
+        />
+        <feColorMatrix in="torn" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" />
       </filter>
       <mask id={`${id}-mask`} maskUnits="userSpaceOnUse" x={x} y={y} width={width} height={height}>
         <g filter={`url(#${id}-goo)`}>
           {Array.from({ length: INK_POOL }, (_, i) => (
-            <circle key={i} data-ink-drop="" r="0" fill="#fff" />
+            <ellipse key={i} data-ink-drop="" rx="0" ry="0" fill="#fff" />
           ))}
         </g>
       </mask>
@@ -1202,16 +670,18 @@ export function InkMask({ id, x, y, width, height }: InkMaskProps) {
 
 /**
  * Converts the trail from viewport pixels into this SVG's user units and writes
- * it into the `InkMask` circles. `getScreenCTM` already includes every CSS
+ * it into the `InkMask` ellipses. `getScreenCTM` already includes every CSS
  * transform on the SVG's ancestors (parallax, entrance scale), so the reveal
  * stays aligned while those animate.
  */
 export function paintInkMask(svg: SVGSVGElement, points: readonly InkPoint[]) {
-  const circles = svg.querySelectorAll<SVGCircleElement>("[data-ink-drop]");
+  const shapes = svg.querySelectorAll<SVGEllipseElement>("[data-ink-drop]");
   const filter = svg.querySelector<SVGFilterElement>("[data-ink-filter]");
   const blur = svg.querySelector<SVGFEGaussianBlurElement>("[data-ink-blur]");
+  const noise = svg.querySelector<SVGFETurbulenceElement>("[data-ink-noise]");
+  const tear = svg.querySelector<SVGFEDisplacementMapElement>("[data-ink-tear]");
   const matrix = svg.getScreenCTM();
-  if (!filter || !blur || !matrix) return;
+  if (!filter || !blur || !noise || !tear || !matrix) return;
 
   const toLocal = matrix.inverse();
   const scale = Math.hypot(matrix.a, matrix.b) || 1;
@@ -1220,25 +690,36 @@ export function paintInkMask(svg: SVGSVGElement, points: readonly InkPoint[]) {
   let maxX = -Infinity;
   let maxY = -Infinity;
 
-  circles.forEach((circle, i) => {
+  shapes.forEach((shape, i) => {
     const point = points[i];
     if (!point) {
-      circle.setAttribute("r", "0");
+      shape.setAttribute("rx", "0");
+      shape.setAttribute("ry", "0");
       return;
     }
     const local = new DOMPoint(point.x, point.y).matrixTransform(toLocal);
     const radius = point.radius / scale;
-    circle.setAttribute("cx", local.x.toFixed(1));
-    circle.setAttribute("cy", local.y.toFixed(1));
-    circle.setAttribute("r", radius.toFixed(1));
-    minX = Math.min(minX, local.x - radius);
-    minY = Math.min(minY, local.y - radius);
-    maxX = Math.max(maxX, local.x + radius);
-    maxY = Math.max(maxY, local.y + radius);
+    // Stretch along the direction of travel, thin across it, keeping the area.
+    const long = radius * Math.sqrt(point.stretch);
+    const short = radius / Math.sqrt(point.stretch);
+    const cx = local.x.toFixed(1);
+    const cy = local.y.toFixed(1);
+    shape.setAttribute("cx", cx);
+    shape.setAttribute("cy", cy);
+    shape.setAttribute("rx", long.toFixed(1));
+    shape.setAttribute("ry", short.toFixed(1));
+    shape.setAttribute("transform", `rotate(${((point.angle * 180) / Math.PI).toFixed(1)} ${cx} ${cy})`);
+    minX = Math.min(minX, local.x - long);
+    minY = Math.min(minY, local.y - long);
+    maxX = Math.max(maxX, local.x + long);
+    maxY = Math.max(maxY, local.y + long);
   });
 
+  // Every filter length is in screen px; convert to this SVG's units.
   const std = INK_BLUR / scale;
   blur.setAttribute("stdDeviation", std.toFixed(2));
+  noise.setAttribute("baseFrequency", `${(INK_NOISE_X * scale).toFixed(5)} ${(INK_NOISE_Y * scale).toFixed(5)}`);
+  tear.setAttribute("scale", (INK_TEAR / scale).toFixed(1));
 
   if (points.length === 0) {
     // A zero-size filter region renders nothing, so the mask reveals nothing.
@@ -1246,7 +727,7 @@ export function paintInkMask(svg: SVGSVGElement, points: readonly InkPoint[]) {
     filter.setAttribute("height", "0");
     return;
   }
-  const margin = std * 3;
+  const margin = std * 3 + INK_TEAR / scale / 2;
   filter.setAttribute("x", (minX - margin).toFixed(1));
   filter.setAttribute("y", (minY - margin).toFixed(1));
   filter.setAttribute("width", (maxX - minX + margin * 2).toFixed(1));
@@ -1271,109 +752,23 @@ export function useInkMaskLayer(svgRef: RefObject<SVGSVGElement | null>) {
 }
 ```
 
-- [ ] **Step 3: Replace `components/sections/headgear-reveal.tsx`**
+- [ ] **Step 3: Add the new point fields to the static headgear reveal**
+
+In `components/sections/headgear-reveal.tsx`, replace:
 
 ```tsx
-"use client";
-
-import { useEffect, useRef } from "react";
-
-import {
-  InkMask,
-  paintInkMask,
-  useInkMaskLayer,
-  useSvgId,
-} from "@/components/sections/ink-reveal";
-
-/*
- * Every coordinate in this file is in hero-portrait.png pixels. The SVG uses
- * the portrait's own dimensions as its viewBox and sits exactly on top of the
- * portrait's 3:2 box, so these numbers stay aligned at every screen size.
- */
-const PORTRAIT = { width: 2048, height: 1365 } as const;
-
-/**
- * Where the headgear photo is drawn. Calibrated so the cage covers the face
- * and the shell sits just above the hood. Re-tune only if either image changes.
- */
-const HEADGEAR = { x: 419, y: 90, width: 1166, height: 1260 } as const;
-
-/** Middle of the face: where the reveal rests on touch devices. */
-const FACE = { x: 1029, y: 520 } as const;
-
-/** Radius of the fixed reveal in `static` mode, in portrait pixels. */
-const STATIC_RADIUS = 300;
-
-/** How far the `wander` reveal drifts from the face, in portrait pixels. */
-const WANDER_SPAN = 140;
-
-/**
- * Reveals a photo of an Arnis headgear over the face in the hero portrait,
- * inside the shared ink trail: the face is fully covered wherever the trail
- * is. A faint line-art ghost of the headgear is always visible as a hint. Must
- * be placed inside the same 3:2 box as the portrait, inside an
- * `InkRevealSection`.
- */
-export function HeadgearReveal() {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const id = useSvgId("headgear");
-  const trail = useInkMaskLayer(svgRef);
-
-  useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
-
-    // Touch + reduced motion: one fixed reveal over the face, no animation.
-    // Painted in viewport pixels so it goes through the same code path.
-    if (trail.mode === "static") {
-      const matrix = svg.getScreenCTM();
-      if (!matrix) return;
-      const face = new DOMPoint(FACE.x, FACE.y).matrixTransform(matrix);
       paintInkMask(svg, [{ x: face.x, y: face.y, radius: STATIC_RADIUS * matrix.a }]);
-      return;
-    }
-
-    // Tell the trail where the face is, for the `wander` drift on touch.
-    trail.setHome(() => {
-      const matrix = svg.getScreenCTM();
-      if (!matrix) return null;
-      const face = new DOMPoint(FACE.x, FACE.y).matrixTransform(matrix);
-      return { x: face.x, y: face.y, span: WANDER_SPAN * matrix.a };
-    });
-    return () => trail.setHome(null);
-  }, [trail]);
-
-  return (
-    <svg
-      ref={svgRef}
-      viewBox={`0 0 ${PORTRAIT.width} ${PORTRAIT.height}`}
-      preserveAspectRatio="xMidYMid meet"
-      aria-hidden
-      className="pointer-events-none absolute inset-0 size-full"
-    >
-      <defs>
-        <InkMask id={id} x={HEADGEAR.x} y={HEADGEAR.y} width={HEADGEAR.width} height={HEADGEAR.height} />
-      </defs>
-
-      {/* Always-visible hint, like the wireframe dome on landonorris.com. */}
-      <image href="/images/hero/headgear-ghost.webp" {...HEADGEAR} opacity="0.22" />
-      <image href="/images/hero/headgear.webp" {...HEADGEAR} mask={`url(#${id}-mask)`} />
-    </svg>
-  );
-}
 ```
 
-- [ ] **Step 4: Make the hero section own the trail**
-
-In `components/sections/hero.tsx`, add this import directly after the `HeroVisual` import:
+with:
 
 ```tsx
-import { InkRevealSection } from "@/components/sections/ink-reveal";
+      paintInkMask(svg, [
+        { x: face.x, y: face.y, radius: STATIC_RADIUS * matrix.a, angle: 0, stretch: 1 },
+      ]);
 ```
 
-Replace the opening tag `<section` with `<InkRevealSection` (keep its `id` and `className` props exactly), and the closing tag `</section>` with `</InkRevealSection>`.
-
-- [ ] **Step 5: Verify**
+- [ ] **Step 4: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1382,281 +777,104 @@ npm run build
 npm run dev
 ```
 
-With the preloader skipped, at 1440px:
+With the preloader skipped, at desktop width:
 
-- [ ] Moving the mouse over the face reveals the headgear inside a liquid blob, as before.
-- [ ] Moving the mouse quickly across the face leaves a trail of blob that shrinks away within about a second of the mouse stopping or leaving.
-- [ ] With the mouse still over the face, the blob stays.
-- [ ] Moving the mouse far from the face shows nothing yet (the other layers come in Task 11.6). Moving it out of the hero, or out of the window, makes the blob shrink away.
-- [ ] Scrolling the hero half out of view while the mouse is still does not leave a frozen blob.
-- [ ] In DevTools device mode (a phone with touch), the blob drifts slowly over the face on its own.
+- [ ] Before touching the mouse, nothing is revealed.
+- [ ] Moving the mouse slowly across the hero leaves small reveal patches; flicking it fast leaves long streaks pointing the way the mouse went.
+- [ ] Reveal edges are ragged, broken into sideways strips, not smooth round blobs.
+- [ ] Stop the mouse over the face and keep it there: within about a second the headgear, lime watermark, weave, and slashes are all gone.
+- [ ] Start moving again: the reveal comes back straight away, with no jump from the previous position.
+- [ ] In the console, run `window.dispatchEvent(new Event("portfolio:strike"))` with the hero on screen: a fast reveal sweeps from lower left to upper right and fades.
+- [ ] In DevTools device mode (a phone with touch), a blob still drifts over the face on its own, with torn edges.
 - [ ] Console is clean.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add hooks/use-ink-trail.ts components/sections/ink-reveal.tsx components/sections/headgear-reveal.tsx components/sections/hero.tsx
-git commit -m "refactor(hero): drive the headgear reveal from a shared ink trail"
+git add hooks/use-ink-trail.ts components/sections/ink-reveal.tsx components/sections/headgear-reveal.tsx
+git commit -m "feat(hero): reveal only while moving, with torn stretched edges"
 ```
 
 ---
 
-### Task 11.6: Reveal the weave, strike slashes, and neon watermark across the hero
+### Task 13.2: Tuck the hero copy and telemetry into the bottom corners
 
 **Files:**
-- Create: `components/sections/hero-watermark.tsx`
-- Create: `components/sections/hero-backdrop-reveal.tsx`
-- Modify: `components/sections/hero-visual.tsx` (full replacement)
+- Create: `components/sections/hero-status.tsx`
+- Delete: `components/sections/telemetry-bar.tsx`
 - Modify: `components/sections/hero.tsx` (full replacement)
 
-**Interfaces consumed:** `InkMask`, `useInkMaskLayer`, `useSvgId`, `InkRevealSection` (Task 11.5); `getStrike` (Task 11.1); `baybayin` (Task 11.1); `HeadgearReveal`.
-**Interfaces produced:** `HeroWatermark` with props `{ text: string }`; `HeroBackdropReveal` (no props, must be inside `InkRevealSection`).
+**Interfaces consumed:** `siteConfig.availability`, `siteConfig.timeZone`, `siteConfig.timeZoneLabel`; `useLocalTime`; `InkRevealSection`, `HeroBackdropReveal`, `HeroVisual`; `baybayin`.
+**Interfaces produced:** `AvailabilityStatus` and `LocalClock` from `@/components/sections/hero-status`, each with props `{ className?: string }`. `TelemetryBar` no longer exists.
 
-The HTML watermark (`<motion.p>` with `text-outline`) is replaced by an SVG that draws the outline and the neon fill from identical `<text>` elements. Its box, font size, and centre point match the old paragraph exactly, so the word does not move.
+`components/sections/hero-visual.tsx` is **not** changed: the portrait keeps its current size.
 
-- [ ] **Step 1: Create `components/sections/hero-watermark.tsx`**
-
-```tsx
-"use client";
-
-import { useRef } from "react";
-
-import { InkMask, useInkMaskLayer, useSvgId } from "@/components/sections/ink-reveal";
-
-const TEXT_CLASS = "font-display text-[clamp(4.5rem,21vw,22rem)]";
-
-/**
- * The giant hero word, drawn twice from identical SVG text: a hollow outline
- * that is always visible, and a solid neon copy that shows only inside the ink
- * trail. Same text, same attributes, same SVG, so the two can never drift apart.
- */
-export function HeroWatermark({ text }: { text: string }) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const id = useSvgId("hero-watermark");
-  useInkMaskLayer(svgRef);
-
-  const word = text.toUpperCase();
-
-  return (
-    <svg
-      ref={svgRef}
-      aria-hidden
-      // One line of the word at 0.8 line height. The word overflows both sides
-      // on purpose; the hero section clips it.
-      className="h-[clamp(3.6rem,16.8vw,17.6rem)] w-full overflow-visible select-none"
-    >
-      <defs>
-        <InkMask id={id} x="-100%" y="-100%" width="300%" height="300%" />
-      </defs>
-      <text
-        x="50%"
-        y="50%"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fill="none"
-        strokeWidth="1"
-        className={`${TEXT_CLASS} stroke-line-strong`}
-      >
-        {word}
-      </text>
-      <text
-        x="50%"
-        y="50%"
-        textAnchor="middle"
-        dominantBaseline="central"
-        mask={`url(#${id}-mask)`}
-        className={`${TEXT_CLASS} fill-accent`}
-      >
-        {word}
-      </text>
-    </svg>
-  );
-}
-```
-
-- [ ] **Step 2: Create `components/sections/hero-backdrop-reveal.tsx`**
+- [ ] **Step 1: Create `components/sections/hero-status.tsx`**
 
 ```tsx
 "use client";
 
-import { useRef } from "react";
+import { siteConfig } from "@/data/site";
+import { useLocalTime } from "@/hooks/use-local-time";
+import { cn } from "@/lib/utils";
 
-import { InkMask, useInkMaskLayer, useSvgId } from "@/components/sections/ink-reveal";
-import { getStrike } from "@/data/strike-angles";
+const TELEMETRY_TEXT = "font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-muted";
 
-/**
- * Bold strike slashes crossing the whole hero. Each is anchored at a point
- * given in percent of the hero and runs far past both edges, so only
- * fragments ever show through the ink trail.
- */
-const SLASHES = [
-  { strike: 1, x: "22%", y: "38%", width: 18 },
-  { strike: 2, x: "80%", y: "30%", width: 12 },
-  { strike: 12, x: "63%", y: "50%", width: 8 },
-  { strike: 3, x: "50%", y: "82%", width: 14 },
-] as const;
-
-/** Half the length of each slash, in px: longer than any screen diagonal. */
-const SLASH_REACH = 3000;
-
-/**
- * The hidden layer behind the hero portrait: a woven diamond texture and neon
- * strike slashes, visible only inside the cursor's ink trail.
- */
-export function HeroBackdropReveal() {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const id = useSvgId("hero-backdrop");
-  useInkMaskLayer(svgRef);
+/** Pulsing availability dot and label, from `siteConfig.availability`. */
+export function AvailabilityStatus({ className }: { className?: string }) {
+  const { availability } = siteConfig;
 
   return (
-    <svg ref={svgRef} aria-hidden className="pointer-events-none absolute inset-0 size-full">
-      <defs>
-        {/* Same diamond lattice as the `bg-weave` utility. */}
-        <pattern id={`${id}-weave`} width="32" height="32" patternUnits="userSpaceOnUse">
-          <g fill="none" stroke="#fff" strokeWidth="1">
-            <path d="M16 0 32 16 16 32 0 16Z" />
-            <path d="M16 9 23 16 16 23 9 16Z" />
-          </g>
-          <path fill="#fff" d="M16 14.5 17.5 16 16 17.5 14.5 16Z" />
-        </pattern>
-        <InkMask id={id} x="0" y="0" width="100%" height="100%" />
-      </defs>
+    <p className={cn("flex items-center gap-3", TELEMETRY_TEXT, className)}>
+      <span aria-hidden className="relative flex size-2">
+        {availability.isAvailable ? (
+          <span className="absolute inset-0 animate-pulse-dot rounded-full bg-accent" />
+        ) : null}
+        <span
+          className={cn(
+            "relative size-2 rounded-full",
+            availability.isAvailable
+              ? "bg-accent shadow-[0_0_10px_var(--color-accent)]"
+              : "bg-muted",
+          )}
+        />
+      </span>
+      <span className={availability.isAvailable ? "text-fg" : undefined}>
+        {availability.label}
+      </span>
+    </p>
+  );
+}
 
-      <g mask={`url(#${id}-mask)`}>
-        <rect width="100%" height="100%" fill={`url(#${id}-weave)`} opacity="0.08" />
-        {SLASHES.map((slash) => (
-          // A nested <svg> moves the origin to a percentage position, which a
-          // `transform` cannot do; the line then rotates around that origin.
-          <svg key={slash.strike} x={slash.x} y={slash.y} overflow="visible">
-            <line
-              x1={-SLASH_REACH}
-              y1="0"
-              x2={SLASH_REACH}
-              y2="0"
-              transform={`rotate(${getStrike(slash.strike).degrees ?? 0})`}
-              strokeWidth={slash.width}
-              className="stroke-accent"
-            />
-          </svg>
-        ))}
-      </g>
-    </svg>
+/** Ticking wall-clock time in the owner's time zone. */
+export function LocalClock({ className }: { className?: string }) {
+  const time = useLocalTime(siteConfig.timeZone);
+
+  return (
+    <p className={cn("flex items-center gap-2 tabular-nums", TELEMETRY_TEXT, className)}>
+      <span>Local</span>
+      <span className="text-fg">{time ?? "--:--:--"}</span>
+      <span className="text-accent">{siteConfig.timeZoneLabel}</span>
+    </p>
   );
 }
 ```
 
-- [ ] **Step 3: Replace `components/sections/hero-visual.tsx`**
+- [ ] **Step 2: Delete the old telemetry bar**
 
-```tsx
-"use client";
-
-import { useRef } from "react";
-import Image from "next/image";
-import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
-
-import { HeadgearReveal } from "@/components/sections/headgear-reveal";
-import { HeroWatermark } from "@/components/sections/hero-watermark";
-
-const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
-
-export function HeroVisual({ watermark }: { watermark: string }) {
-  const stageRef = useRef<HTMLDivElement>(null);
-  const reduceMotion = useReducedMotion();
-
-  // 0 while the stage top is at the viewport top, 1 once the stage has
-  // scrolled fully out above it.
-  const { scrollYProgress } = useScroll({
-    target: stageRef,
-    offset: ["start start", "end start"],
-  });
-
-  // The portrait sinks slowly and the watermark rises against it. The
-  // watermark is nested inside the portrait layer, so its offset stacks on top
-  // of the portrait's and the two visibly separate in depth while scrolling.
-  const portraitY = useTransform(scrollYProgress, [0, 1], ["0%", "12%"]);
-  const watermarkY = useTransform(scrollYProgress, [0, 1], ["0%", "-80%"]);
-
-  return (
-    <div ref={stageRef} className="relative flex flex-1 items-end justify-center">
-      {/* Layer 0: accent bloom behind everything. */}
-      <div
-        aria-hidden
-        className="glow absolute bottom-[15%] left-1/2 size-[28rem] -translate-x-1/2"
-      />
-
-      {/*
-       * Width is the smallest of: 140% of the container, 64rem, and whatever
-       * width keeps the 3:2 portrait's height inside the viewport minus the
-       * hero's top padding, telemetry bar, and bottom padding (~12rem).
-       *
-       * 140% is safe because the subject only occupies the middle ~55% of the
-       * PNG; the transparent margins bleed off-screen and the section's
-       * `overflow-hidden` clips them. On phones this is what makes the portrait
-       * large enough to read.
-       */}
-      <motion.div
-        style={{ y: reduceMotion ? 0 : portraitY }}
-        className="relative w-[min(140%,64rem,calc((100svh_-_12rem)*1.5))] shrink-0"
-      >
-        {/*
-         * Layer 1: the watermark, outline plus its ink-revealed neon fill. It
-         * comes first in the DOM, so the portrait after it paints on top.
-         */}
-        <motion.div
-          aria-hidden
-          style={{ y: reduceMotion ? 0 : watermarkY }}
-          className="pointer-events-none absolute inset-x-0 top-[16%]"
-        >
-          <motion.div
-            initial={reduceMotion ? false : { opacity: 0, y: 48 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.1, ease: EASE_OUT_EXPO }}
-          >
-            <HeroWatermark text={watermark} />
-          </motion.div>
-        </motion.div>
-
-        {/* Layer 2: the transparent cutout portrait, in front of the watermark. */}
-        <motion.div
-          initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.9, delay: 0.15, ease: EASE_OUT_EXPO }}
-          className="relative aspect-[3/2] w-full"
-        >
-          <Image
-            src="/images/hero/hero-portrait.png"
-            alt=""
-            fill
-            preload
-            sizes="(min-width: 1024px) 1024px, 100vw"
-            className="object-contain object-bottom -translate-y-8"
-          />
-          {/* Layer 3: headgear photo over the face, revealed by the ink trail. */}
-          <HeadgearReveal />
-        </motion.div>
-      </motion.div>
-
-      {/* The portrait is cut off at the waist; fade that edge into the page. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-bg via-bg/70 to-transparent"
-      />
-    </div>
-  );
-}
+```bash
+git rm components/sections/telemetry-bar.tsx
 ```
 
-- [ ] **Step 4: Replace `components/sections/hero.tsx`**
-
-The only change from the result of Task 11.5 is `<HeroBackdropReveal />` as the first child of the section, plus its import.
+- [ ] **Step 3: Replace `components/sections/hero.tsx`**
 
 ```tsx
 import { CodeXml, Download } from "lucide-react";
 
 import { HeroBackdropReveal } from "@/components/sections/hero-backdrop-reveal";
+import { AvailabilityStatus, LocalClock } from "@/components/sections/hero-status";
 import { HeroVisual } from "@/components/sections/hero-visual";
 import { InkRevealSection } from "@/components/sections/ink-reveal";
-import { TelemetryBar } from "@/components/sections/telemetry-bar";
 import { Button } from "@/components/ui/button";
 import { baybayin } from "@/data/baybayin";
 import { siteConfig } from "@/data/site";
@@ -1670,369 +888,55 @@ export function Hero() {
       {/* Hidden layer behind everything: weave and strike slashes. */}
       <HeroBackdropReveal />
 
-      <div className="relative z-20 mx-auto w-full max-w-7xl">
-        <TelemetryBar />
-      </div>
-
       <div className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col">
         <HeroVisual watermark={siteConfig.watermark} />
 
         {/*
-         * Below lg the copy flows under the portrait. From lg up it is pinned
-         * across the bottom of the stage, overlapping the faded portrait edge.
+         * Below lg the copy flows under the portrait. From lg up it is tucked
+         * into the bottom corners so the portrait and the reveal own the screen:
+         * identity bottom-left, clock and actions bottom-right.
          */}
         <div className="relative z-20 -mt-16 flex flex-col items-center gap-6 text-center lg:absolute lg:inset-x-0 lg:bottom-0 lg:mt-0 lg:flex-row lg:items-end lg:justify-between lg:text-left">
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col items-center gap-3 lg:items-start">
+            <AvailabilityStatus />
             <span className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
               {siteConfig.name}
             </span>
-            <h1 className="font-display text-6xl uppercase leading-[0.85] text-fg sm:text-7xl lg:text-8xl">
+            <h1 className="font-display text-5xl uppercase leading-[0.85] text-fg sm:text-6xl">
               Full Stack
               <span className="block text-accent">Developer</span>
             </h1>
             <p className="flex flex-col items-center gap-1 whitespace-nowrap sm:flex-row sm:items-baseline sm:gap-3 lg:justify-start">
-              <span aria-hidden className="font-baybayin text-lg text-muted">
+              <span aria-hidden className="font-baybayin text-base text-muted">
                 {baybayin.motto.text}
               </span>
-              <span className="font-mono text-[0.65rem] uppercase tracking-[0.3em] text-muted">
+              <span className="font-mono text-[0.625rem] uppercase tracking-[0.3em] text-muted">
                 Diligence &amp; discipline
               </span>
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button asChild size="lg">
-              <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer">
-                <CodeXml aria-hidden />
-                GitHub
-              </a>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <a href={siteConfig.resumePath} download>
-                <Download aria-hidden />
-                Resume
-              </a>
-            </Button>
+          <div className="flex flex-col items-center gap-4 lg:items-end">
+            <LocalClock />
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button asChild>
+                <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer">
+                  <CodeXml aria-hidden />
+                  GitHub
+                </a>
+              </Button>
+              <Button asChild variant="outline">
+                <a href={siteConfig.resumePath} download>
+                  <Download aria-hidden />
+                  Resume
+                </a>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
     </InkRevealSection>
   );
-}
-```
-
-- [ ] **Step 5: Verify**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run dev
-```
-
-With the preloader skipped, at 1440px:
-
-- [ ] Before touching the mouse, the hero looks the same as before this task: outline `DEVELOPER` in the same place, portrait, faint headgear ghost.
-- [ ] Sweeping the mouse over the `DEVELOPER` letters fills them solid lime inside the trail, with the fill exactly on top of the outline — no double edges.
-- [ ] Sweeping the mouse over empty areas left and right of the portrait shows a faint diamond texture inside the trail, and in places a fragment of a thick lime diagonal, vertical, or horizontal bar.
-- [ ] The portrait, headline, and buttons always paint over the revealed layer, and the buttons stay clickable while the trail passes over them.
-- [ ] Scroll down slowly with the mouse still over the watermark: the word and portrait separate in depth (parallax), and the lime fill stays locked to the outline.
-- [ ] At 375px: no horizontal scrollbar, the watermark is in the same place as before this task.
-- [ ] Console is clean.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add components/sections/hero-watermark.tsx components/sections/hero-backdrop-reveal.tsx components/sections/hero-visual.tsx components/sections/hero.tsx
-git commit -m "feat(hero): reveal weave, strike slashes, and neon watermark across the hero"
-```
-
----
-
-### Task 11.7: Phase 11 verification pass
-
-**Files:** none created; fix whatever this task surfaces.
-
-- [ ] **Step 1: Clean production build**
-
-```bash
-npx tsc --noEmit
-npm run lint
-npm run build
-npm run start
-```
-
-Expected: all pass with no warnings about missing `alt`, `sizes`, or fonts.
-
-- [ ] **Step 2: Walk the production build at http://localhost:3000**
-
-- [ ] **First visit** (storage key cleared): the preloader shows the baybayin name, counts to 100, and wipes away. Then the hero reveal works as in Task 11.6.
-- [ ] **Performance:** DevTools → Performance, CPU throttling **4× slowdown**, record 5 seconds of continuous fast mouse circles over the whole hero. The frames track shows no long frames (red bars) caused by the reveal, and each frame's Scripting + Rendering + Painting stays under about 8 ms. If frames drop, report it in the handoff rather than changing constants.
-- [ ] **Idle cost:** with the mouse outside the hero for 3 seconds, the recording shows no repeated "Paint" events coming from the hero.
-- [ ] **Off screen:** scroll the hero fully out of view and record 3 seconds; there are no repeating "Animation frame fired" events.
-- [ ] **Touch** (DevTools device mode, e.g. Pixel 7, reload): the blob drifts over the face on its own; the rest of the hero reveal (weave, slashes, lime watermark) appears only where the drifting trail passes.
-- [ ] **Touch + reduced motion** (device mode plus Rendering → prefers-reduced-motion: reduce, reload): one still headgear reveal over the face, nothing moves, nothing else is revealed.
-- [ ] **Mouse + reduced motion:** the cursor still drives the reveal; the preloader fades instead of wiping; strike line dividers are already drawn.
-- [ ] **Widths:** at 375px, 768px, and 1440px, `document.documentElement.scrollWidth === document.documentElement.clientWidth` is `true`, and every baybayin string renders as letters, not boxes.
-- [ ] **Buttons:** every primary and outline button on the page shows the strike wipe on hover and a visible focus ring on keyboard focus.
-- [ ] **Console:** clean on first visit and on reload.
-
-- [ ] **Step 3: Commit any fixes**
-
-```bash
-git add -A -- app components data hooks lib types
-git commit -m "fix: address phase 11 verification findings"
-```
-
-If nothing needed fixing, skip the commit.
-
----
-
-# Phase 12 — Project case studies
-
-Every project with a written case study gets its own statically generated page at `/projects/<slug>`, reachable from its card. The page has a woven title band with a telemetry spec row, numbered sections separated by strike lines, and a "Next lap" link to the next case study. Unknown slugs and projects without a case study return a styled 404.
-
-Every block below was type-checked, linted, and built with Turbopack in the same scratch copy, on top of Phase 11, then tested against the production build: `/projects/ledger` and `/projects/driftline` are generated; Ledger shows all six sections (a temporary gallery image was used to check the gallery and then removed) and Driftline only Problem and Approach; `/projects/fleetdesk`, `/projects/nope`, and `/nope/x` return HTTP 404 with the DNF page; header links on a case study navigate to `/#stack` and land on the section; card links navigate to the case study at the top of the page; going back does not replay the preloader. Copy the blocks exactly.
-
-### Task 12.1: Add the case study data model
-
-**Files:**
-- Modify: `types/index.ts`
-- Modify: `data/projects.ts` (full replacement)
-- Modify: `lib/queries.ts` (full replacement)
-
-**Interfaces produced:**
-- Types `CaseStudy`, `CaseStudyStep`, `CaseStudyResult`, `CaseStudyImage` from `@/types`, and the new required field `Project.caseStudy: CaseStudy | null`.
-- From `@/lib/queries`: `getProjectBySlug(slug: string): Promise<Project | null>`, `getCaseStudyProjects(): Promise<Project[]>` (only projects with a case study, in `order`), `getNextCaseStudy(slug: string): Promise<Project | null>` (wraps to the first; `null` when there are fewer than two case studies or the slug has none).
-
-The two example write-ups in `data/projects.ts` are placeholders for the owner, like the rest of that file. Ledger fills every section; Driftline fills only some, to prove that empty sections are hidden. FleetDesk has none.
-
-- [ ] **Step 1: Add the case study types to `types/index.ts`**
-
-Replace the end of the `Project` interface and the comment that follows it:
-
-```ts
-  /** Ascending sort key for the scroll stack. Lower renders first. */
-  order: number;
-}
-
-/** Groups the bento tech-stack cards. */
-```
-
-with:
-
-```ts
-  /** Ascending sort key for the scroll stack. Lower renders first. */
-  order: number;
-  /**
-   * Long-form write-up rendered at `/projects/[slug]`. `null` keeps the
-   * project card-only. Becomes a single `case_study` jsonb column in Supabase.
-   */
-  caseStudy: CaseStudy | null;
-}
-
-/** A titled paragraph: one approach step or one technical highlight. */
-export interface CaseStudyStep {
-  title: string;
-  body: string;
-}
-
-/** A headline number on the case study, e.g. { value: "3×", label: "Faster reports" }. */
-export interface CaseStudyResult {
-  value: string;
-  label: string;
-}
-
-/** A screenshot in the case study gallery. `src` is a path under /public. */
-export interface CaseStudyImage {
-  src: string;
-  alt: string;
-  caption: string;
-  width: number;
-  height: number;
-}
-
-/**
- * The case study body. Empty strings and empty arrays hide their section, so a
- * write-up can ship before every part is ready.
- */
-export interface CaseStudy {
-  /** e.g. "Full-stack developer". */
-  role: string;
-  /** e.g. "Jan–Apr 2026". */
-  timeframe: string;
-  /** e.g. "Solo" or "Team of 4". */
-  team: string;
-  problem: string;
-  approach: CaseStudyStep[];
-  highlights: CaseStudyStep[];
-  results: CaseStudyResult[];
-  gallery: CaseStudyImage[];
-  lessons: string;
-}
-
-/** Groups the bento tech-stack cards. */
-```
-
-- [ ] **Step 2: Replace `data/projects.ts`**
-
-```ts
-import type { Project } from "@/types";
-
-export const projects: Project[] = [
-  {
-    id: "project-ledger",
-    slug: "ledger",
-    title: "Ledger",
-    category: "full-stack",
-    summary: "Real-time expense tracking with shared household budgets.",
-    description:
-      "A full-stack budgeting application with authenticated multi-user households, live balance updates, and monthly reporting. Built around server components with optimistic client updates on the transaction list.",
-    techStack: ["Next.js", "TypeScript", "PostgreSQL", "Tailwind CSS"],
-    liveUrl: "https://example.com",
-    repoUrl: "https://github.com/your-handle/ledger",
-    imageUrl: null,
-    imageAlt: null,
-    year: 2025,
-    order: 1,
-    // Example write-up showing every section. Replace with the real story.
-    caseStudy: {
-      role: "Full-stack developer",
-      timeframe: "Jan–Apr 2025",
-      team: "Solo",
-      problem:
-        "Shared households tracked money in group chats and spreadsheets. Nobody knew the real balance until the end of the month, and settling up started arguments.",
-      approach: [
-        {
-          title: "Model the money first",
-          body: "Designed the schema around households, members, and transactions before writing any UI, so every balance is derived rather than stored.",
-        },
-        {
-          title: "Server components by default",
-          body: "Lists and reports render on the server. Only the transaction form and live balance are client components.",
-        },
-        {
-          title: "Optimistic updates",
-          body: "New transactions appear instantly and reconcile with the server response, so the app feels local even on slow connections.",
-        },
-      ],
-      highlights: [
-        {
-          title: "Race-free balances",
-          body: "Two members adding expenses at the same moment used to double-count. Moving the balance calculation into a single SQL view removed the race entirely.",
-        },
-        {
-          title: "Monthly reports in one query",
-          body: "Replaced a loop of per-category queries with one grouped query, cutting report load time from seconds to milliseconds.",
-        },
-      ],
-      results: [
-        { value: "12", label: "Households using it" },
-        { value: "<200ms", label: "Report load time" },
-        { value: "0", label: "Spreadsheets left" },
-      ],
-      gallery: [],
-      lessons:
-        "Derive, don't store. Every bug that reached users came from a value that was saved when it could have been calculated.",
-    },
-  },
-  {
-    id: "project-driftline",
-    slug: "driftline",
-    title: "Driftline",
-    category: "game-dev",
-    summary: "A top-down arcade racer with procedurally generated circuits.",
-    description:
-      "A 2D racing game featuring a custom drift physics model, lap ghosting, and a seeded track generator. Includes a replay system that records and plays back input frames rather than transforms.",
-    techStack: ["Unity", "C#", "Shader Graph"],
-    liveUrl: null,
-    repoUrl: "https://github.com/your-handle/driftline",
-    imageUrl: null,
-    imageAlt: null,
-    year: 2024,
-    order: 2,
-    // Example of a partial write-up: sections with no content are hidden.
-    caseStudy: {
-      role: "Solo developer",
-      timeframe: "Jun–Aug 2024",
-      team: "Solo",
-      problem:
-        "Arcade racers either feel floaty or punish every mistake. The goal was drifting that is easy to start and hard to master.",
-      approach: [
-        {
-          title: "Physics before graphics",
-          body: "Built the drift model with grey boxes and tuned it for two weeks before drawing a single sprite.",
-        },
-      ],
-      highlights: [],
-      results: [],
-      gallery: [],
-      lessons: "",
-    },
-  },
-  {
-    id: "project-fleetdesk",
-    slug: "fleetdesk",
-    title: "FleetDesk",
-    category: "internship",
-    summary: "Internal dispatch dashboard built during on-the-job training.",
-    description:
-      "An operations dashboard for coordinating vehicle dispatch and driver assignments, delivered during an OJT placement. Replaced a spreadsheet workflow used daily by the dispatch team.",
-    techStack: ["React", "Node.js", "Express", "MySQL"],
-    liveUrl: null,
-    repoUrl: null,
-    imageUrl: null,
-    imageAlt: null,
-    year: 2024,
-    order: 3,
-    caseStudy: null,
-  },
-];
-```
-
-- [ ] **Step 3: Replace `lib/queries.ts`**
-
-```ts
-import { projects } from "@/data/projects";
-import { skillCategories } from "@/data/skills";
-import type { Project, SkillCategory } from "@/types";
-
-/**
- * Data access seam.
- *
- * These are async today even though the local arrays are synchronous. That is
- * deliberate: when these are replaced with Supabase queries, the signatures do
- * not change and no consuming component needs editing.
- */
-
-export async function getProjects(): Promise<Project[]> {
-  return [...projects].sort((a, b) => a.order - b.order);
-}
-
-export async function getSkillCategories(): Promise<SkillCategory[]> {
-  return [...skillCategories].sort((a, b) => a.order - b.order);
-}
-
-/** The project with this slug, or `null` when none matches. */
-export async function getProjectBySlug(slug: string): Promise<Project | null> {
-  return projects.find((project) => project.slug === slug) ?? null;
-}
-
-/** Projects that have a case study, in display order. */
-export async function getCaseStudyProjects(): Promise<Project[]> {
-  const all = await getProjects();
-  return all.filter((project) => project.caseStudy !== null);
-}
-
-/**
- * The case study after `slug` in display order, wrapping to the first. `null`
- * when `slug` is the only case study.
- */
-export async function getNextCaseStudy(slug: string): Promise<Project | null> {
-  const studies = await getCaseStudyProjects();
-  const index = studies.findIndex((project) => project.slug === slug);
-  if (index === -1 || studies.length < 2) return null;
-  return studies[(index + 1) % studies.length];
 }
 ```
 
@@ -2042,626 +946,574 @@ export async function getNextCaseStudy(slug: string): Promise<Project | null> {
 npx tsc --noEmit
 npm run lint
 npm run build
+npm run dev
 ```
 
-Expected: all pass. Nothing visible changes yet.
+- [ ] At desktop width there is no telemetry strip under the header; the portrait and watermark are the same size and position as before this task.
+- [ ] Bottom-left, top to bottom: the pulsing `AVAILABLE FOR WORK` dot, the name, a smaller `FULL STACK / DEVELOPER` headline, the baybayin motto.
+- [ ] Bottom-right: `LOCAL hh:mm:ss GMT+8` ticking, with GitHub and Resume buttons (normal size, not large) below it.
+- [ ] At 375px everything stacks centred under the portrait in the same order, with no horizontal scrollbar.
+- [ ] `grep -r "TelemetryBar" app components` returns nothing.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add types/index.ts data/projects.ts lib/queries.ts
-git commit -m "feat(projects): add case study data model"
+git add components/sections/hero-status.tsx components/sections/hero.tsx
+git commit -m "feat(hero): tuck copy and telemetry into the bottom corners"
 ```
+
+(The deletion from Step 2 is already staged and is included in this commit.)
 
 ---
 
-### Task 12.2: Build the case study page and the 404 page
+### Task 13.3: Add the command palette
 
 **Files:**
-- Modify: `app/globals.css` (one insertion)
-- Create: `components/case-study/case-study-header.tsx`
-- Create: `components/case-study/case-study-body.tsx`
-- Create: `components/case-study/next-lap.tsx`
-- Create: `app/projects/[slug]/page.tsx`
-- Create: `app/not-found.tsx`
+- Modify: `package.json`, `package-lock.json` (via npm)
+- Create: `hooks/use-command-palette.ts`
+- Create: `components/command-palette/command-palette.tsx`
+- Modify: `components/ui/preloader.tsx`
+- Modify: `app/layout.tsx`
 
-**Interfaces consumed:** `getProjectBySlug`, `getCaseStudyProjects`, `getNextCaseStudy`, `CaseStudy`, `Project` (Task 12.1); `StrikeLine` (Task 11.2); `baybayin` (Task 11.1); `bg-weave`; `Button`; `SiteHeader`; `SiteFooter`; `PROJECT_CATEGORY_LABELS`.
-**Interfaces produced:** `animate-strike-wipe` class; `CaseStudyHeader` `{ project; caseStudy }`; `CaseStudyBody` `{ caseStudy }`; `NextLap` `{ next: Project | null }`; route `/projects/[slug]`.
+**Interfaces consumed:** `INK_STRIKE_EVENT` (Task 13.1); `navLinks`; `siteConfig`; `getCaseStudyProjects`; `PROJECT_CATEGORY_LABELS`; `useLenis`.
+**Interfaces produced:**
+- From `@/hooks/use-command-palette`: `setCommandPaletteOpen(next: boolean)`, `useCommandPaletteOpen(): boolean`, `useModifierKeyLabel(): string` (`"⌘"` on Apple devices, `"Ctrl"` elsewhere and on the server).
+- From `@/components/command-palette/command-palette`: `CommandPalette` with props `{ projects: PaletteProject[] }` and `interface PaletteProject { slug; title; category; techStack }`.
+- `STORAGE_KEY` is now exported from `@/components/ui/preloader`.
 
-Read `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/dynamic-routes.md`, `.../02-route-segment-config/dynamicParams.md`, and `.../03-file-conventions/not-found.md` before starting.
+Read `node_modules/cmdk/README.md` after installing.
 
-- [ ] **Step 1: Add the arrival wipe animation to `app/globals.css`**
+- [ ] **Step 1: Install the dependencies**
 
-In the `@theme` block, insert this directly above `  @keyframes status-in {`:
-
-```css
-  /*
-   * Case study arrival: a skewed panel with a neon leading edge slides off to
-   * the right, uncovering the page. CSS-only, so it also runs without JS.
-   */
-  --animate-strike-wipe: strike-wipe 0.9s cubic-bezier(0.76, 0, 0.24, 1) 0.05s both;
-
-  @keyframes strike-wipe {
-    from {
-      transform: skewX(-12deg) translateX(0);
-    }
-    to {
-      transform: skewX(-12deg) translateX(110%);
-    }
-  }
-
+```bash
+npm install cmdk@^1.1.1 @radix-ui/react-dialog@^1.1.23
 ```
 
-- [ ] **Step 2: Create `components/case-study/case-study-header.tsx`**
+Expected: `package.json` lists `"cmdk": "^1.1.1"` and `"@radix-ui/react-dialog": "^1.1.23"` under `dependencies`.
 
-```tsx
-import Link from "next/link";
-import { ArrowLeft, ArrowUpRight, CodeXml } from "lucide-react";
+- [ ] **Step 2: Create `hooks/use-command-palette.ts`**
 
-import { Button } from "@/components/ui/button";
-import { baybayin } from "@/data/baybayin";
-import { PROJECT_CATEGORY_LABELS, type CaseStudy, type Project } from "@/types";
+```ts
+import { useSyncExternalStore } from "react";
 
-function projectStatus(project: Project) {
-  if (project.liveUrl) return "Live";
-  if (project.repoUrl) return "Source only";
-  return "Private";
-}
-
-export interface CaseStudyHeaderProps {
-  project: Project;
-  caseStudy: CaseStudy;
-}
-
-/** Title band of a case study: woven texture, Anton title, telemetry spec row. */
-export function CaseStudyHeader({ project, caseStudy }: CaseStudyHeaderProps) {
-  const specs = [
-    { label: "Role", value: caseStudy.role },
-    { label: "Year", value: `${project.year} · ${caseStudy.timeframe}` },
-    { label: "Team", value: caseStudy.team },
-    { label: "Stack", value: project.techStack.join(" / ") },
-    { label: "Status", value: projectStatus(project) },
-  ];
-
-  return (
-    <header className="relative overflow-hidden px-6 pt-32 pb-16 sm:pt-40">
-      <div aria-hidden className="bg-weave pointer-events-none absolute inset-0 opacity-[0.05]" />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-bg to-transparent"
-      />
-
-      <div className="relative mx-auto flex max-w-6xl flex-col gap-10">
-        <Link
-          href="/#projects"
-          className="flex w-fit items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-muted transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
-          Back to projects
-        </Link>
-
-        <div className="flex flex-col gap-5">
-          <span className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.25em] text-accent">
-            <span aria-hidden className="h-px w-8 bg-accent" />
-            {PROJECT_CATEGORY_LABELS[project.category]}
-            <span aria-hidden className="font-baybayin text-sm tracking-normal text-muted">
-              {baybayin.projects.text}
-            </span>
-          </span>
-          <h1 className="font-display text-6xl uppercase leading-[0.85] text-fg sm:text-8xl lg:text-9xl">
-            {project.title}
-          </h1>
-          <p className="max-w-2xl text-lg text-fg/80 sm:text-xl">{project.summary}</p>
-        </div>
-
-        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line sm:grid-cols-3 lg:grid-cols-5">
-          {specs.map((spec) => (
-            <div key={spec.label} className="flex flex-col gap-2 bg-surface p-4 last:col-span-2 sm:last:col-span-1">
-              <dt className="font-mono text-[0.65rem] uppercase tracking-[0.25em] text-muted">
-                {spec.label}
-              </dt>
-              <dd className="text-sm text-fg">{spec.value}</dd>
-            </div>
-          ))}
-        </dl>
-
-        {project.liveUrl || project.repoUrl ? (
-          <div className="flex flex-wrap gap-3">
-            {project.liveUrl ? (
-              <Button asChild>
-                <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
-                  Live Demo
-                  <ArrowUpRight aria-hidden />
-                </a>
-              </Button>
-            ) : null}
-            {project.repoUrl ? (
-              <Button asChild variant="outline">
-                <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
-                  <CodeXml aria-hidden />
-                  Repository
-                </a>
-              </Button>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-    </header>
-  );
-}
-```
-
-- [ ] **Step 3: Create `components/case-study/case-study-body.tsx`**
-
-```tsx
-import type { ReactNode } from "react";
-import Image from "next/image";
-
-import { StrikeLine } from "@/components/ui/strike-line";
-import type { CaseStudy } from "@/types";
-
-/** Strike angles used for the dividers, in order. All have on-screen lines. */
-const DIVIDER_STRIKES = [1, 2, 12, 3, 4, 8];
-
-interface Block {
-  id: string;
-  title: string;
-  content: ReactNode;
-}
-
-function buildBlocks(caseStudy: CaseStudy): Block[] {
-  const blocks: (Block | null)[] = [
-    caseStudy.problem
-      ? {
-          id: "problem",
-          title: "Problem",
-          content: (
-            <p className="max-w-3xl text-xl leading-relaxed text-fg/90 sm:text-2xl">
-              {caseStudy.problem}
-            </p>
-          ),
-        }
-      : null,
-    caseStudy.approach.length > 0
-      ? {
-          id: "approach",
-          title: "Approach",
-          content: (
-            <ol className="grid gap-4 md:grid-cols-2">
-              {caseStudy.approach.map((step, index) => (
-                <li
-                  key={step.title}
-                  className="flex flex-col gap-3 rounded-card border border-line bg-surface p-6"
-                >
-                  <span className="font-mono text-xs tracking-[0.25em] text-accent">
-                    SECTOR {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <h3 className="text-xl font-semibold tracking-tight text-fg">{step.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted">{step.body}</p>
-                </li>
-              ))}
-            </ol>
-          ),
-        }
-      : null,
-    caseStudy.highlights.length > 0
-      ? {
-          id: "highlights",
-          title: "Highlights",
-          content: (
-            <ul className="flex flex-col gap-8">
-              {caseStudy.highlights.map((highlight) => (
-                <li key={highlight.title} className="flex max-w-3xl flex-col gap-2 border-l-2 border-accent pl-6">
-                  <h3 className="text-xl font-semibold tracking-tight text-fg">{highlight.title}</h3>
-                  <p className="leading-relaxed text-muted">{highlight.body}</p>
-                </li>
-              ))}
-            </ul>
-          ),
-        }
-      : null,
-    caseStudy.results.length > 0
-      ? {
-          id: "results",
-          title: "Results",
-          content: (
-            <dl className="grid gap-8 sm:grid-cols-3">
-              {caseStudy.results.map((result) => (
-                <div key={result.label} className="flex flex-col gap-2">
-                  <dt className="font-mono text-xs uppercase tracking-[0.25em] text-muted">
-                    {result.label}
-                  </dt>
-                  <dd className="font-display text-6xl leading-none text-accent sm:text-7xl">
-                    {result.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          ),
-        }
-      : null,
-    caseStudy.gallery.length > 0
-      ? {
-          id: "gallery",
-          title: "Gallery",
-          content: (
-            <div className="grid gap-6 md:grid-cols-2">
-              {caseStudy.gallery.map((image) => (
-                <figure key={image.src} className="flex flex-col gap-3">
-                  <Image
-                    src={image.src}
-                    alt={image.alt}
-                    width={image.width}
-                    height={image.height}
-                    sizes="(min-width: 768px) 50vw, 100vw"
-                    className="w-full rounded-card border border-line"
-                  />
-                  <figcaption className="font-mono text-xs text-muted">{image.caption}</figcaption>
-                </figure>
-              ))}
-            </div>
-          ),
-        }
-      : null,
-    caseStudy.lessons
-      ? {
-          id: "lessons",
-          title: "Lessons",
-          content: (
-            <p className="max-w-3xl text-xl leading-relaxed text-fg/90 sm:text-2xl">
-              {caseStudy.lessons}
-            </p>
-          ),
-        }
-      : null,
-  ];
-  return blocks.filter((block): block is Block => block !== null);
-}
-
-/**
- * The numbered case study sections. Sections with no content are left out and
- * the remaining ones are numbered consecutively.
+/*
+ * Open state of the command palette, shared by the palette itself and every
+ * button that opens it, without a React context provider. A tiny external
+ * store: the palette renders once in the root layout, triggers can live
+ * anywhere.
  */
-export function CaseStudyBody({ caseStudy }: { caseStudy: CaseStudy }) {
-  const blocks = buildBlocks(caseStudy);
+let open = false;
+const listeners = new Set<() => void>();
 
-  return (
-    <div className="flex flex-col gap-16 pb-24">
-      {blocks.map((block, index) => (
-        <section key={block.id} aria-labelledby={`case-${block.id}`} className="flex flex-col gap-16">
-          <StrikeLine angle={DIVIDER_STRIKES[index % DIVIDER_STRIKES.length]} />
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6">
-            <h2
-              id={`case-${block.id}`}
-              className="flex items-baseline gap-4 font-display text-4xl uppercase text-fg sm:text-5xl"
-            >
-              <span className="font-mono text-sm tracking-[0.25em] text-accent">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              {block.title}
-            </h2>
-            {block.content}
-          </div>
-        </section>
-      ))}
-    </div>
-  );
-}
-```
-
-- [ ] **Step 4: Create `components/case-study/next-lap.tsx`**
-
-```tsx
-import Link from "next/link";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-
-import { PROJECT_CATEGORY_LABELS, type Project } from "@/types";
-
-/** End of a case study: the next case study, and a way back to the list. */
-export function NextLap({ next }: { next: Project | null }) {
-  return (
-    <nav aria-label="Case studies" className="px-6 pb-24">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6">
-        {next ? (
-          <Link
-            href={`/projects/${next.slug}`}
-            className="group relative flex flex-col gap-4 overflow-hidden rounded-card border border-line bg-surface p-8 transition-[border-color,box-shadow] duration-300 hover:border-accent/50 hover:shadow-[0_0_60px_-24px_var(--color-accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:p-12"
-          >
-            <span className="font-mono text-xs tracking-[0.25em] text-accent">NEXT LAP</span>
-            <span className="flex items-center justify-between gap-6">
-              <span className="font-display text-5xl uppercase leading-none text-fg sm:text-7xl">
-                {next.title}
-              </span>
-              <ArrowRight
-                aria-hidden
-                className="size-10 shrink-0 text-accent transition-transform duration-300 group-hover:translate-x-2"
-              />
-            </span>
-            <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
-              {PROJECT_CATEGORY_LABELS[next.category]} · {next.year}
-            </span>
-          </Link>
-        ) : null}
-
-        <Link
-          href="/#projects"
-          className="flex w-fit items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-muted transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
-          Back to projects
-        </Link>
-      </div>
-    </nav>
-  );
-}
-```
-
-- [ ] **Step 5: Create `app/projects/[slug]/page.tsx`**
-
-```tsx
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-
-import { CaseStudyBody } from "@/components/case-study/case-study-body";
-import { CaseStudyHeader } from "@/components/case-study/case-study-header";
-import { NextLap } from "@/components/case-study/next-lap";
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
-import { siteConfig } from "@/data/site";
-import { getCaseStudyProjects, getNextCaseStudy, getProjectBySlug } from "@/lib/queries";
-
-// Only projects with a case study get a page; any other slug is a 404.
-export const dynamicParams = false;
-
-export async function generateStaticParams() {
-  const projects = await getCaseStudyProjects();
-  return projects.map((project) => ({ slug: project.slug }));
-}
-
-export async function generateMetadata({
-  params,
-}: PageProps<"/projects/[slug]">): Promise<Metadata> {
-  const { slug } = await params;
-  const project = await getProjectBySlug(slug);
-  if (!project) return {};
-
-  const title = `${project.title} — ${siteConfig.name}`;
-  return {
-    title,
-    description: project.summary,
-    openGraph: { title, description: project.summary, type: "article" },
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
   };
 }
 
-export default async function CaseStudyPage({ params }: PageProps<"/projects/[slug]">) {
-  const { slug } = await params;
-  const project = await getProjectBySlug(slug);
-  if (!project?.caseStudy) notFound();
+export function setCommandPaletteOpen(next: boolean) {
+  if (open === next) return;
+  open = next;
+  listeners.forEach((listener) => listener());
+}
 
-  const next = await getNextCaseStudy(project.slug);
+/** Whether the palette is open. Always `false` on the server. */
+export function useCommandPaletteOpen(): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    () => open,
+    () => false,
+  );
+}
 
-  return (
-    <>
-      {/* Diagonal neon wipe that uncovers the page on arrival. CSS only. */}
-      <div
-        aria-hidden
-        className="animate-strike-wipe pointer-events-none fixed inset-y-0 -left-1/4 z-90 w-[150%] border-l-2 border-accent bg-bg"
-      />
-      <SiteHeader />
-      <main>
-        <CaseStudyHeader project={project} caseStudy={project.caseStudy} />
-        <CaseStudyBody caseStudy={project.caseStudy} />
-        <NextLap next={next} />
-      </main>
-      <SiteFooter />
-    </>
+function subscribeNever() {
+  return () => {};
+}
+
+/**
+ * The label for the palette shortcut's modifier key: "⌘" on Apple platforms,
+ * "Ctrl" elsewhere. "Ctrl" on the server and during hydration.
+ */
+export function useModifierKeyLabel(): string {
+  return useSyncExternalStore(
+    subscribeNever,
+    () => (/Mac|iPhone|iPad/.test(navigator.userAgent) ? "⌘" : "Ctrl"),
+    () => "Ctrl",
   );
 }
 ```
 
-- [ ] **Step 6: Create `app/not-found.tsx`**
+- [ ] **Step 3: Export the preloader's storage key**
+
+In `components/ui/preloader.tsx`, replace:
 
 ```tsx
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-
-export default function NotFound() {
-  return (
-    <main className="relative flex min-h-svh flex-col items-center justify-center gap-8 overflow-hidden px-6 text-center">
-      <div aria-hidden className="bg-weave pointer-events-none absolute inset-0 opacity-[0.04]" />
-
-      <span className="relative font-mono text-xs uppercase tracking-[0.3em] text-accent">
-        404 <span className="text-line-strong">{"//"}</span> Did not finish
-      </span>
-      <h1 className="relative font-display text-[clamp(6rem,30vw,18rem)] uppercase leading-[0.8] text-outline-accent">
-        DNF
-      </h1>
-      <p className="relative max-w-md text-muted">
-        This page left the track. The link may be old, or the project may no longer be listed.
-      </p>
-      <Button asChild className="relative">
-        <Link href="/">
-          <ArrowLeft aria-hidden />
-          Back to the start
-        </Link>
-      </Button>
-    </main>
-  );
-}
+const STORAGE_KEY = "portfolio_preloaded";
 ```
 
-- [ ] **Step 7: Verify**
+with:
 
-```bash
-npx next typegen
-npx tsc --noEmit
-npm run lint
-npm run build
+```tsx
+export const STORAGE_KEY = "portfolio_preloaded";
 ```
 
-Expected: the build's route list shows `/projects/[slug]` with `● /projects/ledger` and `● /projects/driftline`, and nothing for `fleetdesk`.
-
-```bash
-npm run start
-```
-
-- [ ] http://localhost:3000/projects/ledger: a diagonal dark panel with a lime edge slides off to the right on arrival. The page shows "Back to projects", the `FULL-STACK` eyebrow with baybayin, a huge `LEDGER` title, the summary, a five-cell spec row (Role, Year, Team, Stack, Status `Live`), and Live Demo / Repository buttons.
-- [ ] Below it: `01 Problem`, `02 Approach` (three `SECTOR` cards), `03 Highlights`, `04 Results` (three big lime numbers), `05 Lessons`, each preceded by a strike line divider. There is no Gallery section. At the bottom, a `NEXT LAP` card for Driftline and a "Back to projects" link.
-- [ ] The browser tab title is `Ledger — Your Name`.
-- [ ] http://localhost:3000/projects/driftline shows only `01 Problem` and `02 Approach`, Status `Source only`, and a `NEXT LAP` card for Ledger.
-- [ ] http://localhost:3000/projects/fleetdesk and http://localhost:3000/projects/anything show the `DNF` page with "Back to the start". In DevTools → Network, the document status is 404.
-- [ ] At 375px on the Ledger page: no horizontal scrollbar; the spec row is two columns with Status spanning the full last row.
-- [ ] With reduced motion emulated and a reload, there is no visible wipe.
-
-- [ ] **Step 8: Commit**
-
-```bash
-git add app/globals.css components/case-study app/projects app/not-found.tsx
-git commit -m "feat(case-study): add case study pages and 404"
-```
-
----
-
-### Task 12.3: Link project cards and the header to case studies
-
-**Files:**
-- Modify: `components/sections/project-card.tsx` (full replacement)
-- Modify: `components/layout/site-header.tsx` (full replacement)
-
-**Interfaces consumed:** `Project.caseStudy` (Task 12.1); route `/projects/[slug]` (Task 12.2); `Link` from `next/link`; `usePathname` from `next/navigation`.
-**Interfaces produced:** none new.
-
-On a project card with a case study, the title becomes a link and "Read case study" becomes the primary button; Live Demo drops to an outline button so only one primary button shows. Cards without a case study are unchanged. On any page other than `/`, the header's section links go to `/#<section>` and the initials go to `/`; on the home page they keep smooth-scrolling.
-
-- [ ] **Step 1: Replace `components/sections/project-card.tsx`**
+- [ ] **Step 4: Create `components/command-palette/command-palette.tsx`**
 
 ```tsx
 "use client";
 
-import Link from "next/link";
-import { ArrowRight, ArrowUpRight, CodeXml } from "lucide-react";
+import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import * as Dialog from "@radix-ui/react-dialog";
+import { Command } from "cmdk";
+import { useLenis } from "lenis/react";
 import {
-  motion,
-  useReducedMotion,
-  useTransform,
-  type MotionValue,
-} from "motion/react";
+  ArrowUp,
+  Check,
+  Clipboard,
+  CodeXml,
+  CornerDownLeft,
+  Download,
+  FileText,
+  Hash,
+  RotateCcw,
+  Search,
+  Zap,
+} from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { usePointerTilt } from "@/hooks/use-pointer-tilt";
-import { PROJECT_CATEGORY_LABELS, type Project } from "@/types";
+import { STORAGE_KEY as PRELOADER_STORAGE_KEY } from "@/components/ui/preloader";
+import { navLinks } from "@/data/navigation";
+import { siteConfig } from "@/data/site";
+import { setCommandPaletteOpen, useCommandPaletteOpen } from "@/hooks/use-command-palette";
+import { INK_STRIKE_EVENT } from "@/hooks/use-ink-trail";
 
-export interface ProjectCardProps {
-  project: Project;
-  index: number;
-  total: number;
-  /** Scroll progress of the whole stack, 0 at the top and 1 at the bottom. */
-  progress: MotionValue<number>;
+/** The slice of a project the palette needs. Built on the server in the root layout. */
+export interface PaletteProject {
+  slug: string;
+  title: string;
+  /** Human-readable category, e.g. "Full-Stack". */
+  category: string;
+  techStack: string[];
 }
 
-export function ProjectCard({ project, index, total, progress }: ProjectCardProps) {
-  const reduceMotion = useReducedMotion() ?? false;
+/** Characters typed before the hidden commands start matching. */
+const SECRET_MIN_QUERY = 2;
 
-  // Each card shrinks slightly once the next card begins covering it, so the
-  // stack reads as a physical deck rather than a flat overlay.
-  const targetScale = 1 - (total - index) * 0.04;
-  const scale = useTransform(progress, [index / total, 1], [1, targetScale]);
+interface PaletteItemProps {
+  value: string;
+  keywords?: string[];
+  icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  hint?: string;
+  onSelect: () => void;
+  children: ReactNode;
+}
 
-  const { handlers, tiltStyle, spotlight } = usePointerTilt({ disabled: reduceMotion });
-
+function PaletteItem({ value, keywords, icon: Icon, hint, onSelect, children }: PaletteItemProps) {
   return (
-    <div className="sticky top-0 flex h-screen items-center justify-center px-6">
-      {/*
-       * Scroll layer: stack scale and offset. It is also the pointer
-       * measurement box, which is why it must never rotate.
-       */}
-      <motion.div
-        {...handlers}
-        style={{
-          scale: reduceMotion ? 1 : scale,
-          top: `${index * 1.5}rem`,
-        }}
-        className="relative w-full max-w-4xl"
-      >
-        {/* Tilt layer. */}
-        <motion.article
-          style={tiltStyle}
-          className="group relative overflow-hidden rounded-card border border-line bg-surface p-8 transition-[border-color,box-shadow] duration-300 hover:border-accent/50 hover:shadow-[0_0_60px_-24px_var(--color-accent)] sm:p-12"
-        >
-          <motion.div
-            aria-hidden
-            style={{ background: spotlight }}
-            className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-          />
-
-          <div className="relative flex flex-col gap-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <Badge variant="accent">{PROJECT_CATEGORY_LABELS[project.category]}</Badge>
-              <span className="font-mono text-xs text-muted">{project.year}</span>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <h3 className="text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
-                {project.caseStudy ? (
-                  <Link
-                    href={`/projects/${project.slug}`}
-                    className="transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
-                  >
-                    {project.title}
-                  </Link>
-                ) : (
-                  project.title
-                )}
-              </h3>
-              <p className="text-lg text-fg/80">{project.summary}</p>
-              <p className="max-w-2xl text-sm leading-relaxed text-muted">
-                {project.description}
-              </p>
-            </div>
-
-            <ul className="flex flex-wrap gap-2">
-              {project.techStack.map((tech) => (
-                <li key={tech}>
-                  <Badge>{tech}</Badge>
-                </li>
-              ))}
-            </ul>
-
-            <div className="flex flex-wrap gap-3">
-              {project.caseStudy ? (
-                <Button asChild size="sm">
-                  <Link href={`/projects/${project.slug}`}>
-                    Read case study
-                    <ArrowRight aria-hidden />
-                  </Link>
-                </Button>
-              ) : null}
-              {project.liveUrl ? (
-                <Button asChild size="sm" variant={project.caseStudy ? "outline" : "primary"}>
-                  <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
-                    Live Demo
-                    <ArrowUpRight aria-hidden />
-                  </a>
-                </Button>
-              ) : null}
-              {project.repoUrl ? (
-                <Button asChild variant="outline" size="sm">
-                  <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
-                    <CodeXml aria-hidden />
-                    Repository
-                  </a>
-                </Button>
-              ) : null}
-            </div>
-          </div>
-        </motion.article>
-      </motion.div>
-    </div>
+    <Command.Item
+      value={value}
+      keywords={keywords}
+      onSelect={onSelect}
+      className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-fg/80 transition-colors data-[selected=true]:bg-accent/10 data-[selected=true]:text-accent"
+    >
+      <Icon aria-hidden className="size-4 shrink-0" />
+      <span className="flex-1 truncate">{children}</span>
+      {hint ? (
+        <span className="font-mono text-[0.625rem] uppercase tracking-[0.2em] text-muted">
+          {hint}
+        </span>
+      ) : null}
+    </Command.Item>
   );
 }
+
+/**
+ * Site-wide command palette, opened with Ctrl+K / ⌘K or any button that calls
+ * `setCommandPaletteOpen(true)`. Jumps to sections, opens case studies (search
+ * by name or tech), runs quick actions, and hides two easter eggs that only
+ * match once something is typed.
+ */
+export function CommandPalette({ projects }: { projects: PaletteProject[] }) {
+  const open = useCommandPaletteOpen();
+  const [search, setSearch] = useState("");
+  const [copied, setCopied] = useState(false);
+  const router = useRouter();
+  const onHome = usePathname() === "/";
+  const lenis = useLenis();
+  // An action picked in the palette runs only after the palette has closed and
+  // Lenis has restarted; restarting Lenis cancels any scroll already in flight.
+  const pendingAction = useRef<(() => void) | null>(null);
+
+  // Ctrl+K / ⌘K toggles the palette from anywhere, except during the preloader.
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key.toLowerCase() !== "k" || !(event.metaKey || event.ctrlKey)) return;
+      if (document.documentElement.hasAttribute("data-preloader-active")) return;
+      event.preventDefault();
+      setCommandPaletteOpen(!open);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  // Lenis would keep scrolling the page under the dialog, so it is stopped while
+  // the palette is open. The cleanup restarts it before the closed-state effect
+  // runs the pending action.
+  useEffect(() => {
+    if (!open) {
+      const action = pendingAction.current;
+      pendingAction.current = null;
+      action?.();
+      return;
+    }
+    lenis?.stop();
+    return () => lenis?.start();
+  }, [lenis, open]);
+
+  function onOpenChange(next: boolean) {
+    setCommandPaletteOpen(next);
+    if (!next) {
+      setSearch("");
+      setCopied(false);
+    }
+  }
+
+  /** Closes the palette, then runs `action` once it has closed. */
+  function run(action: () => void) {
+    pendingAction.current = action;
+    onOpenChange(false);
+  }
+
+  function scrollToTarget(target: string | number, onComplete?: () => void) {
+    if (lenis) {
+      lenis.scrollTo(target, { offset: typeof target === "string" ? -96 : 0, onComplete });
+      return;
+    }
+    if (typeof target === "string") document.querySelector(target)?.scrollIntoView();
+    else window.scrollTo(0, target);
+    onComplete?.();
+  }
+
+  function goToSection(href: string) {
+    if (onHome) scrollToTarget(href);
+    else router.push(`/${href}`);
+  }
+
+  function downloadResume() {
+    const link = document.createElement("a");
+    link.href = siteConfig.resumePath;
+    link.download = "";
+    link.click();
+  }
+
+  async function copyEmail() {
+    try {
+      await navigator.clipboard.writeText(siteConfig.email);
+      setCopied(true);
+      window.setTimeout(() => onOpenChange(false), 900);
+    } catch {
+      // Clipboard blocked (e.g. insecure context): fall back to the mail app.
+      run(() => window.location.assign(`mailto:${siteConfig.email}`));
+    }
+  }
+
+  function replayIntro() {
+    try {
+      sessionStorage.removeItem(PRELOADER_STORAGE_KEY);
+    } catch {
+      // Storage blocked: the preloader cannot run either way.
+    }
+    // A full page load, not router.push: the preloader's gate script only runs
+    // while the HTML is being parsed.
+    window.location.assign(window.location.origin);
+  }
+
+  function strike() {
+    scrollToTarget(0, () => window.dispatchEvent(new Event(INK_STRIKE_EVENT)));
+  }
+
+  const showSecrets = search.trim().length >= SECRET_MIN_QUERY;
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-95 bg-bg/70 backdrop-blur-sm" />
+        <Dialog.Content
+          aria-describedby={undefined}
+          className="fixed top-[12vh] left-1/2 z-96 w-[min(40rem,calc(100%-2rem))] -translate-x-1/2 overflow-hidden rounded-card border border-line bg-surface shadow-[0_0_80px_-30px_var(--color-accent)] focus:outline-none"
+        >
+          <Dialog.Title className="sr-only">Command palette</Dialog.Title>
+
+          <Command label="Command palette" loop className="flex flex-col">
+            <div className="flex items-center gap-3 border-b border-line px-4">
+              <Search aria-hidden className="size-4 shrink-0 text-muted" />
+              <Command.Input
+                value={search}
+                onValueChange={setSearch}
+                placeholder="Jump to a section, search projects, run a command…"
+                className="h-14 flex-1 bg-transparent text-sm text-fg placeholder:text-muted focus:outline-none"
+              />
+              <kbd className="rounded-md border border-line px-1.5 py-0.5 font-mono text-[0.625rem] text-muted">
+                ESC
+              </kbd>
+            </div>
+
+            <Command.List
+              data-lenis-prevent
+              className="max-h-[min(24rem,60vh)] overflow-y-auto overscroll-contain p-2 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-2 [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[0.625rem] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.25em] [&_[cmdk-group-heading]]:text-muted"
+            >
+              <Command.Empty className="px-3 py-10 text-center font-mono text-xs uppercase tracking-[0.2em] text-muted">
+                No match <span className="text-line-strong">{"//"}</span> try another word
+              </Command.Empty>
+
+              <Command.Group heading="Navigate">
+                <PaletteItem
+                  value="Top"
+                  keywords={["home", "hero", "start"]}
+                  icon={ArrowUp}
+                  onSelect={() => run(() => (onHome ? scrollToTarget(0) : router.push("/")))}
+                >
+                  Top
+                </PaletteItem>
+                {navLinks.map((link) => (
+                  <PaletteItem
+                    key={link.href}
+                    value={link.label}
+                    icon={Hash}
+                    onSelect={() => run(() => goToSection(link.href))}
+                  >
+                    {link.label}
+                  </PaletteItem>
+                ))}
+              </Command.Group>
+
+              {projects.length > 0 ? (
+                <Command.Group heading="Case studies">
+                  {projects.map((project) => (
+                    <PaletteItem
+                      key={project.slug}
+                      value={`Case study ${project.title}`}
+                      keywords={[project.category, ...project.techStack]}
+                      icon={FileText}
+                      hint={project.category}
+                      onSelect={() => run(() => router.push(`/projects/${project.slug}`))}
+                    >
+                      {project.title}
+                    </PaletteItem>
+                  ))}
+                </Command.Group>
+              ) : null}
+
+              <Command.Group heading="Actions">
+                <PaletteItem
+                  value="Download résumé"
+                  keywords={["resume", "cv", "pdf"]}
+                  icon={Download}
+                  onSelect={() => run(downloadResume)}
+                >
+                  Download résumé
+                </PaletteItem>
+                <PaletteItem
+                  value="Copy email"
+                  keywords={["mail", "contact", siteConfig.email]}
+                  icon={copied ? Check : Clipboard}
+                  hint={copied ? "Copied" : siteConfig.email}
+                  onSelect={copyEmail}
+                >
+                  {copied ? "Email copied" : "Copy email"}
+                </PaletteItem>
+                <PaletteItem
+                  value="Open GitHub"
+                  keywords={["code", "repositories", "source"]}
+                  icon={CodeXml}
+                  onSelect={() =>
+                    run(() => window.open(siteConfig.githubUrl, "_blank", "noopener,noreferrer"))
+                  }
+                >
+                  Open GitHub
+                </PaletteItem>
+              </Command.Group>
+
+              {showSecrets ? (
+                <Command.Group heading="Secrets">
+                  <PaletteItem
+                    value="Replay intro"
+                    keywords={["preloader", "intro", "loading", "again"]}
+                    icon={RotateCcw}
+                    onSelect={() => run(replayIntro)}
+                  >
+                    Replay intro
+                  </PaletteItem>
+                  {onHome ? (
+                    <PaletteItem
+                      value="Strike"
+                      keywords={["arnis", "slash", "reveal", "headgear"]}
+                      icon={Zap}
+                      onSelect={() => run(strike)}
+                    >
+                      Strike
+                    </PaletteItem>
+                  ) : null}
+                </Command.Group>
+              ) : null}
+            </Command.List>
+
+            <div className="flex items-center gap-4 border-t border-line px-4 py-2.5 font-mono text-[0.625rem] uppercase tracking-[0.2em] text-muted">
+              <span>↑↓ Navigate</span>
+              <span className="flex items-center gap-1">
+                <CornerDownLeft aria-hidden className="size-3" /> Select
+              </span>
+              <span className="ml-auto text-accent">
+                {siteConfig.initials} {"//"} CMD
+              </span>
+            </div>
+          </Command>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+```
+
+- [ ] **Step 5: Mount the palette in the root layout**
+
+Replace `app/layout.tsx` with:
+
+```tsx
+import type { Metadata } from "next";
+import { Anton, Geist, Geist_Mono, Noto_Sans_Tagalog, UnifrakturCook } from "next/font/google";
+
+import { Backdrop } from "@/components/layout/backdrop";
+import { CommandPalette } from "@/components/command-palette/command-palette";
+import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
+import { siteConfig } from "@/data/site";
+import { getCaseStudyProjects } from "@/lib/queries";
+import { PROJECT_CATEGORY_LABELS } from "@/types";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// Condensed display face for the hero watermark and headline. Anton ships a
+// single static weight, so `weight` is required.
+const anton = Anton({
+  variable: "--font-anton",
+  subsets: ["latin"],
+  weight: "400",
+});
+
+// Blackletter face for the preloader monogram. `display: "block"` hides the
+// letter until the font arrives instead of flashing a fallback serif "G"; the
+// file is preloaded, so the wait is short.
+const unifraktur = UnifrakturCook({
+  variable: "--font-unifraktur",
+  subsets: ["latin"],
+  weight: "700",
+  display: "block",
+});
+
+// Baybayin script for the decorative accents in `data/baybayin.ts`. Only the
+// Tagalog subset is loaded, so Latin text never falls back to this face.
+const notoTagalog = Noto_Sans_Tagalog({
+  variable: "--font-noto-tagalog",
+  subsets: ["tagalog"],
+  weight: "400",
+});
+
+export const metadata: Metadata = {
+  title: `${siteConfig.name} — ${siteConfig.role}`,
+  description: siteConfig.description,
+  openGraph: {
+    title: `${siteConfig.name} — ${siteConfig.role}`,
+    description: siteConfig.description,
+    type: "website",
+  },
+};
+
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Only what the palette needs, so the full case study text stays on the server.
+  const paletteProjects = (await getCaseStudyProjects()).map((project) => ({
+    slug: project.slug,
+    title: project.title,
+    category: PROJECT_CATEGORY_LABELS[project.category],
+    techStack: project.techStack,
+  }));
+
+  return (
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${unifraktur.variable} ${notoTagalog.variable} h-full antialiased`}
+      // The preloader's inline gate script adds an attribute to <html> before
+      // React hydrates.
+      suppressHydrationWarning
+    >
+      <body className="min-h-full bg-bg font-sans text-fg">
+        <Backdrop />
+        <SmoothScrollProvider>
+          {children}
+          <CommandPalette projects={paletteProjects} />
+        </SmoothScrollProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+- [ ] **Step 6: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+With the preloader skipped, at http://localhost:3000:
+
+- [ ] Ctrl+K (⌘K on a Mac) opens a dark dialog with a search box, groups **Navigate**, **Case studies**, **Actions**, and a footer hint. Ctrl+K again or Esc closes it. The page behind does not scroll while it is open.
+- [ ] Arrow keys move a lime highlight and wrap from the last item to the first; Enter runs the highlighted item.
+- [ ] Scroll halfway down, open the palette, pick **Stack**: the palette closes and the page smooth-scrolls to the Stack section.
+- [ ] Type `supabase` or `unity`: only matching case studies remain. Pick one: its case study opens.
+- [ ] **Download résumé** downloads `resume.pdf`. **Copy email** changes to "Email copied", closes about a second later, and the email is on the clipboard. **Open GitHub** opens the GitHub URL in a new tab.
+- [ ] With the search empty there is no **Secrets** group. Type `strike`: **Strike** appears. Run it from far down the page: the page scrolls to the top, then a reveal sweeps across the hero.
+- [ ] Type `intro` and run **Replay intro**: the page reloads and the preloader plays.
+- [ ] On `/projects/ledger`, Ctrl+K works; **Stack** navigates to the home page's Stack section; **Strike** does not exist there.
+- [ ] While the preloader is playing, Ctrl+K does nothing.
+- [ ] Console is clean, including no `DialogContent requires a DialogTitle` warning in `npm run dev`.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add package.json package-lock.json hooks/use-command-palette.ts components/command-palette components/ui/preloader.tsx app/layout.tsx
+git commit -m "feat(palette): add site-wide command palette"
+```
+
+---
+
+### Task 13.4: Add the name wordmark and palette button to the header
+
+**Files:**
+- Modify: `data/site.ts` (one insertion — do not replace the file)
+- Modify: `components/layout/site-header.tsx` (full replacement)
+
+**Interfaces consumed:** `setCommandPaletteOpen`, `useModifierKeyLabel` (Task 13.3); `NavButton` behaviour from Phase 12.
+**Interfaces produced:** `siteConfig.wordmark: readonly [string, string]`.
+
+- [ ] **Step 1: Add the wordmark to `data/site.ts`**
+
+Insert these two lines directly above the line `  role: "Full Stack Developer",`:
+
+```ts
+  /** Two-line header wordmark, set in Anton. Keep each line short. */
+  wordmark: ["John Paul", "Garaza"],
 ```
 
 - [ ] **Step 2: Replace `components/layout/site-header.tsx`**
@@ -2673,11 +1525,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLenis } from "lenis/react";
-import { CodeXml, Mail, Menu, X } from "lucide-react";
+import { CodeXml, Mail, Menu, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { navLinks } from "@/data/navigation";
 import { siteConfig, socialLinks } from "@/data/site";
+import { setCommandPaletteOpen, useModifierKeyLabel } from "@/hooks/use-command-palette";
 import { cn } from "@/lib/utils";
 
 // lucide-react v1 removed brand icons (no `Github` export), so the "Github"
@@ -2708,12 +1561,23 @@ function NavButton({ href, onHome, onNavigate, className, children }: NavButtonP
   );
 }
 
+/** Two-line name wordmark, like a racing driver's logo. */
+function Wordmark() {
+  return (
+    <span className="flex flex-col font-display text-lg uppercase leading-[0.85] tracking-wide text-fg">
+      <span>{siteConfig.wordmark[0]}</span>
+      <span>{siteConfig.wordmark[1]}</span>
+    </span>
+  );
+}
+
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   // Section anchors only exist on the home page. Elsewhere, links navigate to
   // `/#anchor` instead of smooth-scrolling.
   const onHome = usePathname() === "/";
+  const modifierKey = useModifierKeyLabel();
 
   const lenis = useLenis(({ scroll }) => {
     setScrolled(scroll > 32);
@@ -2733,7 +1597,7 @@ export function SiteHeader() {
       <nav
         aria-label="Primary"
         className={cn(
-          "flex w-full max-w-3xl items-center justify-between gap-4 rounded-full border px-4 py-2 transition-colors duration-300",
+          "flex w-full max-w-4xl items-center justify-between gap-4 rounded-full border py-2 pr-2 pl-5 transition-colors duration-300",
           scrolled
             ? "border-line bg-surface/70 backdrop-blur-xl"
             : "border-transparent bg-transparent",
@@ -2742,17 +1606,19 @@ export function SiteHeader() {
         {onHome ? (
           <button
             type="button"
+            aria-label="Back to top"
             onClick={() => lenis?.scrollTo(0)}
-            className="rounded-full px-2 font-mono text-sm font-semibold tracking-[0.2em] text-fg"
+            className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
           >
-            {siteConfig.initials}
+            <Wordmark />
           </button>
         ) : (
           <Link
             href="/"
-            className="rounded-full px-2 font-mono text-sm font-semibold tracking-[0.2em] text-fg"
+            aria-label="Home"
+            className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
           >
-            {siteConfig.initials}
+            <Wordmark />
           </Link>
         )}
 
@@ -2767,6 +1633,20 @@ export function SiteHeader() {
         </ul>
 
         <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 px-2"
+            aria-label="Open command palette"
+            aria-keyshortcuts="Control+K Meta+K"
+            onClick={() => setCommandPaletteOpen(true)}
+          >
+            <Search aria-hidden />
+            <kbd className="hidden rounded-md border border-line px-1.5 py-0.5 font-mono text-[0.625rem] tracking-normal sm:inline">
+              {modifierKey} K
+            </kbd>
+          </Button>
+
           {socialLinks.map((link) => {
             const Icon = socialIcons[link.icon as keyof typeof socialIcons];
             return (
@@ -2823,26 +1703,27 @@ export function SiteHeader() {
 npx tsc --noEmit
 npm run lint
 npm run build
-npm run start
+npm run dev
 ```
 
-- [ ] On the home page, the Ledger card shows `Read case study` (lime), `Live Demo` (outline), `Repository` (outline). Driftline shows `Read case study` and `Repository`. FleetDesk shows no buttons and a plain title.
-- [ ] Hovering the Ledger and Driftline titles turns them lime; clicking a title or `Read case study` opens the case study scrolled to the top.
-- [ ] Header nav on the home page still smooth-scrolls to each section.
-- [ ] On `/projects/ledger`, clicking `Stack` in the header opens the home page at the Stack section, and clicking the `YN` initials opens the home page at the top. The mobile menu (375px) behaves the same way.
-- [ ] Browser Back from a case study returns to the home page without replaying the preloader.
-- [ ] Console is clean on both pages.
+- [ ] Top-left of the header shows `JOHN PAUL` over `GARAZA` in the condensed display font. On the home page clicking it scrolls to the top; on a case study it goes home.
+- [ ] Right side of the header: a search icon with a `Ctrl K` hint (`⌘ K` on a Mac), then GitHub and email icons. Clicking the search button opens the palette.
+- [ ] At 375px: wordmark, search icon (no key hint), GitHub, email, and menu all fit on one row; no horizontal scrollbar.
+- [ ] Section links still smooth-scroll on the home page and navigate home from case studies.
+- [ ] No hydration warning in the console (the key hint renders `Ctrl` first, then switches to `⌘` on a Mac).
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add components/sections/project-card.tsx components/layout/site-header.tsx
-git commit -m "feat(projects): link cards and header to case studies"
+git add data/site.ts components/layout/site-header.tsx
+git commit -m "feat(header): add name wordmark and command palette button"
 ```
+
+`data/site.ts` also contains the owner's earlier uncommitted edits (name, initials, GitHub URL); committing them here is intended.
 
 ---
 
-### Task 12.4: Phase 12 verification pass
+### Task 13.5: Phase 13 verification pass
 
 **Files:** none created; fix whatever this task surfaces.
 
@@ -2857,18 +1738,20 @@ npm run start
 
 - [ ] **Step 2: Walk the production build**
 
-- [ ] Full home page from preloader to footer: Phase 11 checks still pass (reveal, dividers, baybayin, button wipes).
-- [ ] Both case studies at 375px, 768px, and 1440px: no horizontal overflow, every divider draws in once, the `NEXT LAP` arrow nudges right on hover.
-- [ ] Keyboard only: Tab from the top of a case study reaches "Back to projects", the Live/Repo buttons, the `NEXT LAP` card, and the final back link, each with a visible accent focus ring. Enter follows each link.
-- [ ] JavaScript disabled (DevTools Command Menu → "Disable JavaScript"), open `/projects/ledger`: the arrival wipe still plays and the page is fully readable.
-- [ ] `view-source:http://localhost:3000/projects/ledger` contains `<title>Ledger — Your Name</title>` and an `og:type` of `article`.
-- [ ] Console is clean on `/`, `/projects/ledger`, `/projects/driftline`, and the 404 page.
+- [ ] **Idle:** after any mouse movement, stop for 2 seconds: the hero shows no reveal anywhere. Repeat with the cursor over the face, over the watermark, and over empty background.
+- [ ] **Performance:** DevTools → Performance, CPU throttling 4×, record 5 seconds of fast mouse circles over the hero. No long frames (red bars) caused by the reveal. If frames drop, report it in the handoff rather than changing constants.
+- [ ] **Touch** (device mode, reload): the blob drifts over the face with torn edges. **Touch + reduced motion:** one still headgear reveal, nothing moves.
+- [ ] **Mouse + reduced motion:** the reveal still follows movement; the palette opens and closes; palette navigation jumps without smooth scrolling.
+- [ ] **Widths** 375px, 768px, 1440px: `document.documentElement.scrollWidth === document.documentElement.clientWidth` is `true`; the header fits on one row; the hero copy does not overlap the buttons.
+- [ ] **Keyboard only:** Tab reaches the wordmark, section links, the search button, and the social icons, each with a visible focus ring. Enter on the search button opens the palette with focus in the search box; Esc returns focus to the search button.
+- [ ] **Preloader:** first visit still plays; Ctrl+K is ignored until the wipe finishes.
+- [ ] **Console:** clean on `/`, `/projects/ledger`, and the 404 page.
 
 - [ ] **Step 3: Commit any fixes**
 
 ```bash
 git add -A -- app components data hooks lib types
-git commit -m "fix: address phase 12 verification findings"
+git commit -m "fix: address phase 13 verification findings"
 ```
 
 If nothing needed fixing, skip the commit.
@@ -2879,7 +1762,7 @@ If nothing needed fixing, skip the commit.
 
 Only the repository owner can resolve these. Do not invent values.
 
-1. `data/site.ts` — name, initials, email, GitHub URL, and site URL are placeholders. Also confirm `availability.isAvailable`, `timeZone` / `timeZoneLabel` (`Asia/Manila` / `GMT+8`), and the `watermark` word (sized for ~9 characters).
+1. `data/site.ts` — name, initials, wordmark, and GitHub URL are set; email and site URL are still placeholders (the palette's **Copy email** copies whatever is there). Also confirm `availability.isAvailable`, `timeZone` / `timeZoneLabel` (`Asia/Manila` / `GMT+8`), and the `watermark` word (sized for ~9 characters).
 2. `data/projects.ts` — three example projects (Ledger, Driftline, FleetDesk) need replacing with real ones, including the two example case study write-ups. Gallery images go in `public/images/projects/<slug>/` with their real pixel `width` and `height`.
 3. `public/resume.pdf` — minimal placeholder; replace with the real résumé.
 4. `public/images/hero/headgear.webp` and `headgear-ghost.webp` — cut out from STIX's product photo as sold by Eljan Sports, with the logo painted over. The photo still belongs to STIX/the retailer. Replacing it with a photo of a borrowed headgear (front view, plain background, even light) removes the risk; re-tune `HEADGEAR` and `FACE` in `components/sections/headgear-reveal.tsx` afterwards.
@@ -2887,4 +1770,4 @@ Only the repository owner can resolve these. Do not invent values.
 6. `data/strike-angles.ts` — **launch blocker.** Every entry is `confirmed: false`. Check each number, target, and on-screen direction against the owner's sport Arnis anyo.
 7. `components/ui/preloader.tsx` — `STATUS_LINES` are hard-coded (`GARAZA // DEV PORTFOLIO`, `SYS.INIT // OK`, `LATENCY // 12MS`); `12MS` is decorative.
 
-**Next phases (planned in the spec, not yet written as tasks):** Phase 13, new home sections (About, Experience, Arnis, Now — the owner picks which); Phase 14, polish and reach (tech marquee, heading reveals, OG images, sitemap, robots, JSON-LD, Vercel Web Analytics, Lighthouse ≥ 90).
+**Next phases (planned in the spec, not yet written as tasks):** Phase 14, new home sections (About, Experience, Arnis, Now — the owner picks which); Phase 15, polish and reach (tech marquee, heading reveals, OG images, sitemap, robots, JSON-LD, Vercel Web Analytics, Lighthouse ≥ 90). A redesign of the strike line dividers into a literal slash cut was proposed and is awaiting the owner's approval.
