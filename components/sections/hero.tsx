@@ -1,5 +1,6 @@
 import { CodeXml, Download } from "lucide-react";
 
+import { HeroBackdropReveal } from "@/components/sections/hero-backdrop-reveal";
 import { HeroVisual } from "@/components/sections/hero-visual";
 import { InkRevealSection } from "@/components/sections/ink-reveal";
 import { TelemetryBar } from "@/components/sections/telemetry-bar";
@@ -13,6 +14,9 @@ export function Hero() {
       id="hero"
       className="relative flex flex-col overflow-hidden px-6 pt-24 pb-10 lg:min-h-svh"
     >
+      {/* Hidden layer behind everything: weave and strike slashes. */}
+      <HeroBackdropReveal />
+
       <div className="relative z-20 mx-auto w-full max-w-7xl">
         <TelemetryBar />
       </div>
