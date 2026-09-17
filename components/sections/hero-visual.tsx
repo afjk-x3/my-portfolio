@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 
 import { HeadgearReveal } from "@/components/sections/headgear-reveal";
+import { HeroWatermark } from "@/components/sections/hero-watermark";
 
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 
@@ -48,23 +49,21 @@ export function HeroVisual({ watermark }: { watermark: string }) {
         className="relative w-[min(140%,64rem,calc((100svh_-_12rem)*1.5))] shrink-0"
       >
         {/*
-         * Layer 1: outline watermark. It comes first in the DOM, so the
-         * portrait after it paints on top. `justify-center` on an overflowing
-         * flex item bleeds equally off both sides, which is intended.
+         * Layer 1: the watermark, outline plus its ink-revealed neon fill. It
+         * comes first in the DOM, so the portrait after it paints on top.
          */}
         <motion.div
           aria-hidden
           style={{ y: reduceMotion ? 0 : watermarkY }}
-          className="pointer-events-none absolute inset-x-0 top-[16%] flex select-none justify-center"
+          className="pointer-events-none absolute inset-x-0 top-[16%]"
         >
-          <motion.p
+          <motion.div
             initial={reduceMotion ? false : { opacity: 0, y: 48 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.1, ease: EASE_OUT_EXPO }}
-            className="whitespace-nowrap font-display text-[clamp(4.5rem,21vw,22rem)] uppercase leading-[0.8] text-outline"
           >
-            {watermark}
-          </motion.p>
+            <HeroWatermark text={watermark} />
+          </motion.div>
         </motion.div>
 
         {/* Layer 2: the transparent cutout portrait, in front of the watermark. */}
@@ -82,7 +81,7 @@ export function HeroVisual({ watermark }: { watermark: string }) {
             sizes="(min-width: 1024px) 1024px, 100vw"
             className="object-contain object-bottom -translate-y-8"
           />
-          {/* Layer 3: 3D headgear over the face, revealed around the cursor. */}
+          {/* Layer 3: headgear photo over the face, revealed by the ink trail. */}
           <HeadgearReveal />
         </motion.div>
       </motion.div>
