@@ -2,6 +2,7 @@ import { ArrowUpRight, CodeXml, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { baybayin } from "@/data/baybayin";
 import { siteConfig } from "@/data/site";
 
 export function Contact() {
@@ -16,6 +17,7 @@ export function Contact() {
         <SectionHeading
           eyebrow="Contact"
           title="Let's build something."
+          script={baybayin.contact}
           className="items-center"
         />
 
