@@ -15,11 +15,11 @@ export default function Home() {
       <SiteHeader />
       <main>
         <Hero />
-        <StrikeLine angle={1} className="py-6" />
+        <StrikeLine angle={1} at={0.3} />
         <ProjectsShowcase />
-        <StrikeLine angle={2} className="py-6" />
+        <StrikeLine angle={2} at={0.68} />
         <BentoGrid />
-        <StrikeLine angle={3} className="py-6" />
+        <StrikeLine angle={9} at={0.42} />
         <Contact />
       </main>
       <SiteFooter />
