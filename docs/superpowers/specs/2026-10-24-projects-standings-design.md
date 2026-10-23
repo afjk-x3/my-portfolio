@@ -39,6 +39,17 @@ With six real projects, the pinned stack gives each one a full screen of scrolli
 - **Removed:** the pinned stack, the card's 3D tilt and spotlight, and `hooks/use-pointer-tilt.ts` (nothing else uses it).
 - **Unchanged:** `data/projects.ts`, the `Project` type, and the `getProjects()` data seam.
 
+## Revision (2026-10-24, decided by the owner)
+
+After seeing the list, the owner changed three things. These supersede the matching calls above.
+
+- **Closed by default.** No row is open on load; a row opens only when the visitor opens it, or when a `/#<slug>` link points at it.
+- **Two groups, each with its own standings** (P1–P4 and P1–P2), in this order:
+  - **Work:** BridgeIt (Client), KaAlerto (Internship; a monthly build with the internship team), Intern Docs (Internship), WasThere (Personal).
+  - **Academic:** Tatak Norte, LABANAN.
+  The owner rejected a separate one-project "Client" group; the row label carries that instead. They chose "Work" over "Real-world" as the group name.
+- **The label column shows where a project came from** (Client, Internship, Personal, Academic) instead of its type (Full-Stack, Game Dev). The tech tags inside each row already show the type. `ProjectCategory` changes accordingly, and the group is derived from the category, so no new data field is needed.
+
 ## Left to the builder
 
 Exact spacing, type sizes, and animation timing, within the design system in `tasks.md`.

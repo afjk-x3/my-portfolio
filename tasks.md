@@ -170,7 +170,7 @@ All tokens live in `app/globals.css`. Use the Tailwind classes; never hard-code 
 
 Read this before changing any of these files.
 
-- **Projects standings** (Phase 19; `projects-standings.tsx`, `project-row.tsx`): the projects are an `<ol>` of rows in `order`. One row is open at a time, and P1 is open on load. A `/#<slug>` hash, on load or on `hashchange`, opens that row without animation and scrolls it into view (`scroll-padding-top` keeps it below the header), so a row collapsing above it cannot shift it. Each row's header is a `<button aria-expanded>` inside an `<h3>`. Adding or removing projects needs no component edits. (Phases 4–18 used a pinned card stack, which was replaced here.)
+- **Projects standings** (Phase 19; `projects-standings.tsx`, `project-row.tsx`): the projects are split into groups by `PROJECT_GROUPS` (Work: client, internship, and personal projects; Academic), each an `<ol>` of rows in `order` numbered from P1. Every row starts closed, and one row is open at a time across all groups (Task 19.3). A `/#<slug>` hash, on load or on `hashchange`, opens that row without animation and scrolls it into view (`scroll-padding-top` keeps it below the header), so a row collapsing above it cannot shift it. Each group's heading is an `<h3>`, and each row's header is a `<button aria-expanded>` inside an `<h4>`. Adding or removing projects needs no component edits. (Phases 4–18 used a pinned card stack, which was replaced here.)
 - **Preloader** (`preloader.tsx`, gate styles in `globals.css`):
   - The overlay is always in the server HTML but CSS keeps it `display: none` unless `<html>` has `data-preloader-active`. An inline script, rendered first on the page, sets that attribute during parsing only when `sessionStorage` lacks `portfolio_preloaded` (from Task 15.1: on every full load, and it also sets `history.scrollRestoration = "manual"` so a reload opens at the top; a module flag stops client-side navigation from replaying it). That is why `<html>` has `suppressHydrationWarning`. Do not add a `flex` class to the overlay; `display` belongs to the gate.
   - React reads storage through `useSyncExternalStore` with `true` as the server snapshot.
@@ -207,7 +207,7 @@ Read this before changing any of these files.
 16. Interactive sword-slash rhythm dividers with sound, and the hero portrait fade fix. The dividers are removed again in Phase 17; the fade fix stays.
 17. Strike dividers, strike-angle data, and baybayin removed; hero slashes keep fixed angles.
 18. Next.js 16.4.2, skip link and focus offset, 44px touch targets, 12px/16px text floor, name in the h1 and `GARAZA` watermark, face visible on touch, honest and skippable preloader, both Arnis photos on touch, project deep links and a plain list on phones, 2×2 stack grid, Open Graph image, README.
-19. Projects shown as a standings list: one row per project, P1 open, `/#<slug>` opens a row; the pinned card stack, tilt, and spotlight removed.
+19. Projects shown as standings lists, grouped into Work and Academic and closed by default, with the label column showing Client, Internship, Personal, or Academic; `/#<slug>` opens a row; the pinned card stack, tilt, and spotlight removed.
 
 ---
 
@@ -2348,6 +2348,51 @@ git commit -m "fix: address phase 19 verification findings"
 ```
 
 If nothing needed fixing, skip the commit.
+
+---
+
+### Task 19.3: Group the standings and start closed
+
+The owner's revision of 2026-10-24 (the design doc's "Revision" section): every row starts closed; the projects split into a **Work** group and an **Academic** group, each numbered from P1; and the label column shows where a project came from instead of its type.
+
+**Files:**
+- Modify: `types/index.ts`, `data/projects.ts`, `components/sections/projects-standings.tsx`, `components/sections/project-row.tsx`
+
+**Interfaces:**
+- Produces: `ProjectCategory = "client" | "internship" | "personal" | "academic"`, labelled `Client`, `Internship`, `Personal`, and `Academic` in `PROJECT_CATEGORY_LABELS`. `PROJECT_GROUPS: readonly ProjectGroup[]`, where `interface ProjectGroup { id: string; label: string; categories: readonly ProjectCategory[] }`, in display order: Work holds `client`, `internship`, and `personal`; Academic holds `academic`.
+
+- [x] **Step 1: Retype the categories and recategorise the data**
+
+  In `data/projects.ts`: BridgeIt `client`, KaAlerto `internship`, WasThere `personal`, Intern Docs `internship`, Tatak Norte `academic`, LABANAN `academic`. Append to KaAlerto's description: "Built with my internship team as one of our monthly builds."
+
+- [x] **Step 2: Render one standings list per group**
+
+  - In `ProjectsStandings`, the initial state becomes `{ slug: null, animate: true }`.
+  - For each entry in `PROJECT_GROUPS` that has projects, render a group heading `<h3>` (mono, uppercase, wide tracking, muted, with the project count beside it), then that group's `<ol>`. Positions restart at P1 in each group.
+  - One row is still open at a time across both groups, and the deep-link logic is unchanged.
+  - In `ProjectRow`, the row's heading becomes an `<h4>`, so the outline reads section `h2` › group `h3` › project `h4`.
+
+- [x] **Step 3: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+- [ ] After the intro, every row is closed. The headings read "Work" over BridgeIt, KaAlerto, WasThere, and Intern Docs as P1–P4, then "Academic" over Tatak Norte and LABANAN as P1–P2.
+- [ ] The labels read Client, Internship, Personal, Internship, Academic, Academic, and KaAlerto's details end with the monthly-build sentence.
+- [ ] Opening a row in one group closes an open row in the other.
+- [ ] `/#labanan` on a fresh load opens LABANAN below the header.
+- [ ] At 375px there is no horizontal scrollbar. Console is clean.
+
+- [x] **Step 4: Commit**
+
+```bash
+git add types/index.ts data/projects.ts components/sections/projects-standings.tsx components/sections/project-row.tsx
+git commit -m "feat(projects): group the standings into work and academic, closed by default"
+```
 
 ---
 
