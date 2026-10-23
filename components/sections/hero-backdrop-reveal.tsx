@@ -3,18 +3,18 @@
 import { useRef } from "react";
 
 import { InkMask, useInkMaskLayer, useSvgId } from "@/components/sections/ink-reveal";
-import { getStrike } from "@/data/strike-angles";
 
 /**
  * Bold strike slashes crossing the whole hero. Each is anchored at a point
  * given in percent of the hero and runs far past both edges, so only
- * fragments ever show through the ink trail.
+ * fragments ever show through the ink trail. `degrees` is the slash's
+ * direction: 0 points right and angles grow clockwise, so 90 is straight down.
  */
 const SLASHES = [
-  { strike: 1, x: "22%", y: "38%", width: 18 },
-  { strike: 2, x: "80%", y: "30%", width: 12 },
-  { strike: 12, x: "63%", y: "50%", width: 8 },
-  { strike: 3, x: "50%", y: "82%", width: 14 },
+  { degrees: 135, x: "22%", y: "38%", width: 18 },
+  { degrees: 45, x: "80%", y: "30%", width: 12 },
+  { degrees: 90, x: "63%", y: "50%", width: 8 },
+  { degrees: 180, x: "50%", y: "82%", width: 14 },
 ] as const;
 
 /** Half the length of each slash, in px: longer than any screen diagonal. */
@@ -48,13 +48,13 @@ export function HeroBackdropReveal() {
         {SLASHES.map((slash) => (
           // A nested <svg> moves the origin to a percentage position, which a
           // `transform` cannot do; the line then rotates around that origin.
-          <svg key={slash.strike} x={slash.x} y={slash.y} overflow="visible">
+          <svg key={slash.degrees} x={slash.x} y={slash.y} overflow="visible">
             <line
               x1={-SLASH_REACH}
               y1="0"
               x2={SLASH_REACH}
               y2="0"
-              transform={`rotate(${getStrike(slash.strike).degrees ?? 0})`}
+              transform={`rotate(${slash.degrees})`}
               strokeWidth={slash.width}
               className="stroke-accent"
             />
