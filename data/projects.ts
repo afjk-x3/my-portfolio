@@ -9,7 +9,7 @@ export const projects: Project[] = [
     summary: "An Android game that teaches the FANBOYS conjunctions by building bridges.",
     description:
       "Students pick the right conjunction to join two clauses so a vehicle can cross, across three levels that run from a fill-in song to synonym challenges. Built with a client for a classroom study, with teacher codes that unlock each level and CI on every push.",
-    techStack: ["Flutter", "Dart", "Android", "GitHub Actions"],
+    techStack: ["Flutter", "Dart", "Android"],
     liveUrl: null,
     repoUrl: "https://github.com/afjk-x3/bridgeit",
     imageUrl: null,
@@ -59,7 +59,7 @@ export const projects: Project[] = [
     summary: "Requirement submissions and multi-step approvals for interns, built during my OJT.",
     description:
       "Interns join by email invite and submit requirements that move through configurable approval steps with approver signatures, while admins manage users, routing templates, and an audit log. Built with one teammate during my OJT; I wrote 40 of its 56 commits.",
-    techStack: ["Next.js", "TypeScript", "Supabase", "Resend", "Playwright"],
+    techStack: ["Next.js", "TypeScript", "Supabase", "Resend"],
     liveUrl: null,
     repoUrl: null,
     imageUrl: null,
