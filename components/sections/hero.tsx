@@ -27,12 +27,19 @@ export function Hero() {
         <div className="relative z-20 -mt-16 flex flex-col items-center gap-6 text-center lg:absolute lg:inset-x-0 lg:bottom-0 lg:mt-0 lg:flex-row lg:items-end lg:justify-between lg:text-left">
           <div className="flex flex-col items-center gap-3 lg:items-start">
             <AvailabilityStatus />
-            <span className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
-              {siteConfig.name}
-            </span>
-            <h1 className="font-display text-5xl uppercase leading-[0.85] text-fg sm:text-6xl">
-              Full Stack
-              <span className="block text-accent">Developer</span>
+            {/*
+             * The name is part of the h1, so search engines and screen readers
+             * get who before what. The visible layout is unchanged.
+             */}
+            <h1 className="flex flex-col items-center gap-3 lg:items-start">
+              <span className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
+                {siteConfig.name}
+                <span className="sr-only">, </span>
+              </span>
+              <span className="font-display text-5xl uppercase leading-[0.85] text-fg sm:text-6xl">
+                Full Stack
+                <span className="block text-accent">Developer</span>
+              </span>
             </h1>
             <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
               Diligence &amp; discipline

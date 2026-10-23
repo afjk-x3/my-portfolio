@@ -16,7 +16,7 @@ export const siteConfig = {
    * Giant outline word layered behind the hero portrait. The type size is
    * tuned for roughly 9 characters; much longer words bleed off both edges.
    */
-  watermark: "DEVELOPER",
+  watermark: "GARAZA",
   /** Drives the pulsing status dot in the hero telemetry bar. */
   availability: {
     isAvailable: true,
