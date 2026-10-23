@@ -43,6 +43,10 @@ export const metadata: Metadata = {
     description: siteConfig.description,
     type: "website",
   },
+  // The preview image itself comes from `app/opengraph-image.tsx`.
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
