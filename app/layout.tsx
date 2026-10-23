@@ -55,6 +55,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <body className="min-h-full bg-bg font-sans text-fg" suppressHydrationWarning>
+        {/* First Tab stop on every page: jumps past the header to the content. */}
+        <a
+          href="#main"
+          className="sr-only rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-ink focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          Skip to content
+        </a>
         <Backdrop />
         <SmoothScrollProvider>
           {children}

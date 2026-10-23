@@ -12,7 +12,7 @@ export default function Home() {
       {/* First, so its gate script runs before any page content is parsed. */}
       <Preloader />
       <SiteHeader />
-      <main>
+      <main id="main">
         <Hero />
         <ProjectsShowcase />
         <BentoGrid />

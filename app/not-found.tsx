@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
-    <main className="relative flex min-h-svh flex-col items-center justify-center gap-8 overflow-hidden px-6 text-center">
+    <main id="main" className="relative flex min-h-svh flex-col items-center justify-center gap-8 overflow-hidden px-6 text-center">
       <div aria-hidden className="bg-weave pointer-events-none absolute inset-0 opacity-[0.04]" />
 
       <span className="relative font-mono text-xs uppercase tracking-[0.3em] text-accent">
