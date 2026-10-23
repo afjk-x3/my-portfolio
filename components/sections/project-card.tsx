@@ -67,7 +67,7 @@ export function ProjectCard({ project, index, total, progress }: ProjectCardProp
                 {project.title}
               </h3>
               <p className="text-lg text-fg/80">{project.summary}</p>
-              <p className="max-w-2xl text-sm leading-relaxed text-muted">
+              <p className="max-w-2xl text-base leading-relaxed text-muted">
                 {project.description}
               </p>
             </div>

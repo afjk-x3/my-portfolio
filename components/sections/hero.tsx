@@ -34,7 +34,7 @@ export function Hero() {
               Full Stack
               <span className="block text-accent">Developer</span>
             </h1>
-            <p className="font-mono text-[0.625rem] uppercase tracking-[0.3em] text-muted">
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
               Diligence &amp; discipline
             </p>
           </div>

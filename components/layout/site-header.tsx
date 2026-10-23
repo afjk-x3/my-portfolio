@@ -121,7 +121,7 @@ export function SiteHeader() {
             onClick={() => setCommandPaletteOpen(true)}
           >
             <Search aria-hidden />
-            <kbd className="hidden rounded-md border border-line px-1.5 py-0.5 font-mono text-[0.625rem] tracking-normal sm:inline">
+            <kbd className="hidden rounded-md border border-line px-1.5 py-0.5 font-mono text-xs tracking-normal sm:inline">
               {modifierKey} K
             </kbd>
           </Button>

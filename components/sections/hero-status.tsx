@@ -4,7 +4,7 @@ import { siteConfig } from "@/data/site";
 import { useLocalTime } from "@/hooks/use-local-time";
 import { cn } from "@/lib/utils";
 
-const TELEMETRY_TEXT = "font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-muted";
+const TELEMETRY_TEXT = "font-mono text-xs uppercase tracking-[0.2em] text-muted";
 
 /** Pulsing availability dot and label, from `siteConfig.availability`. */
 export function AvailabilityStatus({ className }: { className?: string }) {

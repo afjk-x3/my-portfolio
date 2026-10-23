@@ -46,7 +46,7 @@ export function DisciplineCard({ className }: { className?: string }) {
         <h3 className="text-2xl font-semibold tracking-tight text-fg">
           Competitive Arnis
         </h3>
-        <p className="max-w-sm text-sm leading-relaxed text-muted">
+        <p className="max-w-sm text-base leading-relaxed text-muted">
           Training and competing in Arnis — the same repetition, timing, and
           composure under pressure that the work demands.
         </p>
