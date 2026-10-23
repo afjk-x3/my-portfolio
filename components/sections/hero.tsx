@@ -5,7 +5,6 @@ import { AvailabilityStatus, LocalClock } from "@/components/sections/hero-statu
 import { HeroVisual } from "@/components/sections/hero-visual";
 import { InkRevealSection } from "@/components/sections/ink-reveal";
 import { Button } from "@/components/ui/button";
-import { baybayin } from "@/data/baybayin";
 import { siteConfig } from "@/data/site";
 
 export function Hero() {
@@ -35,13 +34,8 @@ export function Hero() {
               Full Stack
               <span className="block text-accent">Developer</span>
             </h1>
-            <p className="flex flex-col items-center gap-1 whitespace-nowrap sm:flex-row sm:items-baseline sm:gap-3 lg:justify-start">
-              <span aria-hidden className="font-baybayin text-base text-muted">
-                {baybayin.motto.text}
-              </span>
-              <span className="font-mono text-[0.625rem] uppercase tracking-[0.3em] text-muted">
-                Diligence &amp; discipline
-              </span>
+            <p className="font-mono text-[0.625rem] uppercase tracking-[0.3em] text-muted">
+              Diligence &amp; discipline
             </p>
           </div>
 

@@ -11,8 +11,6 @@ import {
   useTransform,
 } from "motion/react";
 
-import { baybayin } from "@/data/baybayin";
-
 /**
  * Set on `<html>` while the preloader owns the screen. `app/globals.css` reads
  * it to show the overlay and to lock native scrolling.
@@ -182,10 +180,6 @@ export function Preloader() {
                 <span className="animate-monogram-breathe block font-gothic text-8xl leading-none text-fg drop-shadow-[0_0_25px_rgba(204,255,0,0.35)] md:text-[10rem]">
                   G
                 </span>
-              </span>
-
-              <span className="animate-status-in mt-4 font-baybayin text-2xl text-accent/80 md:text-3xl">
-                {baybayin.name.text}
               </span>
 
               <div className="mt-8 flex items-baseline font-mono tabular-nums">

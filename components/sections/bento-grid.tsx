@@ -1,7 +1,6 @@
 import { DisciplineCard } from "@/components/sections/discipline-card";
 import { TechStackCard } from "@/components/sections/tech-stack-card";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { baybayin } from "@/data/baybayin";
 import { getSkillCategories } from "@/lib/queries";
 
 export async function BentoGrid() {
@@ -10,7 +9,7 @@ export async function BentoGrid() {
   return (
     <section id="stack" className="relative px-6 py-24">
       <div className="mx-auto flex max-w-6xl flex-col gap-12">
-        <SectionHeading eyebrow="Toolkit" title="Stack & Discipline" script={baybayin.stack} />
+        <SectionHeading eyebrow="Toolkit" title="Stack & Discipline" />
 
         <div className="grid auto-rows-[minmax(11rem,auto)] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
           <DisciplineCard className="aspect-4/5 sm:col-span-2 sm:aspect-4/3 lg:col-span-3 lg:row-span-2 lg:aspect-auto lg:min-h-[36rem]" />
