@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, type RefObject } from "react";
-import { useInView, useReducedMotion } from "motion/react";
+import { useInView } from "motion/react";
 
 import { useMediaQuery } from "@/hooks/use-media-query";
 
 /**
  * - `pointer`: a mouse or trackpad drives the reveal. Ink appears only while
  *   the pointer moves.
- * - `wander`: touch screens; the reveal drifts over the face on its own.
- * - `static`: touch plus reduced motion; one fixed reveal, no animation.
+ * - `touch`: touch screens. Nothing follows the finger, so the face stays
+ *   visible; only a strike sweep (`INK_STRIKE_EVENT`) reveals anything.
  */
-export type RevealMode = "pointer" | "wander" | "static";
+export type RevealMode = "pointer" | "touch";
 
 /** A live drop of the trail, in viewport (client) pixels. */
 export interface InkPoint {
@@ -28,28 +28,20 @@ export interface InkPoint {
 /** Called once per animation frame with every live drop. */
 export type InkLayer = (points: readonly InkPoint[]) => void;
 
-/**
- * Where the reveal rests in `wander` mode, in viewport pixels, plus how far
- * it drifts from there (`span`, also in viewport pixels).
- */
-export type InkHome = () => { x: number; y: number; span: number } | null;
-
 export interface InkTrail {
   mode: RevealMode;
   /** Registers a layer to paint every frame. Returns the unregister function. */
   addLayer: (layer: InkLayer) => () => void;
-  /** Sets (or clears, with `null`) the resting point used in `wander` mode. */
-  setHome: (home: InkHome | null) => void;
 }
 
 /** Window event that plays one diagonal strike across the hero. */
 export const INK_STRIKE_EVENT = "portfolio:strike";
 
-/** Most drops alive at once, not counting the `wander` head. */
+/** Most drops alive at once. */
 export const MAX_DROPS = 36;
 
-/** Shapes every masked layer must render: the drops plus the `wander` head. */
-export const INK_POOL = MAX_DROPS + 1;
+/** Shapes every masked layer must render: one per drop. */
+export const INK_POOL = MAX_DROPS;
 
 /** Milliseconds a drop takes to shrink from full size to nothing. */
 const DROP_LIFE = 900;
@@ -96,12 +88,10 @@ function easeInOutCubic(t: number) {
  */
 export function useInkTrail(containerRef: RefObject<HTMLElement | null>): InkTrail {
   const inView = useInView(containerRef);
-  const reduceMotion = useReducedMotion() ?? false;
   const finePointer = useMediaQuery("(pointer: fine)");
-  const mode: RevealMode = finePointer ? "pointer" : reduceMotion ? "static" : "wander";
+  const mode: RevealMode = finePointer ? "pointer" : "touch";
 
   const layersRef = useRef(new Set<InkLayer>());
-  const homeRef = useRef<InkHome | null>(null);
   // Time a strike was requested. Stored outside the loop, so a strike asked for
   // while the hero is still scrolling into view plays once the loop starts.
   const strikeRef = useRef<number | null>(null);
@@ -116,7 +106,7 @@ export function useInkTrail(containerRef: RefObject<HTMLElement | null>): InkTra
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || !inView || mode === "static") return;
+    if (!container || !inView) return;
 
     const layers = layersRef.current;
     const drops: {
@@ -128,7 +118,7 @@ export function useInkTrail(containerRef: RefObject<HTMLElement | null>): InkTra
       stretch: number;
     }[] = [];
     const pointer = { x: 0, y: 0, seen: false };
-    const head = { x: 0, y: 0, placed: false, strength: 0 };
+    const head = { x: 0, y: 0, placed: false };
     let lastDrop: { x: number; y: number } | null = null;
     let painted = false;
 
@@ -167,7 +157,6 @@ export function useInkTrail(containerRef: RefObject<HTMLElement | null>): InkTra
     }
 
     let last = performance.now();
-    const start = last;
     let frame = requestAnimationFrame(function tick(now) {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
@@ -215,27 +204,6 @@ export function useInkTrail(containerRef: RefObject<HTMLElement | null>): InkTra
           head.placed = false;
           lastDrop = null;
         }
-      } else {
-        const home = homeRef.current?.();
-        const target = home
-          ? {
-              x: home.x + Math.sin(((now - start) / 1000) * 0.6) * home.span,
-              y: home.y + Math.sin(((now - start) / 1000) * 0.9) * home.span * 0.85,
-            }
-          : null;
-        if (target && !head.placed) {
-          head.x = target.x;
-          head.y = target.y;
-          head.placed = true;
-        }
-        head.strength = damp(head.strength, target ? 1 : 0, 6, dt);
-        if (target) {
-          head.x = damp(head.x, target.x, 18, dt);
-          head.y = damp(head.y, target.y, 18, dt);
-          dropAlong(head.x, head.y, 0, now, true);
-        } else {
-          lastDrop = null;
-        }
       }
 
       while (drops.length > 0 && now - drops[0].born > DROP_LIFE) drops.shift();
@@ -251,11 +219,6 @@ export function useInkTrail(containerRef: RefObject<HTMLElement | null>): InkTra
           stretch: drop.stretch,
         };
       });
-      // Touch has no pointer to follow, so the drifting head stays visible.
-      if (mode === "wander" && head.strength > 0.002) {
-        points.push({ x: head.x, y: head.y, radius: radius * head.strength, angle: 0, stretch: 1 });
-      }
-
       // Skip painting while idle: nothing was showing and nothing is now.
       if (points.length > 0 || painted) {
         layers.forEach((layer) => layer(points));
@@ -287,9 +250,6 @@ export function useInkTrail(containerRef: RefObject<HTMLElement | null>): InkTra
         return () => {
           layersRef.current.delete(layer);
         };
-      },
-      setHome: (home) => {
-        homeRef.current = home;
       },
     }),
     [mode],

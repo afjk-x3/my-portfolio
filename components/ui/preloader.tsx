@@ -11,6 +11,8 @@ import {
   useTransform,
 } from "motion/react";
 
+import { INK_STRIKE_EVENT } from "@/hooks/use-ink-trail";
+
 /**
  * Set on `<html>` while the preloader owns the screen. `app/globals.css` reads
  * it to show the overlay and to lock native scrolling.
@@ -134,6 +136,10 @@ export function Preloader() {
   const handleExitComplete = () => {
     playedThisLoad = true;
     setExited(true);
+    // Touch screens have no cursor to drive the hero reveal, so play it once.
+    if (!reduceMotion && !window.matchMedia("(pointer: fine)").matches) {
+      window.dispatchEvent(new Event(INK_STRIKE_EVENT));
+    }
   };
 
   return (

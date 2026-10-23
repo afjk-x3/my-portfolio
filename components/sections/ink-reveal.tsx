@@ -189,19 +189,13 @@ export function paintInkMask(svg: SVGSVGElement, points: readonly InkPoint[]) {
   filter.setAttribute("height", (maxY - minY + margin * 2).toFixed(1));
 }
 
-/**
- * Paints the shared trail into the `InkMask` inside `svgRef` every frame.
- * Does nothing in `static` mode; a layer that needs a fixed reveal there draws
- * it itself.
- */
+/** Paints the shared trail into the `InkMask` inside `svgRef` every frame. */
 export function useInkMaskLayer(svgRef: RefObject<SVGSVGElement | null>) {
   const trail = useInkReveal();
 
   useEffect(() => {
     const svg = svgRef.current;
-    if (!svg || trail.mode === "static") return;
+    if (!svg) return;
     return trail.addLayer((points) => paintInkMask(svg, points));
   }, [svgRef, trail]);
-
-  return trail;
 }

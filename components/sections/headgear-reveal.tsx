@@ -1,13 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 
-import {
-  InkMask,
-  paintInkMask,
-  useInkMaskLayer,
-  useSvgId,
-} from "@/components/sections/ink-reveal";
+import { InkMask, useInkMaskLayer, useSvgId } from "@/components/sections/ink-reveal";
 
 /*
  * Every coordinate in this file is in hero-portrait.png pixels. The SVG uses
@@ -22,15 +17,6 @@ const PORTRAIT = { width: 2048, height: 1365 } as const;
  */
 const HEADGEAR = { x: 419, y: 90, width: 1166, height: 1260 } as const;
 
-/** Middle of the face: where the reveal rests on touch devices. */
-const FACE = { x: 1029, y: 520 } as const;
-
-/** Radius of the fixed reveal in `static` mode, in portrait pixels. */
-const STATIC_RADIUS = 300;
-
-/** How far the `wander` reveal drifts from the face, in portrait pixels. */
-const WANDER_SPAN = 140;
-
 /**
  * Reveals a photo of an Arnis headgear over the face in the hero portrait,
  * inside the shared ink trail: the face is fully covered wherever the trail
@@ -41,33 +27,7 @@ const WANDER_SPAN = 140;
 export function HeadgearReveal() {
   const svgRef = useRef<SVGSVGElement>(null);
   const id = useSvgId("headgear");
-  const trail = useInkMaskLayer(svgRef);
-
-  useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
-
-    // Touch + reduced motion: one fixed reveal over the face, no animation.
-    // Painted in viewport pixels so it goes through the same code path.
-    if (trail.mode === "static") {
-      const matrix = svg.getScreenCTM();
-      if (!matrix) return;
-      const face = new DOMPoint(FACE.x, FACE.y).matrixTransform(matrix);
-      paintInkMask(svg, [
-        { x: face.x, y: face.y, radius: STATIC_RADIUS * matrix.a, angle: 0, stretch: 1 },
-      ]);
-      return;
-    }
-
-    // Tell the trail where the face is, for the `wander` drift on touch.
-    trail.setHome(() => {
-      const matrix = svg.getScreenCTM();
-      if (!matrix) return null;
-      const face = new DOMPoint(FACE.x, FACE.y).matrixTransform(matrix);
-      return { x: face.x, y: face.y, span: WANDER_SPAN * matrix.a };
-    });
-    return () => trail.setHome(null);
-  }, [trail]);
+  useInkMaskLayer(svgRef);
 
   return (
     <svg
