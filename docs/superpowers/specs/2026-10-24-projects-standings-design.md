@@ -1,7 +1,7 @@
 # Projects as a standings list — Design
 
 **Date:** 2026-10-24
-**Status:** Awaiting owner approval
+**Status:** Approved by the owner on 2026-10-24; built in Phase 19 of `tasks.md`
 **Replaces:** the pinned card stack in `#projects` (`projects-stack.tsx`, `project-card.tsx`)
 
 ## Intent

@@ -5,13 +5,13 @@
 > **Verify** block, then commit. Do not skip ahead, do not batch phases, and do
 > not "improve" adjacent files that the task does not list.
 
-> **Status:** Phases 1–18 are complete and committed. Phases 17 (strike and
+> **Status:** Phases 1–19 are complete and committed. Phases 17 (strike and
 > baybayin removal) and 18 (accessibility, touch, and layout fixes) are on branch
 > `feat/phase-17-18`, not yet merged into `master`. Their verification walks
 > were run at 375px (touch), 1366×768, and 1440px; reduced motion was not
-> emulated. Next: Phase 19 (projects as a standings list, on the same branch;
-> design in `docs/superpowers/specs/2026-10-24-projects-standings-design.md`).
-> After it: Phase 20 (new home sections) or Phase 21 (polish). The design is in
+> emulated. Phase 19 (projects as a standings list; design in
+> `docs/superpowers/specs/2026-10-24-projects-standings-design.md`) is complete on
+> the same branch. Next: Phase 20 (new home sections) or Phase 21 (polish). The design is in
 > `docs/superpowers/specs/2026-09-16-portfolio-v2-design.md` (§4f, §4g); read it only
 > if a task does not answer a question. Step-by-step history of earlier phases
 > was removed from this file; read Phases 1–10 with `git show 633c7fb:tasks.md`,
@@ -207,6 +207,7 @@ Read this before changing any of these files.
 16. Interactive sword-slash rhythm dividers with sound, and the hero portrait fade fix. The dividers are removed again in Phase 17; the fade fix stays.
 17. Strike dividers, strike-angle data, and baybayin removed; hero slashes keep fixed angles.
 18. Next.js 16.4.2, skip link and focus offset, 44px touch targets, 12px/16px text floor, name in the h1 and `GARAZA` watermark, face visible on touch, honest and skippable preloader, both Arnis photos on touch, project deep links and a plain list on phones, 2×2 stack grid, Open Graph image, README.
+19. Projects shown as a standings list: one row per project, P1 open, `/#<slug>` opens a row; the pinned card stack, tilt, and spotlight removed.
 
 ---
 
@@ -2236,39 +2237,51 @@ If nothing needed fixing, skip the commit.
   - `ProjectsStandings({ projects }: { projects: Project[] })`.
   - DOM ids: row `<li id={slug}>`, header button `id="{slug}-header"`, details `id="{slug}-details"`.
 
-- [ ] **Step 1: Create `components/sections/project-row.tsx`** (`"use client"`)
+- [x] **Step 1: Create `components/sections/project-row.tsx`** (`"use client"`)
 
   - **Markup:** `<li id={project.slug} className="border-t border-line">` › `<h3>` › a `<button type="button">` with `id`, `aria-expanded={open}`, `aria-controls="{slug}-details"`, `onClick={onToggle}`, and `group` on the button.
-  - **Header grid:** below `md`, three columns: position `3rem`, title `minmax(0,1fr)`, chevron `auto`. Category and year sit under the title as one mono line. From `md`: position `3rem`, title `minmax(0,1fr)`, category `9rem`, year `4rem`, chevron `1.5rem`. Minimum height 44px, `py-5`, `px-2`, `text-left`, and the accent focus ring (`focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`).
+  - **Header grid:** below `md`, three columns: position `3rem`, title `minmax(0,1fr)`, chevron `auto`. Category and year sit under the title as one mono line. From `md`: position `3rem`, title `minmax(0,1fr)`, category `10rem`, year `4rem`, chevron `1.5rem`. Minimum height 44px, `py-5`, `px-2`, `text-left`, and the accent focus ring (`focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`).
   - **Header text:** position `P{position}` in `font-mono text-sm`, `text-muted`, turning `text-accent` when open or hovered (`group-hover:`). Title in `font-display text-2xl uppercase tracking-wide text-fg sm:text-3xl`. Category (`PROJECT_CATEGORY_LABELS`) and year in `font-mono text-xs uppercase tracking-[0.2em] text-muted`. `ChevronDown` is `aria-hidden` and rotates 180° when open.
   - **Tint:** open rows get `bg-surface`; hovered rows get `hover:bg-surface/60`.
-  - **Details:** wrap in `<AnimatePresence initial={false}>`. When `open`, render `<motion.div id="{slug}-details" role="region" aria-labelledby="{slug}-header" className="overflow-hidden">` animating `height` 0 → `"auto"` and `opacity` 0 → 1. Use `duration: 0.35` with ease `[0.16, 1, 0.3, 1]`, or `duration: 0` when `!animate` or reduced motion.
-  - **Details content:** pad to line up with the title column (`pb-8 pl-14 pr-2 md:pl-[4.5rem]`). Show the summary (`text-lg text-fg/80`), the description (`max-w-2xl text-base leading-relaxed text-muted`), and the tech `<ul>` of `<Badge>`s. Show the links row only when `liveUrl || repoUrl`. Its buttons are exactly the old card's: `Button size="sm"` with "Live Demo" and `ArrowUpRight`, and `variant="outline"` with `CodeXml` and "Repository". Both open in a new tab with `rel="noopener noreferrer"`.
+  - **Details:** wrap in `<AnimatePresence initial={false}>`. When `open`, render `<motion.div id="{slug}-details" role="region" aria-labelledby="{slug}-header" className="overflow-hidden">` animating `height` 0 → `"auto"` and `opacity` 0 → 1. Use `duration: 0.35` with ease `[0.16, 1, 0.3, 1]`, or `duration: 0` under reduced motion. When `animate` is false (a deep-link open), render the details instead as a plain `<div>` with the same `id`, `role`, and `aria-labelledby`, outside `AnimatePresence`. That way every row reaches its final height in a single render: a `duration: 0` motion animation still waits a frame, which let the deep-link scroll land before the row above finished closing.
+  - **Details content:** pad to line up with the title column at every width (`pr-2 pb-8 pl-[4.5rem]`, which is the 3rem position column, the 1rem gap, and the 0.5rem padding). Show the summary (`text-lg text-fg/80`), the description (`max-w-2xl text-base leading-relaxed text-muted`), and the tech `<ul>` of `<Badge>`s. Show the links row only when `liveUrl || repoUrl`. Its buttons are exactly the old card's: `Button size="sm"` with "Live Demo" and `ArrowUpRight`, and `variant="outline"` with `CodeXml` and "Repository". Both open in a new tab with `rel="noopener noreferrer"`.
 
-- [ ] **Step 2: Create `components/sections/projects-standings.tsx`** (`"use client"`)
+- [x] **Step 2: Create `components/sections/projects-standings.tsx`** (`"use client"`)
 
-  It renders `<ol className="mx-auto max-w-4xl border-b border-line">` with one `ProjectRow` per project, `position={index + 1}`. The state is `{ slug: string | null; animate: boolean }`, starting as `{ slug: projects[0]?.slug ?? null, animate: true }`. Toggling a row sets `{ slug: open ? null : project.slug, animate: true }`.
+  It renders `<ol className="border-b border-line">` (the showcase's container already limits the width) with one `ProjectRow` per project, `position={index + 1}`. The state is `{ slug: string | null; animate: boolean }`, starting as `{ slug: projects[0]?.slug ?? null, animate: true }`. Toggling a row sets `{ slug: open ? null : project.slug, animate: true }`.
 
   The hash logic is the part the signatures don't determine:
 
 ```tsx
-  // Opens the row named by the URL hash. Applied without animation, then
-  // scrolled into view: a row closing above the target would otherwise
-  // shift it while the browser's own jump to the hash has already happened.
+  // Row to scroll to once a deep-link open has rendered.
+  const scrollTarget = useRef<string | null>(null);
+
+  // Opens the row named by the URL hash, without animation. The browser has
+  // already jumped to the hash, but the row closing above the target shifts
+  // it, so the effect below scrolls again once the new layout is in place.
   useEffect(() => {
     function openFromHash() {
       const slug = decodeURIComponent(window.location.hash.slice(1));
       if (!projects.some((project) => project.slug === slug)) return;
+      scrollTarget.current = slug;
       setOpen({ slug, animate: false });
-      requestAnimationFrame(() => document.getElementById(slug)?.scrollIntoView());
     }
     openFromHash();
     window.addEventListener("hashchange", openFromHash);
     return () => window.removeEventListener("hashchange", openFromHash);
   }, [projects]);
+
+  useEffect(() => {
+    const slug = scrollTarget.current;
+    if (!slug) return;
+    scrollTarget.current = null;
+    document.getElementById(slug)?.scrollIntoView();
+  }, [open]);
 ```
 
-- [ ] **Step 3: Swap it in, and delete the stack**
+  (A first version scrolled from `requestAnimationFrame` right after `setOpen`. On a fresh load of `/#kaalerto` it left the row 450px above the screen, because the rows were still animating.)
+
+- [x] **Step 3: Swap it in, and delete the stack**
 
   In `projects-showcase.tsx`, replace the `ProjectsStack` import and element with `ProjectsStandings`. Wrap the heading and the list in the existing `mx-auto max-w-4xl` container, with `gap-10` between them. Then:
 
@@ -2276,7 +2289,7 @@ If nothing needed fixing, skip the commit.
 git rm components/sections/projects-stack.tsx components/sections/project-card.tsx hooks/use-pointer-tilt.ts
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 grep -rnE "ProjectsStack|ProjectCard|usePointerTilt|projects-stack|project-card|use-pointer-tilt" app components hooks lib
@@ -2298,7 +2311,7 @@ npm run start
 - [ ] Reduced motion: rows open and close instantly.
 - [ ] Console is clean.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add components/sections/project-row.tsx components/sections/projects-standings.tsx components/sections/projects-showcase.tsx
@@ -2311,7 +2324,7 @@ git commit -m "feat(projects): replace the pinned card stack with a standings li
 
 **Files:** none created; fix whatever this task surfaces.
 
-- [ ] **Step 1: Clean production build**
+- [x] **Step 1: Clean production build**
 
 ```bash
 npx tsc --noEmit
@@ -2320,14 +2333,14 @@ npm run build
 npm run start
 ```
 
-- [ ] **Step 2: Walk the production build**
+- [x] **Step 2: Walk the production build**
 
 - [ ] Widths 375px, 768px, 1366×768, and 1440px: no horizontal scrollbar. The page from the hero to the Stack section is about six screens shorter than with the stack.
 - [ ] The header's "Projects" link scrolls to the section heading, which sits fully below the header.
 - [ ] The command palette, the hero reveal, and the Stack section behave as before.
 - [ ] Console is clean.
 
-- [ ] **Step 3: Commit any fixes**
+- [x] **Step 3: Commit any fixes**
 
 ```bash
 git add -A -- app components data hooks lib types
