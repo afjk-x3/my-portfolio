@@ -24,7 +24,8 @@ const buttonVariants = cva(
         ghost: "text-muted hover:text-fg",
       },
       size: {
-        sm: "h-9 px-4 text-sm",
+        // On touch screens small buttons grow to the 44px minimum tap size.
+        sm: "h-9 px-4 text-sm pointer-coarse:h-11 pointer-coarse:min-w-11",
         md: "h-11 px-6 text-sm",
         lg: "h-13 px-8 text-base",
       },

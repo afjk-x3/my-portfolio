@@ -87,7 +87,7 @@ export function SiteHeader() {
             type="button"
             aria-label="Back to top"
             onClick={() => lenis?.scrollTo(0)}
-            className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+            className="flex items-center rounded-md pointer-coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
           >
             <Wordmark />
           </button>
@@ -95,7 +95,7 @@ export function SiteHeader() {
           <Link
             href="/"
             aria-label="Home"
-            className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+            className="flex items-center rounded-md pointer-coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
           >
             <Wordmark />
           </Link>

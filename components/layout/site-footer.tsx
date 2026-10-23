@@ -18,7 +18,7 @@ export function SiteFooter() {
           © {new Date().getFullYear()} {siteConfig.name}
         </p>
 
-        <ul className="flex items-center gap-5">
+        <ul className="flex items-center gap-1">
           {socialLinks.map((link) => {
             const Icon = socialIcons[link.icon as keyof typeof socialIcons];
             return (
@@ -28,7 +28,7 @@ export function SiteFooter() {
                   aria-label={link.label}
                   target={link.href.startsWith("http") ? "_blank" : undefined}
                   rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                  className="text-muted transition-colors hover:text-fg"
+                  className="flex size-11 items-center justify-center rounded-full text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   <Icon aria-hidden className="size-4" />
                 </a>
