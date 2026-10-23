@@ -53,13 +53,15 @@ export const projects: Project[] = [
     id: "project-intern-docs",
     slug: "intern-docs",
     title: "Intern Docs",
-    category: "full-stack",
-    summary: "Document submissions and multi-step approval routing for interns.",
+    // OJT work owned by the host company: no company name and no links until
+    // they approve listing it.
+    category: "internship",
+    summary: "Requirement submissions and multi-step approvals for interns, built during my OJT.",
     description:
-      "Interns submit requirements that move through configurable approval routes, with versions, comments, signatures, an audit log, and retention rules enforced by a typed state machine. This foundation stage ships the Supabase schema with row-level security and CI with type checks, tests, and secret scanning.",
-    techStack: ["Next.js", "TypeScript", "Supabase", "PostgreSQL", "Zod"],
+      "Interns join by email invite and submit requirements that move through configurable approval steps with approver signatures, while admins manage users, routing templates, and an audit log. Built with one teammate during my OJT; I wrote 40 of its 56 commits.",
+    techStack: ["Next.js", "TypeScript", "Supabase", "Resend", "Playwright"],
     liveUrl: null,
-    repoUrl: "https://github.com/afjk-x3/intern-docs",
+    repoUrl: null,
     imageUrl: null,
     imageAlt: null,
     year: 2026,
