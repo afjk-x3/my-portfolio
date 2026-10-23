@@ -5,10 +5,11 @@
 > **Verify** block, then commit. Do not skip ahead, do not batch phases, and do
 > not "improve" adjacent files that the task does not list.
 
-> **Status:** Phases 1–16 are complete and committed. Next: Phase 17 (remove the
-> strike dividers, strike angles, and baybayin), then Phase 18 (accessibility,
-> touch, and layout fixes). After them: Phase 19 (new home sections) or Phase 20
-> (polish). The design is in
+> **Status:** Phases 1–18 are complete and committed. Phases 17 (strike and
+> baybayin removal) and 18 (accessibility, touch, and layout fixes) are on branch
+> `feat/phase-17-18`, not yet merged into `master`. Their verification walks
+> were run at 375px (touch), 1366×768, and 1440px; reduced motion was not
+> emulated. Next: Phase 19 (new home sections) or Phase 20 (polish). The design is in
 > `docs/superpowers/specs/2026-09-16-portfolio-v2-design.md` (§4f, §4g); read it only
 > if a task does not answer a question. Step-by-step history of earlier phases
 > was removed from this file; read Phases 1–10 with `git show 633c7fb:tasks.md`,
@@ -203,6 +204,8 @@ Read this before changing any of these files.
 14. Case studies removed; strike line dividers turned into a slash cut.
 15. Intro on every full load and reloads open at the top; projects pinned near the top; full-stance discipline card.
 16. Interactive sword-slash rhythm dividers with sound, and the hero portrait fade fix. The dividers are removed again in Phase 17; the fade fix stays.
+17. Strike dividers, strike-angle data, and baybayin removed; hero slashes keep fixed angles.
+18. Next.js 16.4.2, skip link and focus offset, 44px touch targets, 12px/16px text floor, name in the h1 and `GARAZA` watermark, face visible on touch, honest and skippable preloader, both Arnis photos on touch, project deep links and a plain list on phones, 2×2 stack grid, Open Graph image, README.
 
 ---
 
@@ -241,7 +244,7 @@ Every block below was applied in order to a scratch copy at commit `71ca813`. Af
 
 **Interfaces consumed / produced:** none. After this task nothing exports or imports `StrikeLine`, `StrikeMark`, `StrikeButton`, `StrikeFinisher`, `useStrikeRhythm`, or anything from `@/lib/strike-audio`.
 
-- [ ] **Step 1: Replace `app/page.tsx`**
+- [x] **Step 1: Replace `app/page.tsx`**
 
 ```tsx
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -270,7 +273,7 @@ export default function Home() {
 }
 ```
 
-- [ ] **Step 2: Swap the footer's strike divider for a plain hairline**
+- [x] **Step 2: Swap the footer's strike divider for a plain hairline**
 
 In `components/layout/site-footer.tsx`, delete this import line:
 
@@ -290,7 +293,7 @@ with:
       <div aria-hidden className="relative mx-auto mb-6 h-px max-w-6xl bg-line" />
 ```
 
-- [ ] **Step 3: Restore the gap above the projects heading**
+- [x] **Step 3: Restore the gap above the projects heading**
 
 The strike band (96–128px tall) used to separate the hero from the projects heading. In `components/sections/projects-showcase.tsx`, replace:
 
@@ -304,7 +307,7 @@ with:
     <section id="projects" className="relative px-6 pt-24 pb-24">
 ```
 
-- [ ] **Step 4: Remove the strike tokens from `app/globals.css`**
+- [x] **Step 4: Remove the strike tokens from `app/globals.css`**
 
 In the `@theme` block, delete these two lines. The `--color-scar` token is not used anywhere.
 
@@ -336,7 +339,7 @@ In the same block, delete the approach ring, together with the blank line after 
 
 ```
 
-- [ ] **Step 5: Delete the strike files**
+- [x] **Step 5: Delete the strike files**
 
 ```bash
 git rm components/ui/strike-line.tsx components/ui/strike-mark.tsx components/ui/strike-button.tsx components/ui/strike-finisher.tsx hooks/use-strike-rhythm.ts lib/strike-audio.ts
@@ -345,7 +348,7 @@ git rm -r public/audio/strikes
 
 `public/` should now hold only `images/` and `resume.pdf`.
 
-- [ ] **Step 6: Verify**
+- [x] **Step 6: Verify**
 
 ```bash
 grep -rnE "strike-(line|mark|button|finisher)|use-strike-rhythm|strike-audio|audio/strikes|approach-ring|color-scar" app components hooks lib
@@ -368,7 +371,7 @@ After the intro, at 1440px:
 - [ ] At 375px: no horizontal scrollbar.
 - [ ] Console is clean.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/page.tsx app/globals.css components/layout/site-footer.tsx components/sections/projects-showcase.tsx
@@ -386,7 +389,7 @@ git commit -m "refactor(strike): remove the interactive strike dividers and soun
 
 **Interfaces consumed / produced:** none. After this task `getStrike`, `strikeAngles`, and the `StrikeAngle` type no longer exist.
 
-- [ ] **Step 1: Give the hero slashes their own angles**
+- [x] **Step 1: Give the hero slashes their own angles**
 
 In `components/sections/hero-backdrop-reveal.tsx`, delete this import line:
 
@@ -451,7 +454,7 @@ with:
               transform={`rotate(${slash.degrees})`}
 ```
 
-- [ ] **Step 2: Delete the `StrikeAngle` type**
+- [x] **Step 2: Delete the `StrikeAngle` type**
 
 At the end of `types/index.ts`, delete this block and the blank line before it. The file must still end with the closing `}` of `BaybayinEntry` and a newline.
 
@@ -473,13 +476,13 @@ export interface StrikeAngle {
 }
 ```
 
-- [ ] **Step 3: Delete the data file**
+- [x] **Step 3: Delete the data file**
 
 ```bash
 git rm data/strike-angles.ts
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 grep -rnE "strike-angles|getStrike|StrikeAngle|strikeAngles" app components data hooks lib types
@@ -500,7 +503,7 @@ Expected: the `grep` prints nothing, and the other commands pass. After the intr
 - [ ] Sweeping the mouse across the whole hero reveals the same four lime slashes as before: one rising to the right left of the portrait, one falling to the right at the top right, one vertical right of the face, and one horizontal low across the hero.
 - [ ] Console is clean.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add components/sections/hero-backdrop-reveal.tsx types/index.ts
@@ -520,7 +523,7 @@ git commit -m "refactor(hero): hardcode the backdrop slash angles and remove str
 
 **Interfaces consumed / produced:** `SectionHeading` loses its `script` prop and keeps `{ eyebrow, title, className? }`. The `BaybayinEntry` type, the `baybayin` export, and the `font-baybayin` class no longer exist.
 
-- [ ] **Step 1: Replace `components/ui/section-heading.tsx`**
+- [x] **Step 1: Replace `components/ui/section-heading.tsx`**
 
 ```tsx
 import { cn } from "@/lib/utils";
@@ -546,7 +549,7 @@ export function SectionHeading({ eyebrow, title, className }: SectionHeadingProp
 }
 ```
 
-- [ ] **Step 2: Drop `script` from the three section headings**
+- [x] **Step 2: Drop `script` from the three section headings**
 
 In each of `components/sections/projects-showcase.tsx`, `components/sections/bento-grid.tsx`, and `components/sections/contact.tsx`, delete this import line:
 
@@ -584,7 +587,7 @@ In `contact.tsx`, delete this line from the `<SectionHeading>` props:
           script={baybayin.contact}
 ```
 
-- [ ] **Step 3: Keep only the English motto in the hero**
+- [x] **Step 3: Keep only the English motto in the hero**
 
 In `components/sections/hero.tsx`, delete this import line:
 
@@ -613,7 +616,7 @@ with:
             </p>
 ```
 
-- [ ] **Step 4: Remove the baybayin name from the preloader**
+- [x] **Step 4: Remove the baybayin name from the preloader**
 
 In `components/ui/preloader.tsx`, delete this import line and the blank line above it:
 
@@ -630,7 +633,7 @@ Then delete this element and the blank line after it. The counter `<div classNam
 
 ```
 
-- [ ] **Step 5: Stop loading Noto Sans Tagalog**
+- [x] **Step 5: Stop loading Noto Sans Tagalog**
 
 In `app/layout.tsx`, replace:
 
@@ -664,7 +667,7 @@ In `app/globals.css`, in the `@theme inline` block, delete:
   --font-baybayin: var(--font-noto-tagalog);
 ```
 
-- [ ] **Step 6: Delete the `BaybayinEntry` type and the data file**
+- [x] **Step 6: Delete the `BaybayinEntry` type and the data file**
 
 At the end of `types/index.ts`, delete this block and the blank line before it. The file must then end with the closing `}` of `SocialLink` and a newline.
 
@@ -692,7 +695,7 @@ export interface BaybayinEntry {
 git rm data/baybayin.ts
 ```
 
-- [ ] **Step 7: Verify**
+- [x] **Step 7: Verify**
 
 ```bash
 grep -rniE "baybayin|tagalog" app components data hooks lib types
@@ -711,7 +714,7 @@ Expected: the `grep` prints nothing, and the other commands pass.
 - [ ] At 375px: no horizontal scrollbar.
 - [ ] Console is clean.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/layout.tsx app/globals.css types/index.ts components/ui/section-heading.tsx components/ui/preloader.tsx components/sections/hero.tsx components/sections/projects-showcase.tsx components/sections/bento-grid.tsx components/sections/contact.tsx
@@ -724,7 +727,7 @@ git commit -m "refactor: remove the baybayin accents and the Noto Sans Tagalog f
 
 **Files:** none created; fix whatever this task surfaces.
 
-- [ ] **Step 1: Clean production build**
+- [x] **Step 1: Clean production build**
 
 ```bash
 grep -rniE "baybayin|tagalog|strike-angles|getStrike|strike-(line|mark|button|finisher)|use-strike-rhythm|strike-audio" app components data hooks lib types
@@ -736,7 +739,7 @@ npm run start
 
 Expected: the `grep` prints nothing, and the other commands pass.
 
-- [ ] **Step 2: Walk the production build**
+- [x] **Step 2: Walk the production build**
 
 - [ ] **Widths** 375px, 768px, and 1440px: no horizontal scrollbar, and the gaps between hero, projects, stack, contact, and footer look deliberate, with no section crammed against the next.
 - [ ] **Header nav:** Projects, Stack, Discipline, and Contact each scroll to the right place, with the section heading visible below the header.
@@ -745,7 +748,7 @@ Expected: the `grep` prints nothing, and the other commands pass.
 - [ ] **Reduced motion** (DevTools → Rendering → prefers-reduced-motion: reduce, then reload): the page renders statically, with no errors.
 - [ ] **Console:** clean.
 
-- [ ] **Step 3: Commit any fixes**
+- [x] **Step 3: Commit any fixes**
 
 ```bash
 git add -A -- app components data hooks lib types
@@ -794,14 +797,14 @@ The Open Graph image was rendered and inspected. Copy the blocks exactly.
 
 `npm audit` reports a **critical** advisory for `next` 16.0.0–16.4.0 (including remote code execution in `next/og`, which Task 18.11 uses), plus high-severity advisories for `sharp` and `source-map-js`. `16.4.2` is the newest patch that has been out for over a week. Both versions stay pinned exactly, as before.
 
-- [ ] **Step 1: Upgrade and fix the transitive packages**
+- [x] **Step 1: Upgrade and fix the transitive packages**
 
 ```bash
 npm install --save-exact next@16.4.2 eslint-config-next@16.4.2
 npm audit fix
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npm audit
@@ -813,7 +816,7 @@ npm run start
 
 Expected: `npm audit` prints `found 0 vulnerabilities`. In `package.json`, `"next"` and `"eslint-config-next"` both read exactly `"16.4.2"`, with no `^`. The build banner says `Next.js 16.4.2`, and the other commands pass. After the intro, the page looks and behaves exactly as before, and the console is clean.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add package.json package-lock.json
@@ -829,7 +832,7 @@ git commit -m "fix(deps): upgrade next to 16.4.2 for security advisories"
 
 The header is fixed, so a control reached with Tab could scroll in underneath it, which fails WCAG 2.2 AA "Focus not obscured". There was also no way to jump past the header.
 
-- [ ] **Step 1: Offset focus and anchor scrolling in `app/globals.css`**
+- [x] **Step 1: Offset focus and anchor scrolling in `app/globals.css`**
 
 Replace:
 
@@ -849,7 +852,7 @@ with:
 }
 ```
 
-- [ ] **Step 2: Add the skip link in `app/layout.tsx`**
+- [x] **Step 2: Add the skip link in `app/layout.tsx`**
 
 Replace:
 
@@ -872,7 +875,7 @@ with:
         <Backdrop />
 ```
 
-- [ ] **Step 3: Give both `<main>` elements the target id**
+- [x] **Step 3: Give both `<main>` elements the target id**
 
 In `app/page.tsx`, replace `      <main>` with `      <main id="main">`.
 
@@ -890,7 +893,7 @@ with:
 
 (The rest of that line stays as it is.)
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -907,7 +910,7 @@ After the intro, at 1440px:
 - [ ] The skip link is invisible until focused, and it never shows on mouse click.
 - [ ] Console is clean.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/globals.css app/layout.tsx app/page.tsx app/not-found.tsx
@@ -923,7 +926,7 @@ git commit -m "feat(a11y): add a skip link and keep focus clear of the fixed hea
 
 `pointer-coarse:` is Tailwind v4's variant for `@media (pointer: coarse)`, which matches phones and tablets. Mouse users see no change.
 
-- [ ] **Step 1: Grow the small button size on touch screens**
+- [x] **Step 1: Grow the small button size on touch screens**
 
 In `components/ui/button.tsx`, replace:
 
@@ -940,7 +943,7 @@ with:
 
 This covers the header's icon buttons, the mobile menu links, and the project card buttons.
 
-- [ ] **Step 2: Give the header wordmark a 44px hit area**
+- [x] **Step 2: Give the header wordmark a 44px hit area**
 
 The wordmark is a plain `<button>` on the home page and a `<Link>` elsewhere, and both are 31px tall. In `components/layout/site-header.tsx`, this exact `className` appears twice. Replace **both** occurrences of:
 
@@ -954,7 +957,7 @@ with:
 className="flex items-center rounded-md pointer-coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
 ```
 
-- [ ] **Step 3: Give the footer icons a 44px hit area**
+- [x] **Step 3: Give the footer icons a 44px hit area**
 
 In `components/layout/site-footer.tsx`, replace:
 
@@ -980,7 +983,7 @@ with:
                   className="flex size-11 items-center justify-center rounded-full text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1000,7 +1003,7 @@ npm run start
 - [ ] Back on desktop with a mouse, the header and project buttons are the same size as before. The footer icons are spaced a little wider, and Tab shows a lime ring on each one.
 - [ ] Console is clean.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add components/ui/button.tsx components/layout/site-header.tsx components/layout/site-footer.tsx
@@ -1014,7 +1017,7 @@ git commit -m "feat(a11y): grow tap targets to 44px on touch screens"
 **Files:**
 - Modify: `components/sections/hero-status.tsx`, `components/sections/hero.tsx`, `components/layout/site-header.tsx`, `components/sections/project-card.tsx`, `components/sections/discipline-card.tsx`
 
-- [ ] **Step 1: Hero telemetry, motto, and the Ctrl K hint to 12px**
+- [x] **Step 1: Hero telemetry, motto, and the Ctrl K hint to 12px**
 
 In `components/sections/hero-status.tsx`, replace:
 
@@ -1052,7 +1055,7 @@ with:
 font-mono text-xs tracking-normal sm:inline">
 ```
 
-- [ ] **Step 2: Body copy to 16px**
+- [x] **Step 2: Body copy to 16px**
 
 In `components/sections/project-card.tsx`, replace:
 
@@ -1078,7 +1081,7 @@ with:
         <p className="max-w-sm text-base leading-relaxed text-muted">
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1096,7 +1099,7 @@ npm run start
 - [ ] The project descriptions and the Arnis card text are visibly larger and still sit comfortably inside their cards.
 - [ ] Console is clean.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/sections/hero-status.tsx components/sections/hero.tsx components/layout/site-header.tsx components/sections/project-card.tsx components/sections/discipline-card.tsx
@@ -1112,7 +1115,7 @@ git commit -m "feat(a11y): raise label text to 12px and body copy to 16px"
 
 The page's only `h1` was "Full Stack Developer", so search results and screen readers got the role but not the person. The watermark also repeated "DEVELOPER" right above the headline.
 
-- [ ] **Step 1: Wrap the name and the role in one `h1`**
+- [x] **Step 1: Wrap the name and the role in one `h1`**
 
 In `components/sections/hero.tsx`, replace:
 
@@ -1145,7 +1148,7 @@ with:
             </h1>
 ```
 
-- [ ] **Step 2: Make the watermark the surname**
+- [x] **Step 2: Make the watermark the surname**
 
 In `data/site.ts`, replace:
 
@@ -1159,7 +1162,7 @@ with:
   watermark: "GARAZA",
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1173,7 +1176,7 @@ npm run start
 - [ ] The outline watermark behind the portrait now reads GARAZA. "GA" and "ZA" show either side of the head, and moving the mouse over it reveals the lime fill.
 - [ ] Console is clean.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/sections/hero.tsx data/site.ts
@@ -1191,7 +1194,7 @@ On phones, the `wander` mode kept a reveal drifting over the face, and `static` 
 
 **Interfaces consumed / produced:** `RevealMode` becomes `"pointer" | "touch"`. `InkTrail` loses `setHome`, and the `InkHome` type is removed. `INK_POOL` becomes `MAX_DROPS`, because there is no `wander` head any more. `useInkMaskLayer` now returns nothing.
 
-- [ ] **Step 1: Replace the touch modes in `hooks/use-ink-trail.ts`**
+- [x] **Step 1: Replace the touch modes in `hooks/use-ink-trail.ts`**
 
 Replace:
 
@@ -1374,7 +1377,7 @@ In the `useMemo` at the end, delete:
       },
 ```
 
-- [ ] **Step 2: Simplify `useInkMaskLayer` in `components/sections/ink-reveal.tsx`**
+- [x] **Step 2: Simplify `useInkMaskLayer` in `components/sections/ink-reveal.tsx`**
 
 Replace:
 
@@ -1412,7 +1415,7 @@ export function useInkMaskLayer(svgRef: RefObject<SVGSVGElement | null>) {
 }
 ```
 
-- [ ] **Step 3: Remove the face-pinning code from `components/sections/headgear-reveal.tsx`**
+- [x] **Step 3: Remove the face-pinning code from `components/sections/headgear-reveal.tsx`**
 
 Replace:
 
@@ -1486,7 +1489,7 @@ with:
   useInkMaskLayer(svgRef);
 ```
 
-- [ ] **Step 4: Play one sweep on touch screens as the intro ends**
+- [x] **Step 4: Play one sweep on touch screens as the intro ends**
 
 In `components/ui/preloader.tsx`, replace:
 
@@ -1530,7 +1533,7 @@ with:
   };
 ```
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 grep -rnE "wander|static\"|setHome|InkHome|STATIC_RADIUS|WANDER_SPAN|\bFACE\b" components hooks
@@ -1547,7 +1550,7 @@ Expected: the `grep` prints nothing, and the other commands pass.
 - [ ] **Desktop with a mouse:** the cursor reveal behaves exactly as before, including the headgear over the face, and there is no sweep at the end of the intro. Ctrl+K → type `st` → **Strike** still sweeps the hero.
 - [ ] Console is clean.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add hooks/use-ink-trail.ts components/sections/ink-reveal.tsx components/sections/headgear-reveal.tsx components/ui/preloader.tsx
@@ -1563,7 +1566,7 @@ git commit -m "feat(hero): keep the face visible on touch screens"
 
 `SYS.INIT // OK` and `LATENCY // 12MS` presented invented telemetry, and the 2.6 s intro could not be skipped. The status lines now show real facts, and any key, click, tap, or wheel turn jumps straight to the exit wipe. It still plays on every full load, as the owner chose in Phase 15.
 
-- [ ] **Step 1: Import the site config**
+- [x] **Step 1: Import the site config**
 
 Replace:
 
@@ -1578,7 +1581,7 @@ import { siteConfig } from "@/data/site";
 import { INK_STRIKE_EVENT } from "@/hooks/use-ink-trail";
 ```
 
-- [ ] **Step 2: Replace the status lines**
+- [x] **Step 2: Replace the status lines**
 
 Replace:
 
@@ -1605,7 +1608,7 @@ const STATUS_LINES = [
 ] as const;
 ```
 
-- [ ] **Step 3: Skip on any input**
+- [x] **Step 3: Skip on any input**
 
 Replace:
 
@@ -1642,7 +1645,7 @@ add this effect (keep one blank line between them):
   }, [visible]);
 ```
 
-- [ ] **Step 4: Tell the visitor they can skip**
+- [x] **Step 4: Tell the visitor they can skip**
 
 Replace:
 
@@ -1664,7 +1667,7 @@ with:
             {/* Neon leading edge, visible as the overlay wipes upward. */}
 ```
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1680,7 +1683,7 @@ npm run start
 - [ ] Reduced motion: a key press skips to the fade-out.
 - [ ] Console is clean.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add components/ui/preloader.tsx
@@ -1696,7 +1699,7 @@ git commit -m "feat(preloader): show real status lines and skip on any input"
 
 The action photo only appeared on hover or keyboard focus, so phone visitors never saw it. On touch screens (`pointer-coarse:`) the two photos now sit side by side. Tailwind's `hover` variant already applies only on devices that can hover, so the mouse cross-fade is unchanged.
 
-- [ ] **Step 1: Split the card on touch screens**
+- [x] **Step 1: Split the card on touch screens**
 
 Replace:
 
@@ -1737,7 +1740,7 @@ with:
 group-hover:opacity-100 group-focus-visible:opacity-100 pointer-coarse:left-1/2 pointer-coarse:w-1/2 pointer-coarse:opacity-70"
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1750,7 +1753,7 @@ npm run start
 - [ ] Desktop with a mouse: unchanged. The stance photo fills the card, and hovering cross-fades to the action photo.
 - [ ] Console is clean.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/sections/discipline-card.tsx
@@ -1772,7 +1775,7 @@ Two findings shaped this task:
 - **Deep links:** putting the `id` on the pinned card wrapper does not work. Browsers measure a pinned element where it is pinned, so `/#driftline` landed with FleetDesk covering Driftline. A zero-height marker placed before each card, in normal flow, lands correctly. This was tested for all three cards at 1366×768.
 - **Phones:** at 375px wide with 16px descriptions, the first card is 686px tall. Pinned 112px from the top, it overflows a 667px phone screen, so its buttons would be hidden under the next card. Below `md` the cards become a plain list.
 
-- [ ] **Step 1: Replace `components/sections/projects-stack.tsx`**
+- [x] **Step 1: Replace `components/sections/projects-stack.tsx`**
 
 ```tsx
 "use client";
@@ -1818,7 +1821,7 @@ export function ProjectsStack({ projects }: { projects: Project[] }) {
 }
 ```
 
-- [ ] **Step 2: Pin the cards from `md` up only**
+- [x] **Step 2: Pin the cards from `md` up only**
 
 In `components/sections/project-card.tsx`, replace:
 
@@ -1880,7 +1883,7 @@ with:
           top: stacked ? `${index * 1.5}rem` : 0,
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1895,7 +1898,7 @@ npm run start
 - [ ] At 375×667 (DevTools responsive mode): the three cards scroll by as a normal list, 32px apart, with no pinning and no shrinking. Every card's buttons can be tapped. `/#fleetdesk` lands with FleetDesk's top just below the header.
 - [ ] Console is clean.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/sections/projects-stack.tsx components/sections/project-card.tsx
@@ -1911,7 +1914,7 @@ git commit -m "feat(projects): deep-link each project and list them plainly on p
 
 From `lg` up, the Frontend card spanned three columns but held only four tags, so most of it was empty. The four skill cards now form an even 2×2 grid beside the Arnis photo. Each card keeps its label at the top and its tags at the bottom, which matches the photo card's bottom-aligned text.
 
-- [ ] **Step 1: Use a four-column grid**
+- [x] **Step 1: Use a four-column grid**
 
 In `components/sections/bento-grid.tsx`, replace:
 
@@ -1940,7 +1943,7 @@ with:
           ))}
 ```
 
-- [ ] **Step 2: Push the tags to the bottom of each card**
+- [x] **Step 2: Push the tags to the bottom of each card**
 
 In `components/sections/tech-stack-card.tsx`, replace:
 
@@ -1956,7 +1959,7 @@ with:
 
 (The rest of that class string stays as it is.)
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -1970,7 +1973,7 @@ npm run start
 - [ ] 375px: everything is one column, and each skill card shows its label at the top and its tags at the bottom.
 - [ ] Console is clean.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/sections/bento-grid.tsx components/sections/tech-stack-card.tsx
@@ -1989,7 +1992,7 @@ Shared links had no preview image. This adds a 1200×630 card generated at build
 
 `metadataBase` is deliberately not set. On a Vercel production deployment, Next.js resolves the image URL from `VERCEL_PROJECT_PRODUCTION_URL`, and on preview deployments from the preview URL. Local builds print a `metadataBase property ... using "http://localhost:3000"` warning, and that warning is expected.
 
-- [ ] **Step 1: Create `app/opengraph-image.tsx`**
+- [x] **Step 1: Create `app/opengraph-image.tsx`**
 
 ```tsx
 import { ImageResponse } from "next/og";
@@ -2040,7 +2043,7 @@ export default function OpengraphImage() {
 }
 ```
 
-- [ ] **Step 2: Ask for the large preview card**
+- [x] **Step 2: Ask for the large preview card**
 
 In `app/layout.tsx`, replace:
 
@@ -2064,7 +2067,7 @@ with:
 };
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 npx tsc --noEmit
@@ -2079,7 +2082,7 @@ Expected: everything passes. The build lists `○ /opengraph-image` as a static 
 - [ ] View the home page source. It contains `<meta property="og:image"` with a `/opengraph-image` URL, `<meta property="og:image:alt" content="John Paul R. Garaza, Full Stack Developer"`, and `<meta name="twitter:card" content="summary_large_image"`.
 - [ ] Console is clean.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/opengraph-image.tsx app/layout.tsx
@@ -2093,7 +2096,7 @@ git commit -m "feat(seo): generate the link preview image"
 **Files:**
 - Modify: `README.md` (full replacement; it is currently empty)
 
-- [ ] **Step 1: Replace `README.md`**
+- [x] **Step 1: Replace `README.md`**
 
 ````markdown
 # John Paul R. Garaza — Developer Portfolio
@@ -2145,11 +2148,11 @@ hidden from screen readers, and the whole page works from the keyboard: skip
 link, visible focus rings, and the command palette.
 ````
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 Open `README.md` in a Markdown preview (or on GitHub after pushing). The headings, the bash block, and the table render correctly, and every path it names exists.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add README.md
@@ -2162,7 +2165,7 @@ git commit -m "docs: write the README"
 
 **Files:** none created; fix whatever this task surfaces.
 
-- [ ] **Step 1: Clean production build**
+- [x] **Step 1: Clean production build**
 
 ```bash
 npm audit
@@ -2174,7 +2177,7 @@ npm run start
 
 Expected: 0 vulnerabilities, and everything else passes (the `metadataBase` warning is expected).
 
-- [ ] **Step 2: Walk the production build**
+- [x] **Step 2: Walk the production build**
 
 - [ ] **Widths** 375px, 768px, 1366×768, and 1440px: no horizontal scrollbar. The project stack pins only from 768px up, and every project card's buttons can be reached at every width.
 - [ ] **Phone preset (touch):** every tap target is at least 44px, the face is visible after the single intro sweep, and both Arnis photos show.
@@ -2183,7 +2186,7 @@ Expected: 0 vulnerabilities, and everything else passes (the `metadataBase` warn
 - [ ] **Deep links:** `/#ledger`, `/#driftline`, `/#fleetdesk`, `/#stack`, and `/#contact` each land on their target, also on a fresh load with the intro.
 - [ ] **Console:** clean.
 
-- [ ] **Step 3: Commit any fixes**
+- [x] **Step 3: Commit any fixes**
 
 ```bash
 git add -A -- app components data hooks lib types
