@@ -35,8 +35,8 @@ v2 turns that recreation into the owner's own brand while making it useful for j
 | Sequencing | Identity system first, then case studies, then new home sections, then polish. Nothing is styled twice. |
 | Case study content | Typed data extending `Project` in `data/projects.ts`, not MDX. Keeps the `lib/queries.ts` Supabase seam. |
 | Timeline | No deadline. Quality first; each phase ships and is verified before the next. |
-| Home sections | Four candidates are designed (§6). **The owner picks which to build before Phase 19 is planned.** |
-| Analytics | Vercel Web Analytics, added in Phase 20. |
+| Home sections | Four candidates are designed (§6). **The owner picks which to build before Phase 20 is planned.** |
+| Analytics | Vercel Web Analytics, added in Phase 21. |
 
 ---
 
@@ -52,8 +52,9 @@ v2 turns that recreation into the owner's own brand while making it useful for j
 | 16 | Interactive sword-slash dividers (§4e, added 2026-09-17) | 14 |
 | 17 | Remove strike dividers, strike angles, and baybayin (§4f, added 2026-10-23) | 16 |
 | 18 | Accessibility, touch, and layout fixes from the UI/UX review (§4g, added 2026-10-23) | 17 |
-| 19 | New home sections (owner's selection) | 11 |
-| 20 | Polish and reach | 11–19 |
+| 19 | Projects as a standings list (`2026-10-24-projects-standings-design.md`, added 2026-10-24) | 18 |
+| 20 | New home sections (owner's selection) | 11 |
+| 21 | Polish and reach | 11–20 |
 
 Each phase is written into `tasks.md` as atomic builder tasks only when the previous phase is verified.
 
@@ -314,7 +315,7 @@ No special mode. The owner writes confidential case studies without the company 
 
 ---
 
-## 6. Phase 19 — New home sections (owner selects)
+## 6. Phase 20 — New home sections (owner selects)
 
 Each section is independent: its own data file, query, and component. Any subset can ship.
 
@@ -367,7 +368,7 @@ The header shows at most five links, chosen from the built sections in this prio
 
 ---
 
-## 7. Phase 20 — Polish and reach
+## 7. Phase 21 — Polish and reach
 
 ### 7.1 Motion
 
@@ -403,7 +404,7 @@ Code cannot provide these. The builder uses clearly marked placeholders until th
 2. `data/projects.ts` — 3+ real projects, each with case study text and screenshots.
 3. `public/resume.pdf` — real résumé.
 4. Headgear photo: the owner does not own a headgear. Short term, the STIX product cut-out stays with its logo removed. Recommended later: borrow a teammate's or club headgear and photograph it (front view, plain background, even light), then re-tune `HEADGEAR` / `FACE`.
-5. For selected Phase 19 sections: about copy, OJT and school timeline, Arnis competition record and photos, "now" list, and a GitHub token.
+5. For selected Phase 20 sections: about copy, OJT and school timeline, Arnis competition record and photos, "now" list, and a GitHub token.
 
 ---
 
@@ -422,4 +423,4 @@ Code cannot provide these. The builder uses clearly marked placeholders until th
 
 ## 10. Open decision
 
-**Which Phase 19 sections to build** (About, Experience, Arnis, Now — any subset). Needed before Phase 19 is written into `tasks.md`; Phases 11 and 12 can be planned without it.
+**Which Phase 20 sections to build** (About, Experience, Arnis, Now — any subset). Needed before Phase 20 is written into `tasks.md`; Phases 11 and 12 can be planned without it.

@@ -9,7 +9,9 @@
 > baybayin removal) and 18 (accessibility, touch, and layout fixes) are on branch
 > `feat/phase-17-18`, not yet merged into `master`. Their verification walks
 > were run at 375px (touch), 1366×768, and 1440px; reduced motion was not
-> emulated. Next: Phase 19 (new home sections) or Phase 20 (polish). The design is in
+> emulated. Next: Phase 19 (projects as a standings list, on the same branch;
+> design in `docs/superpowers/specs/2026-10-24-projects-standings-design.md`).
+> After it: Phase 20 (new home sections) or Phase 21 (polish). The design is in
 > `docs/superpowers/specs/2026-09-16-portfolio-v2-design.md` (§4f, §4g); read it only
 > if a task does not answer a question. Step-by-step history of earlier phases
 > was removed from this file; read Phases 1–10 with `git show 633c7fb:tasks.md`,
@@ -64,7 +66,7 @@ The preloader plays on every full page load (about 2.6 s); wait for the wipe bef
 
 ## Current file structure
 
-This is the tree after Phase 18. Files marked **[17]** or **[18]** are changed by that phase. Phase 17 also deletes `components/ui/strike-line.tsx`, `strike-mark.tsx`, `strike-button.tsx`, `strike-finisher.tsx`, `hooks/use-strike-rhythm.ts`, `lib/strike-audio.ts`, `data/strike-angles.ts`, `data/baybayin.ts`, and `public/audio/strikes/`. Phase 18 also changes `package.json`, `package-lock.json`, and `README.md`.
+This is the tree after Phase 19. Files marked **[17]**, **[18]**, or **[19]** are changed by that phase. Phase 19 also deletes `components/sections/projects-stack.tsx`, `project-card.tsx`, and `hooks/use-pointer-tilt.ts`. Phase 17 also deletes `components/ui/strike-line.tsx`, `strike-mark.tsx`, `strike-button.tsx`, `strike-finisher.tsx`, `hooks/use-strike-rhythm.ts`, `lib/strike-audio.ts`, `data/strike-angles.ts`, `data/baybayin.ts`, and `public/audio/strikes/`. Phase 18 also changes `package.json`, `package-lock.json`, and `README.md`.
 
 ```
 app/
@@ -89,8 +91,8 @@ components/
     ink-reveal.tsx           # InkRevealSection, InkMask (torn-edge filter), paintInkMask, useInkMaskLayer (client) [18]
     hero-status.tsx          # AvailabilityStatus + LocalClock (client) [18]
     projects-showcase.tsx    # server: awaits getProjects() (id="projects") [17]
-    projects-stack.tsx       # pinned scroll stack from md up, deep-link marker per project (client) [18]
-    project-card.tsx         # one card: pinned + tilt + spotlight from md up, plain below (client) [18]
+    projects-standings.tsx   # standings list: which row is open, /#<slug> deep links (client) [19]
+    project-row.tsx          # one row: header button + animated details (client) [19]
     bento-grid.tsx           # server: awaits getSkillCategories() (id="stack"); photo + 2×2 skill cards [17] [18]
     tech-stack-card.tsx      # one skill group card, label top / tags bottom (server) [18]
     discipline-card.tsx      # Arnis photo card: hover/focus cross-fade, side by side on touch (client, id="discipline") [18]
@@ -112,7 +114,6 @@ hooks/
   use-command-palette.ts     # palette open state + modifier key label
   use-local-time.ts          # ticking clock via useSyncExternalStore
   use-media-query.ts         # matchMedia via useSyncExternalStore
-  use-pointer-tilt.ts        # mouse-tracked 3D tilt + spotlight motion values
 lib/
   utils.ts                   # cn()
   queries.ts                 # async data access seam (Supabase swap point)
@@ -169,7 +170,7 @@ All tokens live in `app/globals.css`. Use the Tailwind classes; never hard-code 
 
 Read this before changing any of these files.
 
-- **Projects stack** (`projects-stack.tsx`, `project-card.tsx`): from `md` up, the section is `projects.length × 100vh` tall. Each card sits in a `md:sticky md:top-0 md:h-screen` wrapper, so cards pin and stack. A shared `useScroll` progress value scales each card down as the next arrives. Below `md` (Phase 18) the cards are a plain list with no pinning or scaling, so a tall card never hides its buttons. Before each card, a zero-height `<span id={slug}>` is the deep-link target for `/#<slug>`; never put that `id` on the pinned wrapper, because browsers measure a pinned element where it is pinned. Adding or removing projects needs no component edits.
+- **Projects standings** (Phase 19; `projects-standings.tsx`, `project-row.tsx`): the projects are an `<ol>` of rows in `order`. One row is open at a time, and P1 is open on load. A `/#<slug>` hash, on load or on `hashchange`, opens that row without animation and scrolls it into view (`scroll-padding-top` keeps it below the header), so a row collapsing above it cannot shift it. Each row's header is a `<button aria-expanded>` inside an `<h3>`. Adding or removing projects needs no component edits. (Phases 4–18 used a pinned card stack, which was replaced here.)
 - **Preloader** (`preloader.tsx`, gate styles in `globals.css`):
   - The overlay is always in the server HTML but CSS keeps it `display: none` unless `<html>` has `data-preloader-active`. An inline script, rendered first on the page, sets that attribute during parsing only when `sessionStorage` lacks `portfolio_preloaded` (from Task 15.1: on every full load, and it also sets `history.scrollRestoration = "manual"` so a reload opens at the top; a module flag stops client-side navigation from replaying it). That is why `<html>` has `suppressHydrationWarning`. Do not add a `flex` class to the overlay; `display` belongs to the gate.
   - React reads storage through `useSyncExternalStore` with `true` as the server snapshot.
@@ -2197,6 +2198,146 @@ If nothing needed fixing, skip the commit.
 
 ---
 
+# Phase 19 — Projects as a standings list
+
+**Goal:** replace the pinned card stack in `#projects` with a standings list. There is one row per project, all six fit on about one screen, and a row opens in place.
+
+**Architecture:** `projects-showcase.tsx` (server) still awaits `getProjects()` and now renders `<ProjectsStandings>` (client). That component owns which row is open and the `/#<slug>` deep links. Each row is a `<ProjectRow>` (client): a header button plus details that animate open. The pinned stack, the card, and the tilt hook are deleted.
+
+**Spec:** `docs/superpowers/specs/2026-10-24-projects-standings-design.md`. Read it before Task 19.1; the plan argues from it.
+
+**Rules for this phase** (on top of Global Constraints):
+
+- One row is open at a time. P1 is open on load unless the URL hash names another project. Clicking the open row closes it, so having no row open is allowed.
+- Hover is only a highlight. Every action works by click, tap, Enter, and Space.
+- No pinning, no scroll-linked motion. The only animation is the details opening and closing, and it is instant under reduced motion.
+- `data/projects.ts`, the `Project` type, and `lib/queries.ts` do not change.
+
+**Review Focus.** These are the cases most likely to break, and Task 19.1's Verify block checks each one:
+
+1. **Deep link on a fresh load** (`/#kaalerto`, during the intro): the row must end up open and fully below the header. The risk is that P1 collapsing above it shifts it up out of place.
+2. **A hash that is not a project** (`/#stack`, `/#contact`, `/#nope`): the rows do not change, and P1 stays open.
+3. **A project with no links** (Intern Docs): its details have no empty button row or stray gap.
+4. **Keyboard:** Tab reaches every row header, Enter and Space toggle it, and focus stays on the header.
+5. **375px:** long titles and the tag lists wrap, with no horizontal scrollbar.
+
+### Task 19.1: Build the standings list and remove the stack
+
+**Files:**
+- Create: `components/sections/project-row.tsx`
+- Create: `components/sections/projects-standings.tsx`
+- Modify: `components/sections/projects-showcase.tsx`
+- Delete: `components/sections/projects-stack.tsx`, `components/sections/project-card.tsx`, `hooks/use-pointer-tilt.ts`
+
+**Interfaces:**
+- Consumes: `Project` and `PROJECT_CATEGORY_LABELS` from `@/types`; `Badge` and `Button` from `components/ui`; `ArrowUpRight`, `ChevronDown`, `CodeXml` from `lucide-react`; `AnimatePresence`, `motion`, `useReducedMotion` from `motion/react`.
+- Produces:
+  - `ProjectRow({ project, position, open, animate, onToggle }: { project: Project; position: number; open: boolean; animate: boolean; onToggle: () => void })`.
+  - `ProjectsStandings({ projects }: { projects: Project[] })`.
+  - DOM ids: row `<li id={slug}>`, header button `id="{slug}-header"`, details `id="{slug}-details"`.
+
+- [ ] **Step 1: Create `components/sections/project-row.tsx`** (`"use client"`)
+
+  - **Markup:** `<li id={project.slug} className="border-t border-line">` › `<h3>` › a `<button type="button">` with `id`, `aria-expanded={open}`, `aria-controls="{slug}-details"`, `onClick={onToggle}`, and `group` on the button.
+  - **Header grid:** below `md`, three columns: position `3rem`, title `minmax(0,1fr)`, chevron `auto`. Category and year sit under the title as one mono line. From `md`: position `3rem`, title `minmax(0,1fr)`, category `9rem`, year `4rem`, chevron `1.5rem`. Minimum height 44px, `py-5`, `px-2`, `text-left`, and the accent focus ring (`focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`).
+  - **Header text:** position `P{position}` in `font-mono text-sm`, `text-muted`, turning `text-accent` when open or hovered (`group-hover:`). Title in `font-display text-2xl uppercase tracking-wide text-fg sm:text-3xl`. Category (`PROJECT_CATEGORY_LABELS`) and year in `font-mono text-xs uppercase tracking-[0.2em] text-muted`. `ChevronDown` is `aria-hidden` and rotates 180° when open.
+  - **Tint:** open rows get `bg-surface`; hovered rows get `hover:bg-surface/60`.
+  - **Details:** wrap in `<AnimatePresence initial={false}>`. When `open`, render `<motion.div id="{slug}-details" role="region" aria-labelledby="{slug}-header" className="overflow-hidden">` animating `height` 0 → `"auto"` and `opacity` 0 → 1. Use `duration: 0.35` with ease `[0.16, 1, 0.3, 1]`, or `duration: 0` when `!animate` or reduced motion.
+  - **Details content:** pad to line up with the title column (`pb-8 pl-14 pr-2 md:pl-[4.5rem]`). Show the summary (`text-lg text-fg/80`), the description (`max-w-2xl text-base leading-relaxed text-muted`), and the tech `<ul>` of `<Badge>`s. Show the links row only when `liveUrl || repoUrl`. Its buttons are exactly the old card's: `Button size="sm"` with "Live Demo" and `ArrowUpRight`, and `variant="outline"` with `CodeXml` and "Repository". Both open in a new tab with `rel="noopener noreferrer"`.
+
+- [ ] **Step 2: Create `components/sections/projects-standings.tsx`** (`"use client"`)
+
+  It renders `<ol className="mx-auto max-w-4xl border-b border-line">` with one `ProjectRow` per project, `position={index + 1}`. The state is `{ slug: string | null; animate: boolean }`, starting as `{ slug: projects[0]?.slug ?? null, animate: true }`. Toggling a row sets `{ slug: open ? null : project.slug, animate: true }`.
+
+  The hash logic is the part the signatures don't determine:
+
+```tsx
+  // Opens the row named by the URL hash. Applied without animation, then
+  // scrolled into view: a row closing above the target would otherwise
+  // shift it while the browser's own jump to the hash has already happened.
+  useEffect(() => {
+    function openFromHash() {
+      const slug = decodeURIComponent(window.location.hash.slice(1));
+      if (!projects.some((project) => project.slug === slug)) return;
+      setOpen({ slug, animate: false });
+      requestAnimationFrame(() => document.getElementById(slug)?.scrollIntoView());
+    }
+    openFromHash();
+    window.addEventListener("hashchange", openFromHash);
+    return () => window.removeEventListener("hashchange", openFromHash);
+  }, [projects]);
+```
+
+- [ ] **Step 3: Swap it in, and delete the stack**
+
+  In `projects-showcase.tsx`, replace the `ProjectsStack` import and element with `ProjectsStandings`. Wrap the heading and the list in the existing `mx-auto max-w-4xl` container, with `gap-10` between them. Then:
+
+```bash
+git rm components/sections/projects-stack.tsx components/sections/project-card.tsx hooks/use-pointer-tilt.ts
+```
+
+- [ ] **Step 4: Verify**
+
+```bash
+grep -rnE "ProjectsStack|ProjectCard|usePointerTilt|projects-stack|project-card|use-pointer-tilt" app components hooks lib
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+  Expected: the `grep` prints nothing, and the other commands pass. After the intro:
+
+- [ ] 1440px: six rows, P1–P6, fit within about one screen below the "Projects" heading, with BridgeIt (P1) open. Clicking KaAlerto opens it and closes BridgeIt; clicking KaAlerto again closes it, leaving all rows closed.
+- [ ] Hovering a closed row tints it and turns its position number lime. Nothing else changes on hover.
+- [ ] Intern Docs' details end after its tags, with no empty space where buttons would be. WasThere shows both Live Demo and Repository.
+- [ ] A fresh load of `/#kaalerto` (new tab, wait for the intro) shows KaAlerto open and fully below the header, with BridgeIt closed. Changing the address to `/#labanan` opens LABANAN the same way.
+- [ ] `/#stack` and `/#nope` leave BridgeIt open and change no rows.
+- [ ] Keyboard: Tab reaches each row header, with a lime focus ring. Enter and Space toggle the row, and focus stays on the header.
+- [ ] 375px with the phone preset: category and year sit under each title, there is no horizontal scrollbar, and every row header is at least 44px tall.
+- [ ] Reduced motion: rows open and close instantly.
+- [ ] Console is clean.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add components/sections/project-row.tsx components/sections/projects-standings.tsx components/sections/projects-showcase.tsx
+git commit -m "feat(projects): replace the pinned card stack with a standings list"
+```
+
+---
+
+### Task 19.2: Phase 19 verification pass
+
+**Files:** none created; fix whatever this task surfaces.
+
+- [ ] **Step 1: Clean production build**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+- [ ] **Step 2: Walk the production build**
+
+- [ ] Widths 375px, 768px, 1366×768, and 1440px: no horizontal scrollbar. The page from the hero to the Stack section is about six screens shorter than with the stack.
+- [ ] The header's "Projects" link scrolls to the section heading, which sits fully below the header.
+- [ ] The command palette, the hero reveal, and the Stack section behave as before.
+- [ ] Console is clean.
+
+- [ ] **Step 3: Commit any fixes**
+
+```bash
+git add -A -- app components data hooks lib types
+git commit -m "fix: address phase 19 verification findings"
+```
+
+If nothing needed fixing, skip the commit.
+
+---
+
 ## Handoff checklist (owner-supplied content)
 
 Only the repository owner can resolve these. Do not invent values.
@@ -2207,4 +2348,4 @@ Only the repository owner can resolve these. Do not invent values.
 4. `public/images/hero/headgear.webp` and `headgear-ghost.webp` — cut out from STIX's product photo as sold by Eljan Sports, with the logo painted over. The photo still belongs to STIX/the retailer. Replacing it with a photo of a borrowed headgear (front view, plain background, even light) removes the risk; re-tune `HEADGEAR` in `components/sections/headgear-reveal.tsx` afterwards.
 5. `components/ui/preloader.tsx` — from Task 18.7, `STATUS_LINES` read `GARAZA // DEV PORTFOLIO`, `BASE // PHILIPPINES`, and the availability label from `data/site.ts`. Confirm that `PHILIPPINES` is how the owner wants their base shown.
 
-**Next phases (planned in the spec, not yet written as tasks):** Phase 19, new home sections (About, Experience, Arnis, Now — the owner picks which); Phase 20, polish and reach (tech marquee, heading reveals, sitemap, robots, JSON-LD, Vercel Web Analytics, Lighthouse ≥ 90). The home page's Open Graph image is already done in Task 18.11.
+**Next phases (planned in the spec, not yet written as tasks):** Phase 20, new home sections (About, Experience, Arnis, Now — the owner picks which); Phase 21, polish and reach (tech marquee, heading reveals, sitemap, robots, JSON-LD, Vercel Web Analytics, Lighthouse ≥ 90). The home page's Open Graph image is already done in Task 18.11.
