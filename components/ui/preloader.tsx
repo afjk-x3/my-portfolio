@@ -11,6 +11,7 @@ import {
   useTransform,
 } from "motion/react";
 
+import { siteConfig } from "@/data/site";
 import { INK_STRIKE_EVENT } from "@/hooks/use-ink-trail";
 
 /**
@@ -28,10 +29,15 @@ const EXIT_HOLD = 0.2;
 const EASE_OUT_QUINT = [0.22, 1, 0.36, 1] as const;
 const EASE_IN_OUT_QUART = [0.76, 0, 0.24, 1] as const;
 
+/** Telemetry-styled, but every line is true: nothing here pretends to be measured. */
 const STATUS_LINES = [
   { label: "GARAZA", value: "DEV PORTFOLIO", accent: false },
-  { label: "SYS.INIT", value: "OK", accent: true },
-  { label: "LATENCY", value: "12MS", accent: false },
+  { label: "BASE", value: "PHILIPPINES", accent: false },
+  {
+    label: "STATUS",
+    value: siteConfig.availability.label,
+    accent: siteConfig.availability.isAvailable,
+  },
 ] as const;
 
 /*
@@ -78,7 +84,7 @@ function InlineScript({ html }: { html: string }) {
 /**
  * Intro: the Gothic monogram, a telemetry counter from 00 to 100, then an
  * upward wipe that uncovers the hero. Plays on every full page load, including
- * reloads.
+ * reloads. Any key, click, tap, or wheel turn skips straight to the wipe.
  */
 export function Preloader() {
   // The server always renders the overlay (CSS keeps it hidden unless the gate
@@ -132,6 +138,14 @@ export function Preloader() {
     });
     return () => controls.stop();
   }, [visible, progress]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const skip = () => setCounted(true);
+    const events = ["keydown", "pointerdown", "wheel"] as const;
+    events.forEach((name) => window.addEventListener(name, skip, { passive: true }));
+    return () => events.forEach((name) => window.removeEventListener(name, skip));
+  }, [visible]);
 
   const handleExitComplete = () => {
     playedThisLoad = true;
@@ -212,6 +226,14 @@ export function Preloader() {
                 ))}
               </ul>
             </div>
+
+            <p
+              aria-hidden
+              className="animate-status-in absolute inset-x-0 bottom-10 text-center font-mono text-xs uppercase tracking-[0.3em] text-muted"
+              style={{ animationDelay: "0.9s" }}
+            >
+              Tap or press any key to skip
+            </p>
 
             {/* Neon leading edge, visible as the overlay wipes upward. */}
             <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-accent" />
