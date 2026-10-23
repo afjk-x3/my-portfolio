@@ -1,6 +1,5 @@
 import { CodeXml, Mail } from "lucide-react";
 
-import { StrikeLine } from "@/components/ui/strike-line";
 import { siteConfig, socialLinks } from "@/data/site";
 
 // lucide-react v1 removed brand icons (no `Github` export), so the "Github"
@@ -12,7 +11,7 @@ export function SiteFooter() {
     <footer className="relative overflow-hidden px-6 pt-4 pb-10">
       <div aria-hidden className="bg-weave pointer-events-none absolute inset-0 opacity-[0.04]" />
 
-      <StrikeLine angle={12} at={0.5} className="mb-6 px-0" />
+      <div aria-hidden className="relative mx-auto mb-6 h-px max-w-6xl bg-line" />
 
       <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 sm:flex-row">
         <p className="font-mono text-xs text-muted">

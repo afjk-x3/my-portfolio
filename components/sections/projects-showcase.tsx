@@ -7,7 +7,7 @@ export async function ProjectsShowcase() {
   const projects = await getProjects();
 
   return (
-    <section id="projects" className="relative px-6 pt-8 pb-24">
+    <section id="projects" className="relative px-6 pt-24 pb-24">
       <div className="mx-auto max-w-4xl">
         <SectionHeading eyebrow="Selected Work" title="Projects" script={baybayin.projects} />
       </div>
