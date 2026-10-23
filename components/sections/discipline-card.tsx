@@ -17,13 +17,14 @@ export function DisciplineCard({ className }: { className?: string }) {
         className,
       )}
     >
+      {/* Touch screens have no hover, so there the two photos sit side by side. */}
       <Image
         src={stance.src}
         alt={stance.alt}
         width={stance.width}
         height={stance.height}
         sizes="(min-width: 1024px) 50vw, 100vw"
-        className="absolute inset-0 h-full w-full object-cover object-[center_80%] sm:object-[center_45%] lg:object-[center_80%] opacity-70 transition-opacity duration-500 group-hover:opacity-0 group-focus-visible:opacity-0"
+        className="absolute inset-0 h-full w-full object-cover object-[center_80%] sm:object-[center_45%] lg:object-[center_80%] opacity-70 transition-opacity duration-500 group-hover:opacity-0 group-focus-visible:opacity-0 pointer-coarse:w-1/2"
       />
       <Image
         src={action.src}
@@ -31,7 +32,7 @@ export function DisciplineCard({ className }: { className?: string }) {
         width={action.width}
         height={action.height}
         sizes="(min-width: 1024px) 50vw, 100vw"
-        className="absolute inset-0 h-full w-full object-cover object-[center_80%] sm:object-[center_45%] lg:object-[center_80%] opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100"
+        className="absolute inset-0 h-full w-full object-cover object-[center_80%] sm:object-[center_45%] lg:object-[center_80%] opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100 pointer-coarse:left-1/2 pointer-coarse:w-1/2 pointer-coarse:opacity-70"
       />
 
       <div
