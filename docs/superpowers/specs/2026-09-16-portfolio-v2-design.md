@@ -35,8 +35,8 @@ v2 turns that recreation into the owner's own brand while making it useful for j
 | Sequencing | Identity system first, then case studies, then new home sections, then polish. Nothing is styled twice. |
 | Case study content | Typed data extending `Project` in `data/projects.ts`, not MDX. Keeps the `lib/queries.ts` Supabase seam. |
 | Timeline | No deadline. Quality first; each phase ships and is verified before the next. |
-| Home sections | Four candidates are designed (§6). **The owner picks which to build before Phase 18 is planned.** |
-| Analytics | Vercel Web Analytics, added in Phase 19. |
+| Home sections | Four candidates are designed (§6). **The owner picks which to build before Phase 19 is planned.** |
+| Analytics | Vercel Web Analytics, added in Phase 20. |
 
 ---
 
@@ -51,8 +51,9 @@ v2 turns that recreation into the owner's own brand while making it useful for j
 | 15 | Targeted fixes: intro on every load, hero on reload, projects gap, discipline card (§4d, added 2026-09-17) | 13, 14 |
 | 16 | Interactive sword-slash dividers (§4e, added 2026-09-17) | 14 |
 | 17 | Remove strike dividers, strike angles, and baybayin (§4f, added 2026-10-23) | 16 |
-| 18 | New home sections (owner's selection) | 11 |
-| 19 | Polish and reach | 11–18 |
+| 18 | Accessibility, touch, and layout fixes from the UI/UX review (§4g, added 2026-10-23) | 17 |
+| 19 | New home sections (owner's selection) | 11 |
+| 20 | Polish and reach | 11–19 |
 
 Each phase is written into `tasks.md` as atomic builder tasks only when the previous phase is verified.
 
@@ -240,6 +241,25 @@ After a portfolio review, the owner decided to drop three motifs. This supersede
 
 ---
 
+## 4g. Phase 18 — Accessibility, touch, and layout fixes (added 2026-10-23)
+
+These come from a UI/UX review of the live page against the ui-ux-pro-max guidelines, measured at 375px and 1440px. None needs owner content.
+
+- **Security:** upgrade Next.js 16.3.5 → 16.4.2, which clears a critical advisory (including RCE in `next/og`), plus `sharp` and `source-map-js`.
+- **Keyboard:** a skip link, and `scroll-padding-top: 6rem` so focus is never hidden under the fixed header (WCAG 2.2 AA "Focus not obscured").
+- **Touch:** every tap target is at least 44px on `pointer: coarse`. The `sm` button size, the wordmark, and the footer icons were 16–36px.
+- **Text:** labels at least 12px and body copy 16px. Some were 10–11px and 14px.
+- **Hero:** the name joins the role in the `h1`, and the watermark becomes the surname, "GARAZA", so "DEVELOPER" no longer appears twice.
+- **Touch hero:** the `wander` and `static` modes kept the headgear over the face on phones. They are replaced by a `touch` mode in which only strike sweeps reveal anything, and one sweep plays as the intro ends.
+- **Preloader:** the made-up telemetry (`SYS.INIT // OK`, `LATENCY // 12MS`) becomes real facts (base and availability), and any input skips the intro. It still plays on every full load (§4d).
+- **Discipline card:** on touch screens both photos show side by side, because hover does not exist there.
+- **Projects:** each project gets a deep link at `/#<slug>`, through a zero-height marker rather than the pinned card. Below `md` the stack becomes a plain list, because a pinned card taller than a 667px phone screen hid its own buttons.
+- **Stack grid:** the four skill cards form a 2×2 grid beside the photo. The old layout left the Frontend card mostly empty across three columns.
+- **Sharing:** a generated Open Graph image, plus `twitter:card` `summary_large_image`. On Vercel, `metadataBase` falls back to the production URL.
+- **Deferred:** project screenshots (the layout depends on the real images and the 1366×768 height budget of the pinned stack), the About section, and Game Dev skills.
+
+---
+
 ## 5. Phase 12 — Project case studies (removed in Phase 14; record only)
 
 ### 5.1 Route
@@ -294,7 +314,7 @@ No special mode. The owner writes confidential case studies without the company 
 
 ---
 
-## 6. Phase 18 — New home sections (owner selects)
+## 6. Phase 19 — New home sections (owner selects)
 
 Each section is independent: its own data file, query, and component. Any subset can ship.
 
@@ -347,7 +367,7 @@ The header shows at most five links, chosen from the built sections in this prio
 
 ---
 
-## 7. Phase 19 — Polish and reach
+## 7. Phase 20 — Polish and reach
 
 ### 7.1 Motion
 
@@ -383,7 +403,7 @@ Code cannot provide these. The builder uses clearly marked placeholders until th
 2. `data/projects.ts` — 3+ real projects, each with case study text and screenshots.
 3. `public/resume.pdf` — real résumé.
 4. Headgear photo: the owner does not own a headgear. Short term, the STIX product cut-out stays with its logo removed. Recommended later: borrow a teammate's or club headgear and photograph it (front view, plain background, even light), then re-tune `HEADGEAR` / `FACE`.
-5. For selected Phase 18 sections: about copy, OJT and school timeline, Arnis competition record and photos, "now" list, and a GitHub token.
+5. For selected Phase 19 sections: about copy, OJT and school timeline, Arnis competition record and photos, "now" list, and a GitHub token.
 
 ---
 
@@ -402,4 +422,4 @@ Code cannot provide these. The builder uses clearly marked placeholders until th
 
 ## 10. Open decision
 
-**Which Phase 18 sections to build** (About, Experience, Arnis, Now — any subset). Needed before Phase 18 is written into `tasks.md`; Phases 11 and 12 can be planned without it.
+**Which Phase 19 sections to build** (About, Experience, Arnis, Now — any subset). Needed before Phase 19 is written into `tasks.md`; Phases 11 and 12 can be planned without it.

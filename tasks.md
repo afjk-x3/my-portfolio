@@ -6,9 +6,10 @@
 > not "improve" adjacent files that the task does not list.
 
 > **Status:** Phases 1–16 are complete and committed. Next: Phase 17 (remove the
-> strike dividers, strike angles, and baybayin). After it: Phase 18 (new home
-> sections) or Phase 19 (polish). The design is in
-> `docs/superpowers/specs/2026-09-16-portfolio-v2-design.md` (§4f); read it only
+> strike dividers, strike angles, and baybayin), then Phase 18 (accessibility,
+> touch, and layout fixes). After them: Phase 19 (new home sections) or Phase 20
+> (polish). The design is in
+> `docs/superpowers/specs/2026-09-16-portfolio-v2-design.md` (§4f, §4g); read it only
 > if a task does not answer a question. Step-by-step history of earlier phases
 > was removed from this file; read Phases 1–10 with `git show 633c7fb:tasks.md`,
 > Phases 11–12 with `git show f9256c3:tasks.md`, Phase 13 with
@@ -20,7 +21,7 @@
 
 **Architecture:** `app/page.tsx` composes the home page from section components in `components/sections/`. Every section that renders data is an async Server Component that awaits a function from `lib/queries.ts`. Those functions return local typed arrays today, but they already return `Promise`s, so the Supabase swap only changes the data layer and no UI code. Client-side interactivity (smooth scroll, scroll-linked animation, cursor effects, the preloader, the mobile nav) is isolated in leaf `"use client"` components.
 
-**Tech Stack:** Next.js 16.3.5 (App Router, Turbopack), React 19.2.8, TypeScript 5 (strict), Tailwind CSS v4, `motion` v13 (the current package name for Framer Motion, imported from `motion/react`), `lenis` v1.3, `lucide-react` v1, shadcn/ui conventions (`cn()` + `cva` + `components/ui/`). No three.js, no WebGL.
+**Tech Stack:** Next.js 16.4.2 from Task 18.1, 16.3.5 before it (App Router, Turbopack), React 19.2.8, TypeScript 5 (strict), Tailwind CSS v4, `motion` v13 (the current package name for Framer Motion, imported from `motion/react`), `lenis` v1.3, `lucide-react` v1, shadcn/ui conventions (`cn()` + `cva` + `components/ui/`). No three.js, no WebGL.
 
 ---
 
@@ -40,7 +41,7 @@ These apply to every task.
 - **`lucide-react` v1 has no brand icons.** There is no `Github` export. GitHub links use `CodeXml`.
 - **No `scroll-behavior: smooth` in CSS.** Lenis drives scrolling. Anchor navigation on the home page goes through the Lenis instance (`lenis.scrollTo(href, { offset: -96 })` in `components/layout/site-header.tsx`).
 - **Respect `prefers-reduced-motion`.** Every scroll-linked or entrance animation must degrade to a static layout. Lenis is disabled entirely under reduced motion, and a global rule in `app/globals.css` shortens every CSS animation and transition to near zero.
-- **Accessibility floor.** Every `<Image>` has meaningful `alt` (or `alt=""` when purely decorative). Every icon-only link or button has an `aria-label`. Every section has an `id` that matches its nav anchor.
+- **Accessibility floor.** Every `<Image>` has meaningful `alt` (or `alt=""` when purely decorative). Every icon-only link or button has an `aria-label`. Every section has an `id` that matches its nav anchor. From Phase 18: visible text is at least 12px (body copy 16px), every tap target is at least 44px on touch screens (use the `pointer-coarse:` variant), and nothing that matters appears on hover only.
 - **Commit after every task** using Conventional Commits and the exact message the task gives. Stage only the files the task lists; the working tree may contain unrelated uncommitted files (such as `.claude/`) that must not be committed.
 
 ### Verification commands
@@ -62,50 +63,51 @@ The preloader plays on every full page load (about 2.6 s); wait for the wipe bef
 
 ## Current file structure
 
-This is the tree after Phase 17. Files marked **[17]** are changed by Phase 17. Phase 17 also deletes `components/ui/strike-line.tsx`, `strike-mark.tsx`, `strike-button.tsx`, `strike-finisher.tsx`, `hooks/use-strike-rhythm.ts`, `lib/strike-audio.ts`, `data/strike-angles.ts`, `data/baybayin.ts`, and `public/audio/strikes/`.
+This is the tree after Phase 18. Files marked **[17]** or **[18]** are changed by that phase. Phase 17 also deletes `components/ui/strike-line.tsx`, `strike-mark.tsx`, `strike-button.tsx`, `strike-finisher.tsx`, `hooks/use-strike-rhythm.ts`, `lib/strike-audio.ts`, `data/strike-angles.ts`, `data/baybayin.ts`, and `public/audio/strikes/`. Phase 18 also changes `package.json`, `package-lock.json`, and `README.md`.
 
 ```
 app/
-  layout.tsx                 # fonts, metadata, <Backdrop>, <SmoothScrollProvider>, <CommandPalette> [17]
-  page.tsx                   # <Preloader>, <SiteHeader>, sections, <SiteFooter> [17]
-  globals.css                # theme tokens, utilities (bg-weave), animations, Lenis base, preloader gate [17]
-  not-found.tsx              # "DNF // Did not finish" 404
+  layout.tsx                 # fonts, metadata, skip link, <Backdrop>, <SmoothScrollProvider>, <CommandPalette> [17] [18]
+  page.tsx                   # <Preloader>, <SiteHeader>, <main id="main"> sections, <SiteFooter> [17] [18]
+  globals.css                # theme tokens, utilities (bg-weave), animations, Lenis base, preloader gate, scroll padding [17] [18]
+  not-found.tsx              # "DNF // Did not finish" 404 [18]
+  opengraph-image.tsx        # generated 1200×630 link preview card [18]
 components/
   command-palette/
     command-palette.tsx      # Ctrl+K / ⌘K palette: navigate, actions, secrets (client)
   layout/
     backdrop.tsx             # page-wide fixed grid + noise layers (server)
-    site-header.tsx          # glass nav: name wordmark, section links, palette button, socials (client)
-    site-footer.tsx          # footer with weave texture and a hairline (server) [17]
+    site-header.tsx          # glass nav: name wordmark, section links, palette button, socials (client) [18]
+    site-footer.tsx          # footer with weave texture and a hairline (server) [17] [18]
   sections/
-    hero.tsx                 # <InkRevealSection>: backdrop reveal, visual stage, corner copy + status [17]
+    hero.tsx                 # <InkRevealSection>: backdrop reveal, visual stage, corner copy + status; name + role h1 [17] [18]
     hero-visual.tsx          # watermark + glow + portrait, parallax (client)
     hero-watermark.tsx       # SVG outline word + ink-revealed neon fill (client)
     hero-backdrop-reveal.tsx # ink-revealed weave + four slashes at fixed angles across the hero (client) [17]
-    headgear-reveal.tsx      # ink-revealed headgear photo over the face (client)
-    ink-reveal.tsx           # InkRevealSection, InkMask (torn-edge filter), paintInkMask, useInkMaskLayer (client)
-    hero-status.tsx          # AvailabilityStatus + LocalClock (client)
+    headgear-reveal.tsx      # ink-revealed headgear photo over the face (client) [18]
+    ink-reveal.tsx           # InkRevealSection, InkMask (torn-edge filter), paintInkMask, useInkMaskLayer (client) [18]
+    hero-status.tsx          # AvailabilityStatus + LocalClock (client) [18]
     projects-showcase.tsx    # server: awaits getProjects() (id="projects") [17]
-    projects-stack.tsx       # sticky scroll stack (client)
-    project-card.tsx         # one card in the stack, tilt + spotlight (client)
-    bento-grid.tsx           # server: awaits getSkillCategories() (id="stack") [17]
-    tech-stack-card.tsx      # one skill group card (server)
-    discipline-card.tsx      # Arnis photo card, hover/focus cross-fade, full-stance crop (client, id="discipline")
+    projects-stack.tsx       # pinned scroll stack from md up, deep-link marker per project (client) [18]
+    project-card.tsx         # one card: pinned + tilt + spotlight from md up, plain below (client) [18]
+    bento-grid.tsx           # server: awaits getSkillCategories() (id="stack"); photo + 2×2 skill cards [17] [18]
+    tech-stack-card.tsx      # one skill group card, label top / tags bottom (server) [18]
+    discipline-card.tsx      # Arnis photo card: hover/focus cross-fade, side by side on touch (client, id="discipline") [18]
     contact.tsx              # contact CTA (server, id="contact") [17]
   providers/
     smooth-scroll-provider.tsx  # Lenis root (client)
   ui/
-    button.tsx               # cva + Radix Slot, neon variants, strike wipe on hover
+    button.tsx               # cva + Radix Slot, neon variants, strike wipe on hover, 44px `sm` on touch [18]
     badge.tsx                # tech-stack pill
     section-heading.tsx      # eyebrow + title [17]
-    preloader.tsx            # intro on every full load: monogram + counter, opens at top (client) [17]
+    preloader.tsx            # intro on every full load, skippable: monogram + counter + status lines, opens at top (client) [17] [18]
 data/
-  site.ts                    # siteConfig (identity, wordmark, watermark, availability, time zone) + socialLinks
+  site.ts                    # siteConfig (identity, wordmark, watermark, availability, time zone) + socialLinks [18]
   navigation.ts              # nav anchors
   projects.ts                # Project[]
   skills.ts                  # SkillCategory[] + discipline photos
 hooks/
-  use-ink-trail.ts           # shared ink trail: move-only, speed-sized drops, strike event
+  use-ink-trail.ts           # shared ink trail: pointer mode (move-only drops) or touch mode, strike event [18]
   use-command-palette.ts     # palette open state + modifier key label
   use-local-time.ts          # ticking clock via useSyncExternalStore
   use-media-query.ts         # matchMedia via useSyncExternalStore
@@ -158,7 +160,7 @@ All tokens live in `app/globals.css`. Use the Tailwind classes; never hard-code 
 | `animate-pulse-dot` | Live status dot ring |
 | `animate-monogram-in`, `animate-monogram-breathe`, `animate-status-in` | Preloader entrance animations |
 
-**Stacking order:** header `z-50`, preloader overlay `z-90`, command palette overlay `z-95` and dialog `z-96`, page-wide film grain `z-100`.
+**Stacking order:** header `z-50`, skip link while focused `z-60` **[18]**, preloader overlay `z-90`, command palette overlay `z-95` and dialog `z-96`, page-wide film grain `z-100`.
 
 ---
 
@@ -166,18 +168,19 @@ All tokens live in `app/globals.css`. Use the Tailwind classes; never hard-code 
 
 Read this before changing any of these files.
 
-- **Projects stack** (`projects-stack.tsx`, `project-card.tsx`): the section is `projects.length × 100vh` tall. Each card sits in a `sticky top-0 h-screen` wrapper, so cards pin and stack. A shared `useScroll` progress value scales each card down as the next arrives. Adding or removing projects needs no component edits.
+- **Projects stack** (`projects-stack.tsx`, `project-card.tsx`): from `md` up, the section is `projects.length × 100vh` tall. Each card sits in a `md:sticky md:top-0 md:h-screen` wrapper, so cards pin and stack. A shared `useScroll` progress value scales each card down as the next arrives. Below `md` (Phase 18) the cards are a plain list with no pinning or scaling, so a tall card never hides its buttons. Before each card, a zero-height `<span id={slug}>` is the deep-link target for `/#<slug>`; never put that `id` on the pinned wrapper, because browsers measure a pinned element where it is pinned. Adding or removing projects needs no component edits.
 - **Preloader** (`preloader.tsx`, gate styles in `globals.css`):
   - The overlay is always in the server HTML but CSS keeps it `display: none` unless `<html>` has `data-preloader-active`. An inline script, rendered first on the page, sets that attribute during parsing only when `sessionStorage` lacks `portfolio_preloaded` (from Task 15.1: on every full load, and it also sets `history.scrollRestoration = "manual"` so a reload opens at the top; a module flag stops client-side navigation from replaying it). That is why `<html>` has `suppressHydrationWarning`. Do not add a `flex` class to the overlay; `display` belongs to the gate.
   - React reads storage through `useSyncExternalStore` with `true` as the server snapshot.
   - `animate()` tweens a motion value 0→100 over `COUNT_DURATION` (1.6 s); holds `EXIT_HOLD` (0.2 s); exits with `y: "-100%"` over 0.8 s, or a fade under reduced motion. On exit completion the storage key is written and the scroll lock released.
   - Scroll lock is CSS `overflow: hidden` on `<html>` plus `lenis.stop()`.
+  - From Phase 18, any `keydown`, `pointerdown`, or `wheel` while the counter runs sets `counted`, which starts the exit wipe at once. When the exit completes on a touch screen (and without reduced motion), it dispatches `portfolio:strike`, so phone visitors see the headgear reveal once.
 - **Ink reveal** (Phase 11; `use-ink-trail.ts`, `ink-reveal.tsx`, and the three hero layers):
   - `InkRevealSection` renders the hero `<section>` and owns one **ink trail**: a single `requestAnimationFrame` loop, running only while the hero is on screen, that drops "ink" along the cursor's path **only while it moves**. Drop size and stretch grow with speed, and each drop shrinks away over 900 ms, so a still cursor shows nothing. A `portfolio:strike` window event plays a scripted diagonal sweep. Positions are in viewport pixels. Nothing in the loop causes a React render.
   - Each masked layer is an SVG containing an `<InkMask>` (a blur → noise-displacement tear → alpha-threshold filter over a mask of rotated ellipses). `useInkMaskLayer` registers the SVG with the trail; every frame `paintInkMask` converts the drops into that SVG's own coordinates with `getScreenCTM()` — which already includes parallax and entrance transforms — and resizes the filter region to fit only the live drops.
   - There is one masked SVG per coordinate space because the watermark and the portrait move at different parallax speeds: `HeroBackdropReveal` (whole hero: weave + strike slashes), `HeroWatermark` (outline word + neon fill, drawn from identical `<text>`), and `HeadgearReveal` (portrait pixels: headgear photo over the face).
-  - Modes: a fine pointer drives the trail (`pointer`); touch screens get a drop that drifts over the face (`wander`), using the face position that `HeadgearReveal` reports through `setHome`; touch plus reduced motion shows one fixed headgear reveal (`static`) and nothing else.
-  - If the portrait or headgear image changes, re-tune only `HEADGEAR` and `FACE` in `headgear-reveal.tsx`.
+  - Modes (Phase 18): a fine pointer drives the trail (`pointer`). On touch screens (`touch`) nothing follows the finger, so the face stays visible, and only `portfolio:strike` sweeps reveal anything. The earlier `wander` and `static` modes, which kept the headgear over the face on phones, are gone.
+  - If the portrait or headgear image changes, re-tune only `HEADGEAR` in `headgear-reveal.tsx`.
 - **Command palette** (`command-palette.tsx`, `use-command-palette.ts`): rendered once in the root layout, inside the Lenis provider. Open state is a tiny external store, so any component can call `setCommandPaletteOpen(true)`. While open, Lenis is stopped; picked actions run through `run()`, which waits until the palette has closed and Lenis has restarted. The **Secrets** group only renders once 2+ characters are typed.
 
 ---
@@ -753,14 +756,1452 @@ If nothing needed fixing, skip the commit.
 
 ---
 
+# Phase 18 — Accessibility, touch, and layout fixes
+
+These are fixes from a UI/UX review of the live page (ui-ux-pro-max guidelines, measured at 375px and 1440px). None of them needs new content from the owner. In order:
+
+1. **Security:** upgrade Next.js past a critical advisory.
+2. **Keyboard:** add a skip link, and keep focus clear of the fixed header.
+3. **Touch targets:** at least 44px on touch screens. Small buttons and the wordmark were 31–36px and the footer icons 16px.
+4. **Text size:** at least 12px for labels and 16px for body copy. Some labels were 10–11px and the body copy 14px.
+5. **Hero:** the name becomes part of the `h1`, and the watermark becomes the surname.
+6. **Touch hero:** on phones the face stays visible instead of permanently covered by the headgear.
+7. **Preloader:** honest status lines, and any key, click, or tap skips it.
+8. **Discipline card:** on touch screens both photos show, because there is no hover.
+9. **Projects:** each project gets a deep link (`/#<slug>`), and on phones the stack becomes a plain list, so no card can hide its own buttons.
+10. **Stack grid:** a balanced 2×2 grid replaces the wide, mostly empty Frontend card.
+11. **Link previews:** a generated Open Graph image.
+12. **README.**
+
+**Deliberately not in this phase:**
+
+- **Project screenshots.** The card layout depends on the real images. On a 1366×768 laptop, a card with even a 224px image strip no longer fits the pinned stack. This waits for the owner's screenshots.
+- **About section and Game Dev skills.** Both need owner copy and confirmed skills.
+- **Showing the preloader once per session.** The owner chose every load in Phase 15. This phase only makes it skippable.
+
+Every block below was applied in order to a scratch copy with Phase 17 already applied. After each task the copy passed `npx tsc --noEmit`, `npm run lint`, and `npm run build`. Three things were checked live in the production page at 375px and 1366–1440px:
+
+- The layout changes (44px header buttons fit at 375px, the side-by-side discipline photos, the 2×2 stack grid).
+- Deep links: a link to the pinned card itself landed on the wrong card, and the marker element in Task 18.9 fixes that.
+- `scroll-padding-top` with Lenis.
+
+The Open Graph image was rendered and inspected. Copy the blocks exactly.
+
+### Task 18.1: Upgrade Next.js past the critical advisory
+
+**Files:**
+- Modify: `package.json`, `package-lock.json`
+
+`npm audit` reports a **critical** advisory for `next` 16.0.0–16.4.0 (including remote code execution in `next/og`, which Task 18.11 uses), plus high-severity advisories for `sharp` and `source-map-js`. `16.4.2` is the newest patch that has been out for over a week. Both versions stay pinned exactly, as before.
+
+- [ ] **Step 1: Upgrade and fix the transitive packages**
+
+```bash
+npm install --save-exact next@16.4.2 eslint-config-next@16.4.2
+npm audit fix
+```
+
+- [ ] **Step 2: Verify**
+
+```bash
+npm audit
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+Expected: `npm audit` prints `found 0 vulnerabilities`. In `package.json`, `"next"` and `"eslint-config-next"` both read exactly `"16.4.2"`, with no `^`. The build banner says `Next.js 16.4.2`, and the other commands pass. After the intro, the page looks and behaves exactly as before, and the console is clean.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add package.json package-lock.json
+git commit -m "fix(deps): upgrade next to 16.4.2 for security advisories"
+```
+
+---
+
+### Task 18.2: Add a skip link and keep focus clear of the header
+
+**Files:**
+- Modify: `app/globals.css`, `app/layout.tsx`, `app/page.tsx`, `app/not-found.tsx`
+
+The header is fixed, so a control reached with Tab could scroll in underneath it, which fails WCAG 2.2 AA "Focus not obscured". There was also no way to jump past the header.
+
+- [ ] **Step 1: Offset focus and anchor scrolling in `app/globals.css`**
+
+Replace:
+
+```css
+:root {
+  color-scheme: dark;
+}
+```
+
+with:
+
+```css
+:root {
+  color-scheme: dark;
+  /* Keeps keyboard focus and in-page link targets clear of the fixed header. */
+  scroll-padding-top: 6rem;
+}
+```
+
+- [ ] **Step 2: Add the skip link in `app/layout.tsx`**
+
+Replace:
+
+```tsx
+      <body className="min-h-full bg-bg font-sans text-fg" suppressHydrationWarning>
+        <Backdrop />
+```
+
+with:
+
+```tsx
+      <body className="min-h-full bg-bg font-sans text-fg" suppressHydrationWarning>
+        {/* First Tab stop on every page: jumps past the header to the content. */}
+        <a
+          href="#main"
+          className="sr-only rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-ink focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          Skip to content
+        </a>
+        <Backdrop />
+```
+
+- [ ] **Step 3: Give both `<main>` elements the target id**
+
+In `app/page.tsx`, replace `      <main>` with `      <main id="main">`.
+
+In `app/not-found.tsx`, replace:
+
+```tsx
+    <main className="relative flex min-h-svh
+```
+
+with:
+
+```tsx
+    <main id="main" className="relative flex min-h-svh
+```
+
+(The rest of that line stays as it is.)
+
+- [ ] **Step 4: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+After the intro, at 1440px:
+
+- [ ] Click the page background, then press Tab once. A lime "Skip to content" pill appears in the top-left corner, above the header. Press Enter: the page jumps past the header, and the next Tab focuses the hero's GitHub button.
+- [ ] Scroll so that a project card's "Repository" button sits under the header, click the background just above the card, and press Tab until that button is focused. The page scrolls so the button is fully below the header.
+- [ ] Open `/does-not-exist`. The first Tab shows the same pill, and Enter moves to the 404 content.
+- [ ] The skip link is invisible until focused, and it never shows on mouse click.
+- [ ] Console is clean.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app/globals.css app/layout.tsx app/page.tsx app/not-found.tsx
+git commit -m "feat(a11y): add a skip link and keep focus clear of the fixed header"
+```
+
+---
+
+### Task 18.3: Make tap targets 44px on touch screens
+
+**Files:**
+- Modify: `components/ui/button.tsx`, `components/layout/site-header.tsx`, `components/layout/site-footer.tsx`
+
+`pointer-coarse:` is Tailwind v4's variant for `@media (pointer: coarse)`, which matches phones and tablets. Mouse users see no change.
+
+- [ ] **Step 1: Grow the small button size on touch screens**
+
+In `components/ui/button.tsx`, replace:
+
+```tsx
+        sm: "h-9 px-4 text-sm",
+```
+
+with:
+
+```tsx
+        // On touch screens small buttons grow to the 44px minimum tap size.
+        sm: "h-9 px-4 text-sm pointer-coarse:h-11 pointer-coarse:min-w-11",
+```
+
+This covers the header's icon buttons, the mobile menu links, and the project card buttons.
+
+- [ ] **Step 2: Give the header wordmark a 44px hit area**
+
+The wordmark is a plain `<button>` on the home page and a `<Link>` elsewhere, and both are 31px tall. In `components/layout/site-header.tsx`, this exact `className` appears twice. Replace **both** occurrences of:
+
+```tsx
+className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+```
+
+with:
+
+```tsx
+className="flex items-center rounded-md pointer-coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+```
+
+- [ ] **Step 3: Give the footer icons a 44px hit area**
+
+In `components/layout/site-footer.tsx`, replace:
+
+```tsx
+        <ul className="flex items-center gap-5">
+```
+
+with:
+
+```tsx
+        <ul className="flex items-center gap-1">
+```
+
+Then replace:
+
+```tsx
+                  className="text-muted transition-colors hover:text-fg"
+```
+
+with:
+
+```tsx
+                  className="flex size-11 items-center justify-center rounded-full text-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+```
+
+- [ ] **Step 4: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+- [ ] DevTools device toolbar → a phone preset (it emulates touch), then reload. In the console, this prints only values of `44` or more:
+
+```js
+[...document.querySelectorAll("header button, header a, footer a")].filter((el) => el.offsetParent).map((el) => Math.round(Math.min(el.getBoundingClientRect().width, el.getBoundingClientRect().height)))
+```
+
+- [ ] At 375px the header still fits on one line, with the wordmark, search, GitHub, email, and menu buttons, and there is no horizontal scrollbar.
+- [ ] The mobile menu links and the project card buttons are visibly taller (44px).
+- [ ] Back on desktop with a mouse, the header and project buttons are the same size as before. The footer icons are spaced a little wider, and Tab shows a lime ring on each one.
+- [ ] Console is clean.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add components/ui/button.tsx components/layout/site-header.tsx components/layout/site-footer.tsx
+git commit -m "feat(a11y): grow tap targets to 44px on touch screens"
+```
+
+---
+
+### Task 18.4: Raise the smallest text sizes
+
+**Files:**
+- Modify: `components/sections/hero-status.tsx`, `components/sections/hero.tsx`, `components/layout/site-header.tsx`, `components/sections/project-card.tsx`, `components/sections/discipline-card.tsx`
+
+- [ ] **Step 1: Hero telemetry, motto, and the Ctrl K hint to 12px**
+
+In `components/sections/hero-status.tsx`, replace:
+
+```tsx
+const TELEMETRY_TEXT = "font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-muted";
+```
+
+with:
+
+```tsx
+const TELEMETRY_TEXT = "font-mono text-xs uppercase tracking-[0.2em] text-muted";
+```
+
+In `components/sections/hero.tsx`, replace:
+
+```tsx
+            <p className="font-mono text-[0.625rem] uppercase tracking-[0.3em] text-muted">
+```
+
+with:
+
+```tsx
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
+```
+
+In `components/layout/site-header.tsx`, at the end of the `<kbd>` element's `className`, replace:
+
+```tsx
+font-mono text-[0.625rem] tracking-normal sm:inline">
+```
+
+with:
+
+```tsx
+font-mono text-xs tracking-normal sm:inline">
+```
+
+- [ ] **Step 2: Body copy to 16px**
+
+In `components/sections/project-card.tsx`, replace:
+
+```tsx
+              <p className="max-w-2xl text-sm leading-relaxed text-muted">
+```
+
+with:
+
+```tsx
+              <p className="max-w-2xl text-base leading-relaxed text-muted">
+```
+
+In `components/sections/discipline-card.tsx`, replace:
+
+```tsx
+        <p className="max-w-sm text-sm leading-relaxed text-muted">
+```
+
+with:
+
+```tsx
+        <p className="max-w-sm text-base leading-relaxed text-muted">
+```
+
+- [ ] **Step 3: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+- [ ] At 375px and 1440px, this prints `[]` in the console. Visible text no longer goes below 12px (the preloader and the decorative `aria-hidden` layers are excluded):
+
+```js
+[...document.querySelectorAll("main *, header *, footer *")].filter((el) => !el.closest("[aria-hidden]") && el.offsetParent && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) && parseFloat(getComputedStyle(el).fontSize) < 12).map((el) => el.textContent.trim())
+```
+
+- [ ] The project descriptions and the Arnis card text are visibly larger and still sit comfortably inside their cards.
+- [ ] Console is clean.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add components/sections/hero-status.tsx components/sections/hero.tsx components/layout/site-header.tsx components/sections/project-card.tsx components/sections/discipline-card.tsx
+git commit -m "feat(a11y): raise label text to 12px and body copy to 16px"
+```
+
+---
+
+### Task 18.5: Put the name in the hero heading and the watermark
+
+**Files:**
+- Modify: `components/sections/hero.tsx`, `data/site.ts`
+
+The page's only `h1` was "Full Stack Developer", so search results and screen readers got the role but not the person. The watermark also repeated "DEVELOPER" right above the headline.
+
+- [ ] **Step 1: Wrap the name and the role in one `h1`**
+
+In `components/sections/hero.tsx`, replace:
+
+```tsx
+            <span className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
+              {siteConfig.name}
+            </span>
+            <h1 className="font-display text-5xl uppercase leading-[0.85] text-fg sm:text-6xl">
+              Full Stack
+              <span className="block text-accent">Developer</span>
+            </h1>
+```
+
+with:
+
+```tsx
+            {/*
+             * The name is part of the h1, so search engines and screen readers
+             * get who before what. The visible layout is unchanged.
+             */}
+            <h1 className="flex flex-col items-center gap-3 lg:items-start">
+              <span className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
+                {siteConfig.name}
+                <span className="sr-only">, </span>
+              </span>
+              <span className="font-display text-5xl uppercase leading-[0.85] text-fg sm:text-6xl">
+                Full Stack
+                <span className="block text-accent">Developer</span>
+              </span>
+            </h1>
+```
+
+- [ ] **Step 2: Make the watermark the surname**
+
+In `data/site.ts`, replace:
+
+```ts
+  watermark: "DEVELOPER",
+```
+
+with:
+
+```ts
+  watermark: "GARAZA",
+```
+
+- [ ] **Step 3: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+- [ ] At 1440px and 375px, the hero copy looks exactly as before: the small grey name, then "FULL STACK / DEVELOPER".
+- [ ] In the console, `document.querySelector("h1").textContent` prints `John Paul R. Garaza, Full StackDeveloper`. The missing space comes from the line break and is fine for screen readers, which read the block as two lines.
+- [ ] The outline watermark behind the portrait now reads GARAZA. "GA" and "ZA" show either side of the head, and moving the mouse over it reveals the lime fill.
+- [ ] Console is clean.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add components/sections/hero.tsx data/site.ts
+git commit -m "feat(hero): put the name in the h1 and the surname in the watermark"
+```
+
+---
+
+### Task 18.6: Keep the face visible on touch screens
+
+**Files:**
+- Modify: `hooks/use-ink-trail.ts`, `components/sections/ink-reveal.tsx`, `components/sections/headgear-reveal.tsx`, `components/ui/preloader.tsx`
+
+On phones, the `wander` mode kept a reveal drifting over the face, and `static` mode (touch plus reduced motion) pinned the headgear over it permanently. So phone visitors never saw the owner's face. This task replaces both modes with a single `touch` mode, in which nothing is revealed except a strike sweep. One sweep plays as the intro wipes away, so phone visitors still see the headgear once. The palette's **Strike** secret keeps working everywhere.
+
+**Interfaces consumed / produced:** `RevealMode` becomes `"pointer" | "touch"`. `InkTrail` loses `setHome`, and the `InkHome` type is removed. `INK_POOL` becomes `MAX_DROPS`, because there is no `wander` head any more. `useInkMaskLayer` now returns nothing.
+
+- [ ] **Step 1: Replace the touch modes in `hooks/use-ink-trail.ts`**
+
+Replace:
+
+```ts
+import { useInView, useReducedMotion } from "motion/react";
+```
+
+with:
+
+```ts
+import { useInView } from "motion/react";
+```
+
+Replace:
+
+```ts
+/**
+ * - `pointer`: a mouse or trackpad drives the reveal. Ink appears only while
+ *   the pointer moves.
+ * - `wander`: touch screens; the reveal drifts over the face on its own.
+ * - `static`: touch plus reduced motion; one fixed reveal, no animation.
+ */
+export type RevealMode = "pointer" | "wander" | "static";
+```
+
+with:
+
+```ts
+/**
+ * - `pointer`: a mouse or trackpad drives the reveal. Ink appears only while
+ *   the pointer moves.
+ * - `touch`: touch screens. Nothing follows the finger, so the face stays
+ *   visible; only a strike sweep (`INK_STRIKE_EVENT`) reveals anything.
+ */
+export type RevealMode = "pointer" | "touch";
+```
+
+Delete this block, together with the blank line after it:
+
+```ts
+/**
+ * Where the reveal rests in `wander` mode, in viewport pixels, plus how far
+ * it drifts from there (`span`, also in viewport pixels).
+ */
+export type InkHome = () => { x: number; y: number; span: number } | null;
+```
+
+In the `InkTrail` interface, delete these two lines:
+
+```ts
+  /** Sets (or clears, with `null`) the resting point used in `wander` mode. */
+  setHome: (home: InkHome | null) => void;
+```
+
+Replace:
+
+```ts
+/** Most drops alive at once, not counting the `wander` head. */
+export const MAX_DROPS = 36;
+
+/** Shapes every masked layer must render: the drops plus the `wander` head. */
+export const INK_POOL = MAX_DROPS + 1;
+```
+
+with:
+
+```ts
+/** Most drops alive at once. */
+export const MAX_DROPS = 36;
+
+/** Shapes every masked layer must render: one per drop. */
+export const INK_POOL = MAX_DROPS;
+```
+
+Replace:
+
+```ts
+  const reduceMotion = useReducedMotion() ?? false;
+  const finePointer = useMediaQuery("(pointer: fine)");
+  const mode: RevealMode = finePointer ? "pointer" : reduceMotion ? "static" : "wander";
+
+  const layersRef = useRef(new Set<InkLayer>());
+  const homeRef = useRef<InkHome | null>(null);
+```
+
+with:
+
+```ts
+  const finePointer = useMediaQuery("(pointer: fine)");
+  const mode: RevealMode = finePointer ? "pointer" : "touch";
+
+  const layersRef = useRef(new Set<InkLayer>());
+```
+
+Replace:
+
+```ts
+    if (!container || !inView || mode === "static") return;
+```
+
+with:
+
+```ts
+    if (!container || !inView) return;
+```
+
+Replace:
+
+```ts
+    const head = { x: 0, y: 0, placed: false, strength: 0 };
+```
+
+with:
+
+```ts
+    const head = { x: 0, y: 0, placed: false };
+```
+
+Delete this line (the line above it, `let last = performance.now();`, stays):
+
+```ts
+    const start = last;
+```
+
+Replace the end of the pointer branch, including the whole `wander` branch:
+
+```ts
+        } else {
+          head.placed = false;
+          lastDrop = null;
+        }
+      } else {
+        const home = homeRef.current?.();
+        const target = home
+          ? {
+              x: home.x + Math.sin(((now - start) / 1000) * 0.6) * home.span,
+              y: home.y + Math.sin(((now - start) / 1000) * 0.9) * home.span * 0.85,
+            }
+          : null;
+        if (target && !head.placed) {
+          head.x = target.x;
+          head.y = target.y;
+          head.placed = true;
+        }
+        head.strength = damp(head.strength, target ? 1 : 0, 6, dt);
+        if (target) {
+          head.x = damp(head.x, target.x, 18, dt);
+          head.y = damp(head.y, target.y, 18, dt);
+          dropAlong(head.x, head.y, 0, now, true);
+        } else {
+          lastDrop = null;
+        }
+      }
+```
+
+with:
+
+```ts
+        } else {
+          head.placed = false;
+          lastDrop = null;
+        }
+      }
+```
+
+Delete these lines, together with the blank line after them:
+
+```ts
+      // Touch has no pointer to follow, so the drifting head stays visible.
+      if (mode === "wander" && head.strength > 0.002) {
+        points.push({ x: head.x, y: head.y, radius: radius * head.strength, angle: 0, stretch: 1 });
+      }
+```
+
+In the `useMemo` at the end, delete:
+
+```ts
+      setHome: (home) => {
+        homeRef.current = home;
+      },
+```
+
+- [ ] **Step 2: Simplify `useInkMaskLayer` in `components/sections/ink-reveal.tsx`**
+
+Replace:
+
+```tsx
+/**
+ * Paints the shared trail into the `InkMask` inside `svgRef` every frame.
+ * Does nothing in `static` mode; a layer that needs a fixed reveal there draws
+ * it itself.
+ */
+export function useInkMaskLayer(svgRef: RefObject<SVGSVGElement | null>) {
+  const trail = useInkReveal();
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg || trail.mode === "static") return;
+    return trail.addLayer((points) => paintInkMask(svg, points));
+  }, [svgRef, trail]);
+
+  return trail;
+}
+```
+
+with:
+
+```tsx
+/** Paints the shared trail into the `InkMask` inside `svgRef` every frame. */
+export function useInkMaskLayer(svgRef: RefObject<SVGSVGElement | null>) {
+  const trail = useInkReveal();
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    return trail.addLayer((points) => paintInkMask(svg, points));
+  }, [svgRef, trail]);
+}
+```
+
+- [ ] **Step 3: Remove the face-pinning code from `components/sections/headgear-reveal.tsx`**
+
+Replace:
+
+```tsx
+import { useEffect, useRef } from "react";
+
+import {
+  InkMask,
+  paintInkMask,
+  useInkMaskLayer,
+  useSvgId,
+} from "@/components/sections/ink-reveal";
+```
+
+with:
+
+```tsx
+import { useRef } from "react";
+
+import { InkMask, useInkMaskLayer, useSvgId } from "@/components/sections/ink-reveal";
+```
+
+Delete this block, together with the blank line after it:
+
+```tsx
+/** Middle of the face: where the reveal rests on touch devices. */
+const FACE = { x: 1029, y: 520 } as const;
+
+/** Radius of the fixed reveal in `static` mode, in portrait pixels. */
+const STATIC_RADIUS = 300;
+
+/** How far the `wander` reveal drifts from the face, in portrait pixels. */
+const WANDER_SPAN = 140;
+```
+
+Replace:
+
+```tsx
+  const trail = useInkMaskLayer(svgRef);
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    // Touch + reduced motion: one fixed reveal over the face, no animation.
+    // Painted in viewport pixels so it goes through the same code path.
+    if (trail.mode === "static") {
+      const matrix = svg.getScreenCTM();
+      if (!matrix) return;
+      const face = new DOMPoint(FACE.x, FACE.y).matrixTransform(matrix);
+      paintInkMask(svg, [
+        { x: face.x, y: face.y, radius: STATIC_RADIUS * matrix.a, angle: 0, stretch: 1 },
+      ]);
+      return;
+    }
+
+    // Tell the trail where the face is, for the `wander` drift on touch.
+    trail.setHome(() => {
+      const matrix = svg.getScreenCTM();
+      if (!matrix) return null;
+      const face = new DOMPoint(FACE.x, FACE.y).matrixTransform(matrix);
+      return { x: face.x, y: face.y, span: WANDER_SPAN * matrix.a };
+    });
+    return () => trail.setHome(null);
+  }, [trail]);
+```
+
+with:
+
+```tsx
+  useInkMaskLayer(svgRef);
+```
+
+- [ ] **Step 4: Play one sweep on touch screens as the intro ends**
+
+In `components/ui/preloader.tsx`, replace:
+
+```tsx
+} from "motion/react";
+
+/**
+ * Set on
+```
+
+with:
+
+```tsx
+} from "motion/react";
+
+import { INK_STRIKE_EVENT } from "@/hooks/use-ink-trail";
+
+/**
+ * Set on
+```
+
+Then replace:
+
+```tsx
+  const handleExitComplete = () => {
+    playedThisLoad = true;
+    setExited(true);
+  };
+```
+
+with:
+
+```tsx
+  const handleExitComplete = () => {
+    playedThisLoad = true;
+    setExited(true);
+    // Touch screens have no cursor to drive the hero reveal, so play it once.
+    if (!reduceMotion && !window.matchMedia("(pointer: fine)").matches) {
+      window.dispatchEvent(new Event(INK_STRIKE_EVENT));
+    }
+  };
+```
+
+- [ ] **Step 5: Verify**
+
+```bash
+grep -rnE "wander|static\"|setHome|InkHome|STATIC_RADIUS|WANDER_SPAN|\bFACE\b" components hooks
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+Expected: the `grep` prints nothing, and the other commands pass.
+
+- [ ] **Phone** (DevTools device toolbar, phone preset, reload): as the intro wipes away, one lime diagonal sweep crosses the hero and briefly shows the headgear. After that the face stays fully visible, with only the faint headgear outline. Nothing drifts over it.
+- [ ] **Phone with reduced motion** (Rendering → prefers-reduced-motion: reduce, reload): no sweep, and the face is visible from the start.
+- [ ] **Desktop with a mouse:** the cursor reveal behaves exactly as before, including the headgear over the face, and there is no sweep at the end of the intro. Ctrl+K → type `st` → **Strike** still sweeps the hero.
+- [ ] Console is clean.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add hooks/use-ink-trail.ts components/sections/ink-reveal.tsx components/sections/headgear-reveal.tsx components/ui/preloader.tsx
+git commit -m "feat(hero): keep the face visible on touch screens"
+```
+
+---
+
+### Task 18.7: Make the preloader honest and skippable
+
+**Files:**
+- Modify: `components/ui/preloader.tsx`
+
+`SYS.INIT // OK` and `LATENCY // 12MS` presented invented telemetry, and the 2.6 s intro could not be skipped. The status lines now show real facts, and any key, click, tap, or wheel turn jumps straight to the exit wipe. It still plays on every full load, as the owner chose in Phase 15.
+
+- [ ] **Step 1: Import the site config**
+
+Replace:
+
+```tsx
+import { INK_STRIKE_EVENT } from "@/hooks/use-ink-trail";
+```
+
+with:
+
+```tsx
+import { siteConfig } from "@/data/site";
+import { INK_STRIKE_EVENT } from "@/hooks/use-ink-trail";
+```
+
+- [ ] **Step 2: Replace the status lines**
+
+Replace:
+
+```tsx
+const STATUS_LINES = [
+  { label: "GARAZA", value: "DEV PORTFOLIO", accent: false },
+  { label: "SYS.INIT", value: "OK", accent: true },
+  { label: "LATENCY", value: "12MS", accent: false },
+] as const;
+```
+
+with:
+
+```tsx
+/** Telemetry-styled, but every line is true: nothing here pretends to be measured. */
+const STATUS_LINES = [
+  { label: "GARAZA", value: "DEV PORTFOLIO", accent: false },
+  { label: "BASE", value: "PHILIPPINES", accent: false },
+  {
+    label: "STATUS",
+    value: siteConfig.availability.label,
+    accent: siteConfig.availability.isAvailable,
+  },
+] as const;
+```
+
+- [ ] **Step 3: Skip on any input**
+
+Replace:
+
+```tsx
+ * upward wipe that uncovers the hero. Plays on every full page load, including
+ * reloads.
+ */
+```
+
+with:
+
+```tsx
+ * upward wipe that uncovers the hero. Plays on every full page load, including
+ * reloads. Any key, click, tap, or wheel turn skips straight to the wipe.
+ */
+```
+
+Directly below the counter effect, which ends with:
+
+```tsx
+    return () => controls.stop();
+  }, [visible, progress]);
+```
+
+add this effect (keep one blank line between them):
+
+```tsx
+  useEffect(() => {
+    if (!visible) return;
+    const skip = () => setCounted(true);
+    const events = ["keydown", "pointerdown", "wheel"] as const;
+    events.forEach((name) => window.addEventListener(name, skip, { passive: true }));
+    return () => events.forEach((name) => window.removeEventListener(name, skip));
+  }, [visible]);
+```
+
+- [ ] **Step 4: Tell the visitor they can skip**
+
+Replace:
+
+```tsx
+            {/* Neon leading edge, visible as the overlay wipes upward. */}
+```
+
+with:
+
+```tsx
+            <p
+              aria-hidden
+              className="animate-status-in absolute inset-x-0 bottom-10 text-center font-mono text-xs uppercase tracking-[0.3em] text-muted"
+              style={{ animationDelay: "0.9s" }}
+            >
+              Tap or press any key to skip
+            </p>
+
+            {/* Neon leading edge, visible as the overlay wipes upward. */}
+```
+
+- [ ] **Step 5: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+- [ ] Reload: the status lines read `GARAZA // DEV PORTFOLIO`, `BASE // PHILIPPINES`, and `STATUS // AVAILABLE FOR WORK` (lime). "TAP OR PRESS ANY KEY TO SKIP" fades in near the bottom.
+- [ ] Reload and press any key at about 30%: the counter stops and the wipe starts at once. Repeat with a click, a mouse-wheel turn, and (phone preset) a tap. Each one skips.
+- [ ] Reload and do nothing: the intro still runs its full 2.6 s.
+- [ ] After a skip, scrolling works immediately and the page opens at the hero.
+- [ ] Reduced motion: a key press skips to the fade-out.
+- [ ] Console is clean.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add components/ui/preloader.tsx
+git commit -m "feat(preloader): show real status lines and skip on any input"
+```
+
+---
+
+### Task 18.8: Show both Arnis photos on touch screens
+
+**Files:**
+- Modify: `components/sections/discipline-card.tsx`
+
+The action photo only appeared on hover or keyboard focus, so phone visitors never saw it. On touch screens (`pointer-coarse:`) the two photos now sit side by side. Tailwind's `hover` variant already applies only on devices that can hover, so the mouse cross-fade is unchanged.
+
+- [ ] **Step 1: Split the card on touch screens**
+
+Replace:
+
+```tsx
+      <Image
+        src={stance.src}
+```
+
+with:
+
+```tsx
+      {/* Touch screens have no hover, so there the two photos sit side by side. */}
+      <Image
+        src={stance.src}
+```
+
+At the end of the first `<Image>`'s `className`, replace:
+
+```tsx
+group-hover:opacity-0 group-focus-visible:opacity-0"
+```
+
+with:
+
+```tsx
+group-hover:opacity-0 group-focus-visible:opacity-0 pointer-coarse:w-1/2"
+```
+
+At the end of the second `<Image>`'s `className`, replace:
+
+```tsx
+group-hover:opacity-100 group-focus-visible:opacity-100"
+```
+
+with:
+
+```tsx
+group-hover:opacity-100 group-focus-visible:opacity-100 pointer-coarse:left-1/2 pointer-coarse:w-1/2 pointer-coarse:opacity-70"
+```
+
+- [ ] **Step 2: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+- [ ] Phone preset: the Arnis card shows the stance photo on the left half and the action photo on the right half, both at the same brightness, with the text over the bottom of both.
+- [ ] Desktop with a mouse: unchanged. The stance photo fills the card, and hovering cross-fades to the action photo.
+- [ ] Console is clean.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add components/sections/discipline-card.tsx
+git commit -m "feat(stack): show both Arnis photos on touch screens"
+```
+
+---
+
+### Task 18.9: Deep-link each project, and use a plain list on phones
+
+**Files:**
+- Modify: `components/sections/projects-stack.tsx` (full replacement)
+- Modify: `components/sections/project-card.tsx`
+
+**Interfaces consumed / produced:** every project is reachable at `/#<slug>` (for example `/#ledger`), so a single project can be linked from a résumé or message.
+
+Two findings shaped this task:
+
+- **Deep links:** putting the `id` on the pinned card wrapper does not work. Browsers measure a pinned element where it is pinned, so `/#driftline` landed with FleetDesk covering Driftline. A zero-height marker placed before each card, in normal flow, lands correctly. This was tested for all three cards at 1366×768.
+- **Phones:** at 375px wide with 16px descriptions, the first card is 686px tall. Pinned 112px from the top, it overflows a 667px phone screen, so its buttons would be hidden under the next card. Below `md` the cards become a plain list.
+
+- [ ] **Step 1: Replace `components/sections/projects-stack.tsx`**
+
+```tsx
+"use client";
+
+import { Fragment, useRef } from "react";
+import { useScroll } from "motion/react";
+
+import { ProjectCard } from "@/components/sections/project-card";
+import type { Project } from "@/types";
+
+export function ProjectsStack({ projects }: { projects: Project[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // "start start" → the container top hits the viewport top (progress 0).
+  // "end end"     → the container bottom hits the viewport bottom (progress 1).
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"],
+  });
+
+  return (
+    <div ref={containerRef} className="relative">
+      {projects.map((project, index) => (
+        <Fragment key={project.id}>
+          {/*
+           * Deep-link target for `/#<slug>`. The pinned card can't be the
+           * target: browsers measure a pinned element where it is pinned, so
+           * the link would land on a later card. This marker stays where the
+           * card's slot begins. On the stack, the negative margin cancels the
+           * header offset so the card lands pinned on top.
+           */}
+          <span id={project.slug} className="block md:-scroll-mt-24" />
+          <ProjectCard
+            project={project}
+            index={index}
+            total={projects.length}
+            progress={scrollYProgress}
+          />
+        </Fragment>
+      ))}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Pin the cards from `md` up only**
+
+In `components/sections/project-card.tsx`, replace:
+
+```tsx
+import { Button } from "@/components/ui/button";
+import { usePointerTilt } from "@/hooks/use-pointer-tilt";
+```
+
+with:
+
+```tsx
+import { Button } from "@/components/ui/button";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { usePointerTilt } from "@/hooks/use-pointer-tilt";
+```
+
+Replace:
+
+```tsx
+  const reduceMotion = useReducedMotion() ?? false;
+
+  // Each card shrinks
+```
+
+with:
+
+```tsx
+  const reduceMotion = useReducedMotion() ?? false;
+  // Below md the cards are a plain list: a pinned card taller than a short
+  // phone screen would hide its own buttons under the next card.
+  const stacked = useMediaQuery("(min-width: 768px)");
+
+  // Each card shrinks
+```
+
+Replace:
+
+```tsx
+    <div className="sticky top-0 flex h-screen items-start justify-center px-6 pt-28">
+```
+
+with:
+
+```tsx
+    <div className="flex items-start justify-center px-6 pt-8 md:sticky md:top-0 md:h-screen md:pt-28">
+```
+
+Replace:
+
+```tsx
+          scale: reduceMotion ? 1 : scale,
+          top: `${index * 1.5}rem`,
+```
+
+with:
+
+```tsx
+          scale: reduceMotion || !stacked ? 1 : scale,
+          top: stacked ? `${index * 1.5}rem` : 0,
+```
+
+- [ ] **Step 3: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+- [ ] At 1366×768 and 1440px, the stack pins, scales, and offsets exactly as before.
+- [ ] At 1366×768, open `/#driftline` in a new tab and wait for the intro. Driftline is the top card of the stack, fully visible below the header, and FleetDesk is not covering it. Repeat for `/#ledger` and `/#fleetdesk`.
+- [ ] While on the page, change the address to `/#ledger` and press Enter: the page jumps to Ledger the same way.
+- [ ] At 375×667 (DevTools responsive mode): the three cards scroll by as a normal list, 32px apart, with no pinning and no shrinking. Every card's buttons can be tapped. `/#fleetdesk` lands with FleetDesk's top just below the header.
+- [ ] Console is clean.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add components/sections/projects-stack.tsx components/sections/project-card.tsx
+git commit -m "feat(projects): deep-link each project and list them plainly on phones"
+```
+
+---
+
+### Task 18.10: Balance the stack grid
+
+**Files:**
+- Modify: `components/sections/bento-grid.tsx`, `components/sections/tech-stack-card.tsx`
+
+From `lg` up, the Frontend card spanned three columns but held only four tags, so most of it was empty. The four skill cards now form an even 2×2 grid beside the Arnis photo. Each card keeps its label at the top and its tags at the bottom, which matches the photo card's bottom-aligned text.
+
+- [ ] **Step 1: Use a four-column grid**
+
+In `components/sections/bento-grid.tsx`, replace:
+
+```tsx
+        <div className="grid auto-rows-[minmax(11rem,auto)] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+          <DisciplineCard className="aspect-4/5 sm:col-span-2 sm:aspect-4/3 lg:col-span-3 lg:row-span-2 lg:aspect-auto lg:min-h-[36rem]" />
+
+          {categories.map((category, index) => (
+            <TechStackCard
+              key={category.id}
+              category={category}
+              className={index === 0 ? "lg:col-span-3" : "lg:col-span-1"}
+            />
+          ))}
+```
+
+with:
+
+```tsx
+        {/* From lg up: the discipline photo on the left half, the stack cards in a 2×2 grid on the right. */}
+        <div className="grid auto-rows-[minmax(11rem,auto)] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <DisciplineCard className="aspect-4/5 sm:col-span-2 sm:aspect-4/3 lg:row-span-2 lg:aspect-auto lg:min-h-[36rem]" />
+
+          {categories.map((category) => (
+            <TechStackCard key={category.id} category={category} />
+          ))}
+```
+
+- [ ] **Step 2: Push the tags to the bottom of each card**
+
+In `components/sections/tech-stack-card.tsx`, replace:
+
+```tsx
+        "group flex flex-col gap-4 rounded-card
+```
+
+with:
+
+```tsx
+        "group flex flex-col justify-between gap-4 rounded-card
+```
+
+(The rest of that class string stays as it is.)
+
+- [ ] **Step 3: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+- [ ] 1440px: the Arnis photo fills the left half. On the right, Frontend and Backend form the top row and Databases and DevOps & Tools the bottom row, all four the same size. Each has its label at the top and its tags at the bottom.
+- [ ] 768px: the Arnis card spans the full width, with the four skill cards below it in two rows of two.
+- [ ] 375px: everything is one column, and each skill card shows its label at the top and its tags at the bottom.
+- [ ] Console is clean.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add components/sections/bento-grid.tsx components/sections/tech-stack-card.tsx
+git commit -m "feat(stack): balance the skill cards into a 2x2 grid"
+```
+
+---
+
+### Task 18.11: Generate the link preview image
+
+**Files:**
+- Create: `app/opengraph-image.tsx`
+- Modify: `app/layout.tsx`
+
+Shared links had no preview image. This adds a 1200×630 card generated at build time from `siteConfig`: the availability label, the name, and the role in lime, with a lime bar along the bottom.
+
+`metadataBase` is deliberately not set. On a Vercel production deployment, Next.js resolves the image URL from `VERCEL_PROJECT_PRODUCTION_URL`, and on preview deployments from the preview URL. Local builds print a `metadataBase property ... using "http://localhost:3000"` warning, and that warning is expected.
+
+- [ ] **Step 1: Create `app/opengraph-image.tsx`**
+
+```tsx
+import { ImageResponse } from "next/og";
+
+import { siteConfig } from "@/data/site";
+
+export const alt = `${siteConfig.name}, ${siteConfig.role}`;
+export const size = { width: 1200, height: 630 };
+export const contentType = "image/png";
+
+/*
+ * The image is rendered outside the page, where the CSS tokens do not exist,
+ * so the colours are copied from app/globals.css: bg, fg, muted, and accent.
+ */
+const BG = "#09090b";
+const FG = "#fafafa";
+const MUTED = "#a1a1aa";
+const ACCENT = "#ccff00";
+
+/** Link preview card for chats and social posts, generated at build time. */
+export default function OpengraphImage() {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-end",
+          padding: 80,
+          background: BG,
+          color: FG,
+        }}
+      >
+        <div style={{ fontSize: 26, letterSpacing: 8, color: MUTED, textTransform: "uppercase" }}>
+          {siteConfig.availability.label}
+        </div>
+        <div style={{ marginTop: 20, fontSize: 84, lineHeight: 1.05 }}>{siteConfig.name}</div>
+        <div style={{ marginTop: 12, fontSize: 56, color: ACCENT }}>{siteConfig.role}</div>
+        <div
+          style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 10, background: ACCENT }}
+        />
+      </div>
+    ),
+    size,
+  );
+}
+```
+
+- [ ] **Step 2: Ask for the large preview card**
+
+In `app/layout.tsx`, replace:
+
+```tsx
+    description: siteConfig.description,
+    type: "website",
+  },
+};
+```
+
+with:
+
+```tsx
+    description: siteConfig.description,
+    type: "website",
+  },
+  // The preview image itself comes from `app/opengraph-image.tsx`.
+  twitter: {
+    card: "summary_large_image",
+  },
+};
+```
+
+- [ ] **Step 3: Verify**
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+Expected: everything passes. The build lists `○ /opengraph-image` as a static route and prints the expected `metadataBase` warning.
+
+- [ ] Open `http://localhost:3000/opengraph-image`. A 1200×630 PNG shows "AVAILABLE FOR WORK" in spaced grey capitals, "John Paul R. Garaza" in large white type on one line, and "Full Stack Developer" in lime, all bottom-left on near-black, with a lime bar along the bottom edge.
+- [ ] View the home page source. It contains `<meta property="og:image"` with a `/opengraph-image` URL, `<meta property="og:image:alt" content="John Paul R. Garaza, Full Stack Developer"`, and `<meta name="twitter:card" content="summary_large_image"`.
+- [ ] Console is clean.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add app/opengraph-image.tsx app/layout.tsx
+git commit -m "feat(seo): generate the link preview image"
+```
+
+---
+
+### Task 18.12: Write the README
+
+**Files:**
+- Modify: `README.md` (full replacement; it is currently empty)
+
+- [ ] **Step 1: Replace `README.md`**
+
+````markdown
+# John Paul R. Garaza — Developer Portfolio
+
+A single-page developer portfolio: dark, neon-lime, and telemetry-styled, with a
+cursor-driven ink reveal in the hero, a scroll-pinned project stack, and a
+Ctrl+K / ⌘K command palette.
+
+## Stack
+
+- Next.js 16 (App Router, Turbopack) and React 19
+- TypeScript (strict)
+- Tailwind CSS v4, following shadcn/ui conventions
+- Motion for animation and Lenis for smooth scrolling
+- cmdk for the command palette
+
+## Run it
+
+```bash
+npm ci
+npm run dev      # http://localhost:3000
+npm run build    # production build
+npm run lint
+```
+
+## Where things live
+
+| Path | What it holds |
+| --- | --- |
+| `app/` | Root layout, home page, 404 page, design tokens (`globals.css`), link preview image |
+| `components/sections/` | One component per home page section |
+| `components/ui/` | Buttons, badges, section headings, the preloader |
+| `data/` | All site content: identity and links (`site.ts`), projects, skills, navigation |
+| `lib/queries.ts` | Async data access; components read data only through this file |
+| `types/index.ts` | Shared types for the data files |
+
+## Editing content
+
+Everything a visitor reads comes from `data/`. Projects are in
+`data/projects.ts`; skills and the discipline photos are in `data/skills.ts`;
+name, email, links, and availability are in `data/site.ts`. Components never
+import those arrays directly. They go through `lib/queries.ts`, so moving the
+data to a database later only changes that one file.
+
+## Accessibility
+
+Every animation respects `prefers-reduced-motion`, decorative layers are
+hidden from screen readers, and the whole page works from the keyboard: skip
+link, visible focus rings, and the command palette.
+````
+
+- [ ] **Step 2: Verify**
+
+Open `README.md` in a Markdown preview (or on GitHub after pushing). The headings, the bash block, and the table render correctly, and every path it names exists.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add README.md
+git commit -m "docs: write the README"
+```
+
+---
+
+### Task 18.13: Phase 18 verification pass
+
+**Files:** none created; fix whatever this task surfaces.
+
+- [ ] **Step 1: Clean production build**
+
+```bash
+npm audit
+npx tsc --noEmit
+npm run lint
+npm run build
+npm run start
+```
+
+Expected: 0 vulnerabilities, and everything else passes (the `metadataBase` warning is expected).
+
+- [ ] **Step 2: Walk the production build**
+
+- [ ] **Widths** 375px, 768px, 1366×768, and 1440px: no horizontal scrollbar. The project stack pins only from 768px up, and every project card's buttons can be reached at every width.
+- [ ] **Phone preset (touch):** every tap target is at least 44px, the face is visible after the single intro sweep, and both Arnis photos show.
+- [ ] **Keyboard only:** the skip link is the first stop. Every stop shows the accent focus ring and is never hidden behind the header. The command palette opens with Ctrl+K.
+- [ ] **Reduced motion:** the page is static and readable, the preloader fades and can be skipped, and on touch there is no sweep.
+- [ ] **Deep links:** `/#ledger`, `/#driftline`, `/#fleetdesk`, `/#stack`, and `/#contact` each land on their target, also on a fresh load with the intro.
+- [ ] **Console:** clean.
+
+- [ ] **Step 3: Commit any fixes**
+
+```bash
+git add -A -- app components data hooks lib types
+git commit -m "fix: address phase 18 verification findings"
+```
+
+If nothing needed fixing, skip the commit.
+
+---
+
 ## Handoff checklist (owner-supplied content)
 
 Only the repository owner can resolve these. Do not invent values.
 
-1. `data/site.ts` — name, initials, wordmark, and GitHub URL are set; email and site URL are still placeholders (the palette's **Copy email** copies whatever is there). Also confirm `availability.isAvailable`, `timeZone` / `timeZoneLabel` (`Asia/Manila` / `GMT+8`), and the `watermark` word (sized for ~9 characters).
-2. `data/projects.ts` — three example projects (Ledger, Driftline, FleetDesk) need replacing with real ones.
+1. `data/site.ts` — name, initials, wordmark, and GitHub URL are set; email and site URL are still placeholders (the palette's **Copy email** copies whatever is there). Also confirm `availability.isAvailable`, `timeZone` / `timeZoneLabel` (`Asia/Manila` / `GMT+8`), and the `watermark` word (`GARAZA` from Task 18.5; sized for up to ~9 characters).
+2. `data/projects.ts` — three example projects (Ledger, Driftline, FleetDesk) need replacing with real ones, each with a screenshot. The cards do not display `imageUrl` yet. That was deferred from Phase 18 because the layout depends on the real screenshots and must still fit the pinned stack on a 1366×768 screen, so it gets its own task once the screenshots exist.
 3. `public/resume.pdf` — minimal placeholder; replace with the real résumé.
-4. `public/images/hero/headgear.webp` and `headgear-ghost.webp` — cut out from STIX's product photo as sold by Eljan Sports, with the logo painted over. The photo still belongs to STIX/the retailer. Replacing it with a photo of a borrowed headgear (front view, plain background, even light) removes the risk; re-tune `HEADGEAR` and `FACE` in `components/sections/headgear-reveal.tsx` afterwards.
-5. `components/ui/preloader.tsx` — `STATUS_LINES` are hard-coded (`GARAZA // DEV PORTFOLIO`, `SYS.INIT // OK`, `LATENCY // 12MS`); `12MS` is decorative.
+4. `public/images/hero/headgear.webp` and `headgear-ghost.webp` — cut out from STIX's product photo as sold by Eljan Sports, with the logo painted over. The photo still belongs to STIX/the retailer. Replacing it with a photo of a borrowed headgear (front view, plain background, even light) removes the risk; re-tune `HEADGEAR` in `components/sections/headgear-reveal.tsx` afterwards.
+5. `components/ui/preloader.tsx` — from Task 18.7, `STATUS_LINES` read `GARAZA // DEV PORTFOLIO`, `BASE // PHILIPPINES`, and the availability label from `data/site.ts`. Confirm that `PHILIPPINES` is how the owner wants their base shown.
 
-**Next phases (planned in the spec, not yet written as tasks):** Phase 18, new home sections (About, Experience, Arnis, Now — the owner picks which); Phase 19, polish and reach (tech marquee, heading reveals, OG images, sitemap, robots, JSON-LD, Vercel Web Analytics, Lighthouse ≥ 90).
+**Next phases (planned in the spec, not yet written as tasks):** Phase 19, new home sections (About, Experience, Arnis, Now — the owner picks which); Phase 20, polish and reach (tech marquee, heading reveals, sitemap, robots, JSON-LD, Vercel Web Analytics, Lighthouse ≥ 90). The home page's Open Graph image is already done in Task 18.11.
