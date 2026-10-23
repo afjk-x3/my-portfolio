@@ -30,13 +30,13 @@ v2 turns that recreation into the owner's own brand while making it useful for j
 | --- | --- |
 | Structure | Home is one scroll page. Case study pages were built in Phase 12 and **removed in Phase 14** at the owner's request (2026-09-17). |
 | Visual direction | Keep the dark telemetry base and blend in Filipino/Arnis identity. No new accent colour; neon lime stays the only accent. |
-| Motifs | Baybayin accents, Arnis strike lines, woven (inabel-inspired) texture. |
+| Motifs | Woven (inabel-inspired) texture, the hero slashes, and the Arnis headgear and photos. Baybayin accents and the strike-line dividers were built in Phases 11–16 and **removed in Phase 17** at the owner's request (2026-10-23). |
 | Copy voice | Confident and disciplined: short, direct sentences with an athlete's mindset. |
 | Sequencing | Identity system first, then case studies, then new home sections, then polish. Nothing is styled twice. |
 | Case study content | Typed data extending `Project` in `data/projects.ts`, not MDX. Keeps the `lib/queries.ts` Supabase seam. |
 | Timeline | No deadline. Quality first; each phase ships and is verified before the next. |
-| Home sections | Four candidates are designed (§6). **The owner picks which to build before Phase 17 is planned.** |
-| Analytics | Vercel Web Analytics, added in Phase 18. |
+| Home sections | Four candidates are designed (§6). **The owner picks which to build before Phase 18 is planned.** |
+| Analytics | Vercel Web Analytics, added in Phase 19. |
 
 ---
 
@@ -50,8 +50,9 @@ v2 turns that recreation into the owner's own brand while making it useful for j
 | 14 | Remove case studies + slash-cut strike lines (§4c, added 2026-09-17) | 11, 12 |
 | 15 | Targeted fixes: intro on every load, hero on reload, projects gap, discipline card (§4d, added 2026-09-17) | 13, 14 |
 | 16 | Interactive sword-slash dividers (§4e, added 2026-09-17) | 14 |
-| 17 | New home sections (owner's selection) | 11 |
-| 18 | Polish and reach | 11–17 |
+| 17 | Remove strike dividers, strike angles, and baybayin (§4f, added 2026-10-23) | 16 |
+| 18 | New home sections (owner's selection) | 11 |
+| 19 | Polish and reach | 11–18 |
 
 Each phase is written into `tasks.md` as atomic builder tasks only when the previous phase is verified.
 
@@ -228,6 +229,17 @@ Decorative SVG stays `aria-hidden`. Only the finisher is announced, through a po
 
 ---
 
+## 4f. Phase 17 — Remove strike dividers, strike angles, and baybayin (added 2026-10-23)
+
+After a portfolio review, the owner decided to drop three motifs. This supersedes §4.2, §4.3, §4c (blade), and §4e, and removes their launch gates.
+
+- **Strike dividers removed.** The four `<StrikeLine>` bands, the STRIKE rhythm game, the finisher, and the sword sounds are deleted. Recruiters read the button and mute icon as UI controls, and the feature cost about 950 lines plus 105 KB of audio. The home sections are separated by their own padding. The projects section's top padding goes back up (`pt-8` → `pt-24`) to replace the band's height, and the footer gets a plain `bg-line` hairline.
+- **Strike-angle data removed.** `data/strike-angles.ts` was never confirmed. The hero backdrop's four slashes keep their exact on-screen angles (135°, 45°, 90°, 180°) as plain numbers in `hero-backdrop-reveal.tsx`.
+- **Baybayin removed.** No entry was ever reviewed by a reader, and a wrong transliteration of the owner's name would be public. The preloader name, the hero motto script, the section-eyebrow scripts, `SectionHeading`'s `script` prop, and the Noto Sans Tagalog font all go. The hero keeps the English "Diligence & discipline".
+- **Kept:** the full-hero ink reveal (weave, slashes, watermark, headgear), the command palette's **Strike** secret (the `portfolio:strike` ink sweep), the discipline photos, and the button strike wipe. The Arnis identity now rests on the headgear and the photos.
+
+---
+
 ## 5. Phase 12 — Project case studies (removed in Phase 14; record only)
 
 ### 5.1 Route
@@ -282,7 +294,7 @@ No special mode. The owner writes confidential case studies without the company 
 
 ---
 
-## 6. Phase 17 — New home sections (owner selects)
+## 6. Phase 18 — New home sections (owner selects)
 
 Each section is independent: its own data file, query, and component. Any subset can ship.
 
@@ -335,7 +347,7 @@ The header shows at most five links, chosen from the built sections in this prio
 
 ---
 
-## 7. Phase 18 — Polish and reach
+## 7. Phase 19 — Polish and reach
 
 ### 7.1 Motion
 
@@ -359,7 +371,6 @@ The header shows at most five links, chosen from the built sections in this prio
 
 - Lighthouse mobile ≥ 90 in Performance, Accessibility, Best Practices, and SEO on `/` and one case study page.
 - No horizontal overflow at 375 px on any page; clean console in production.
-- Every `data/baybayin.ts` entry has `reviewed: true`, and every `data/strike-angles.ts` entry has `confirmed: true`. The owner currently has no baybayin reviewer, so this gate blocks launch until one is found.
 - Keyboard pass: every interactive element shows the accent focus ring.
 
 ---
@@ -372,9 +383,7 @@ Code cannot provide these. The builder uses clearly marked placeholders until th
 2. `data/projects.ts` — 3+ real projects, each with case study text and screenshots.
 3. `public/resume.pdf` — real résumé.
 4. Headgear photo: the owner does not own a headgear. Short term, the STIX product cut-out stays with its logo removed. Recommended later: borrow a teammate's or club headgear and photograph it (front view, plain background, even light), then re-tune `HEADGEAR` / `FACE`.
-5. Baybayin strings reviewed by a reader.
-6. Strike-angle degree mapping for sport Arnis anyo, as the owner learned it.
-7. For selected Phase 17 sections: about copy, OJT and school timeline, Arnis competition record and photos, "now" list, and a GitHub token.
+5. For selected Phase 18 sections: about copy, OJT and school timeline, Arnis competition record and photos, "now" list, and a GitHub token.
 
 ---
 
@@ -382,7 +391,6 @@ Code cannot provide these. The builder uses clearly marked placeholders until th
 
 | Risk | Mitigation |
 | --- | --- |
-| Incorrect baybayin | Single data file with a `reviewed` flag; launch gate in Phase 18. |
 | Cultural misuse of weaving patterns | Generic geometry only; no t'nalak reproduction. |
 | Reveal filter cost on large screens | Filter regions bounded to live drops; loop paused when the hero is off-screen; 60 fps acceptance test. |
 | Watermark fill misalignment | Outline and fill share one SVG `<text>` geometry. |
@@ -394,4 +402,4 @@ Code cannot provide these. The builder uses clearly marked placeholders until th
 
 ## 10. Open decision
 
-**Which Phase 17 sections to build** (About, Experience, Arnis, Now — any subset). Needed before Phase 17 is written into `tasks.md`; Phases 11 and 12 can be planned without it.
+**Which Phase 18 sections to build** (About, Experience, Arnis, Now — any subset). Needed before Phase 18 is written into `tasks.md`; Phases 11 and 12 can be planned without it.
