@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { Fragment, useRef } from "react";
 import { useScroll } from "motion/react";
 
 import { ProjectCard } from "@/components/sections/project-card";
@@ -19,13 +19,22 @@ export function ProjectsStack({ projects }: { projects: Project[] }) {
   return (
     <div ref={containerRef} className="relative">
       {projects.map((project, index) => (
-        <ProjectCard
-          key={project.id}
-          project={project}
-          index={index}
-          total={projects.length}
-          progress={scrollYProgress}
-        />
+        <Fragment key={project.id}>
+          {/*
+           * Deep-link target for `/#<slug>`. The pinned card can't be the
+           * target: browsers measure a pinned element where it is pinned, so
+           * the link would land on a later card. This marker stays where the
+           * card's slot begins. On the stack, the negative margin cancels the
+           * header offset so the card lands pinned on top.
+           */}
+          <span id={project.slug} className="block md:-scroll-mt-24" />
+          <ProjectCard
+            project={project}
+            index={index}
+            total={projects.length}
+            progress={scrollYProgress}
+          />
+        </Fragment>
       ))}
     </div>
   );

@@ -10,6 +10,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { usePointerTilt } from "@/hooks/use-pointer-tilt";
 import { PROJECT_CATEGORY_LABELS, type Project } from "@/types";
 
@@ -23,6 +24,9 @@ export interface ProjectCardProps {
 
 export function ProjectCard({ project, index, total, progress }: ProjectCardProps) {
   const reduceMotion = useReducedMotion() ?? false;
+  // Below md the cards are a plain list: a pinned card taller than a short
+  // phone screen would hide its own buttons under the next card.
+  const stacked = useMediaQuery("(min-width: 768px)");
 
   // Each card shrinks slightly once the next card begins covering it, so the
   // stack reads as a physical deck rather than a flat overlay.
@@ -32,7 +36,7 @@ export function ProjectCard({ project, index, total, progress }: ProjectCardProp
   const { handlers, tiltStyle, spotlight } = usePointerTilt({ disabled: reduceMotion });
 
   return (
-    <div className="sticky top-0 flex h-screen items-start justify-center px-6 pt-28">
+    <div className="flex items-start justify-center px-6 pt-8 md:sticky md:top-0 md:h-screen md:pt-28">
       {/*
        * Scroll layer: stack scale and offset. It is also the pointer
        * measurement box, which is why it must never rotate.
@@ -40,8 +44,8 @@ export function ProjectCard({ project, index, total, progress }: ProjectCardProp
       <motion.div
         {...handlers}
         style={{
-          scale: reduceMotion ? 1 : scale,
-          top: `${index * 1.5}rem`,
+          scale: reduceMotion || !stacked ? 1 : scale,
+          top: stacked ? `${index * 1.5}rem` : 0,
         }}
         className="relative w-full max-w-4xl"
       >
