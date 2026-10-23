@@ -8,15 +8,31 @@
  * directly — see `lib/queries.ts`.
  */
 
-/** Groups the projects showcase filters and labels by. */
-export type ProjectCategory = "full-stack" | "game-dev" | "internship";
+/** Where a project came from. Shown on each standings row and decides its group. */
+export type ProjectCategory = "client" | "internship" | "personal" | "academic";
 
-/** Human-readable labels for each category, used for card tags. */
+/** Human-readable labels for each category, shown in the standings rows. */
 export const PROJECT_CATEGORY_LABELS: Record<ProjectCategory, string> = {
-  "full-stack": "Full-Stack",
-  "game-dev": "Game Dev",
-  internship: "OJT / Internship",
+  client: "Client",
+  internship: "Internship",
+  personal: "Personal",
+  academic: "Academic",
 };
+
+/** One group of the projects standings, numbered from P1 on its own. */
+export interface ProjectGroup {
+  id: string;
+  /** Group heading, e.g. "Work". */
+  label: string;
+  /** Categories whose projects belong in this group. */
+  categories: readonly ProjectCategory[];
+}
+
+/** The standings groups, in display order. */
+export const PROJECT_GROUPS: readonly ProjectGroup[] = [
+  { id: "work", label: "Work", categories: ["client", "internship", "personal"] },
+  { id: "academic", label: "Academic", categories: ["academic"] },
+];
 
 export interface Project {
   /** Stable identifier. Becomes the Supabase `id` (uuid) column. */

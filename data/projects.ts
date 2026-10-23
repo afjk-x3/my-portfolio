@@ -5,7 +5,7 @@ export const projects: Project[] = [
     id: "project-bridgeit",
     slug: "bridgeit",
     title: "BridgeIt",
-    category: "game-dev",
+    category: "client",
     summary: "An Android game that teaches the FANBOYS conjunctions by building bridges.",
     description:
       "Students pick the right conjunction to join two clauses so a vehicle can cross, across three levels that run from a fill-in song to synonym challenges. Built with a client for a classroom study, with teacher codes that unlock each level and CI on every push.",
@@ -21,10 +21,10 @@ export const projects: Project[] = [
     id: "project-kaalerto",
     slug: "kaalerto",
     title: "KaAlerto",
-    category: "full-stack",
+    category: "internship",
     summary: "An offline-first flood map and rescue channel for Philippine barangays.",
     description:
-      "Each phone keeps its own copy of the data and computes its own map, so reports, alerts, and SOS keep working in airplane mode and travel phone to phone over Bluetooth until someone reaches signal. A Next.js dashboard gives the local government the full picture once data syncs.",
+      "Each phone keeps its own copy of the data and computes its own map, so reports, alerts, and SOS keep working in airplane mode and travel phone to phone over Bluetooth until someone reaches signal. A Next.js dashboard gives the local government the full picture once data syncs. Built with my internship team as one of our monthly builds.",
     techStack: ["Kotlin", "Jetpack Compose", "MapLibre", "Supabase", "Next.js"],
     liveUrl: null,
     repoUrl: "https://github.com/afjk-x3/ka-alerto",
@@ -37,7 +37,7 @@ export const projects: Project[] = [
     id: "project-wasthere",
     slug: "wasthere",
     title: "WasThere",
-    category: "full-stack",
+    category: "personal",
     summary: "Event check-ins recorded as verifiable attendance on the Stellar blockchain.",
     description:
       "Organisers create an event and show a QR code; attendees scan it and sign the check-in with their Freighter wallet. A Soroban smart contract written in Rust stores every attendance record and badge, and can draw a winner from the attendees.",
@@ -71,7 +71,7 @@ export const projects: Project[] = [
     id: "project-tatak-norte",
     slug: "tatak-norte",
     title: "Tatak Norte",
-    category: "full-stack",
+    category: "academic",
     summary: "A marketplace for Ilocano artisans' handwoven crafts, pottery, and delicacies.",
     description:
       "Shoppers browse products from Ilocos Norte makers, chat with sellers, and check out with addresses picked from the official PSGC location list. Sellers apply through the site, and new prepaid orders send a Zapier notification.",
@@ -87,7 +87,7 @@ export const projects: Project[] = [
     id: "project-labanan",
     slug: "labanan",
     title: "LABANAN",
-    category: "game-dev",
+    category: "academic",
     summary: "A two-player 2D fighting game built from scratch in Java.",
     description:
       "Two players share one keyboard to fight with strikes, a jump attack, a low sungkit attack, blocks, and crouches, each with its own hitbox. A game manager tracks health and round wins until one player takes the match.",

@@ -71,7 +71,7 @@ export function ProjectRow({ project, position, open, animate, onToggle }: Proje
 
   return (
     <li id={slug} className={cn("border-t border-line transition-colors", open && "bg-surface")}>
-      <h3>
+      <h4>
         <button
           type="button"
           id={`${slug}-header`}
@@ -107,7 +107,7 @@ export function ProjectRow({ project, position, open, animate, onToggle }: Proje
             className={cn("size-5 text-muted transition-transform duration-300", open && "rotate-180 text-accent")}
           />
         </button>
-      </h3>
+      </h4>
 
       {/*
        * Deep-link opens skip the animation entirely, so every row's final
