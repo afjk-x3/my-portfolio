@@ -11,7 +11,7 @@ export function TechStackCard({ category, className }: TechStackCardProps) {
   return (
     <article
       className={cn(
-        "group flex flex-col gap-4 rounded-card border border-line bg-surface p-6 transition-[border-color,box-shadow] duration-300 hover:border-accent/50 hover:shadow-[0_0_40px_-16px_var(--color-accent)]",
+        "group flex flex-col justify-between gap-4 rounded-card border border-line bg-surface p-6 transition-[border-color,box-shadow] duration-300 hover:border-accent/50 hover:shadow-[0_0_40px_-16px_var(--color-accent)]",
         className,
       )}
     >
